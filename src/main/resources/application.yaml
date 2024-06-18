@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate:
+      ddl-auto: create-drop
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/togedog?useSSL=false&serverTimezone=Asia/Seoul
+    username: "${DATABASE_MYSQL_USERNAME}"
+    password: "${DATABASE_MYSQL_PASSWORD}"
+
+logging:
+  level:
+    org.hibernate: debug
