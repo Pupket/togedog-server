@@ -1,8 +1,7 @@
 package pupket.togedogserver.domain.match.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
@@ -16,26 +15,29 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity(name = "matching")
 @Getter
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder(toBuilder = true)
 public class Match {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long matchId;
 
-    @Column(nullable = false)
     private Date startTime;
 
-    @Column(nullable = false)
     private Date endTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @ColumnDefault("'UNMATCHED'")
+    @Builder.Default
     private MatchStatus matched = MatchStatus.UNMATCHED;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @ColumnDefault("'INCOMPLETE'")
+    @Builder.Default
     private CompleteStatus completeStatus = CompleteStatus.INCOMPLETE;
 
     private String review;
@@ -43,9 +45,11 @@ public class Match {
     @Column(nullable = false)
     private boolean deleted = Boolean.FALSE;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mate_uuid")
     private Mate mate;
 }

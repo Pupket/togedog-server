@@ -65,18 +65,19 @@ public class Board {
     @ColumnDefault("false")
     private boolean deleted = Boolean.FALSE;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "users_uuid")
     private User user;
 
-    @OneToMany
+    @OneToMany(mappedBy = "board")
     private List<OwnerBoard> ownerBoard;
 
-    @OneToMany
+    @OneToMany(mappedBy = "board")
     private List<MateBoard> mateBoard;
 
-    @OneToMany
+    @OneToMany(mappedBy = "board")
     private List<ChatRoom> chatRoom;
 
-    @OneToMany
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BoardPhoto> boardPhoto;
 }

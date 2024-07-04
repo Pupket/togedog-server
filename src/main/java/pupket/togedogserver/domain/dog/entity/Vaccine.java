@@ -1,9 +1,6 @@
 package pupket.togedogserver.domain.dog.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -20,7 +17,8 @@ public class Vaccine {
     @GeneratedValue(strategy = IDENTITY)
     private Long vaccinationId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dog_id")
     private Dog dog;
 
     private String vaccineName;

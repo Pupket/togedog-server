@@ -20,15 +20,18 @@ public class ChatRoom {
     @GeneratedValue(strategy = IDENTITY)
     private Long roomId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "onwer_id")
     private Owner owner;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "onwer_uuid")
     private Mate mate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id")
     private Board board;
 
-    @OneToMany
+    @OneToMany(mappedBy = "chatRoom")
     private List<Chatting> chatting;
 }
