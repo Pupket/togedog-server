@@ -1,9 +1,6 @@
 package pupket.togedogserver.domain.board.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -22,6 +19,7 @@ public class MateBoard {
 
     private Long maxDogSize;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id")
     private Board board;
 }

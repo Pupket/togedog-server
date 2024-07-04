@@ -20,7 +20,7 @@ public class Owner {
     @GeneratedValue(strategy = IDENTITY)
     private Long ownerUuid;
 
-    @OneToOne
+    @OneToOne(mappedBy = "owner", fetch = FetchType.LAZY)
     private User user;
 
     @Column(nullable = false)
@@ -30,9 +30,9 @@ public class Owner {
     @Column(columnDefinition = "LONGTEXT")
     private String introduce;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "owner")
     private List<ChatRoom> chatRoom;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "owner")
     private List<Match> match;
 }

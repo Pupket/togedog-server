@@ -21,7 +21,8 @@ public class Dog {
     @GeneratedValue(strategy = IDENTITY)
     private Long dogId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "users_uuid")
     private User user;
 
     @Column(nullable = false)
@@ -43,9 +44,9 @@ public class Dog {
 
     private String dogImage;
 
-    @OneToMany
+    @OneToMany(mappedBy = "dog")
     private List<Vaccine> vaccine;
 
-    @OneToMany
+    @OneToMany(mappedBy = "dog")
     private List<OwnerBoard> ownerBoard;
 }

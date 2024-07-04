@@ -1,9 +1,6 @@
 package pupket.togedogserver.domain.chat.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 import pupket.togedogserver.domain.user.entity.User;
@@ -21,12 +18,14 @@ public class Chatting {
     @GeneratedValue(strategy = IDENTITY)
     private Long chatId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
     private String imageURL;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "users_uuid")
     private User user;
 
     private Date writtenTime;

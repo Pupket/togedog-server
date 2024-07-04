@@ -20,7 +20,8 @@ public class Mate {
     @GeneratedValue(strategy = IDENTITY)
     private Long mateUuid;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "users_uuid")
     private User user;
 
     @Column(nullable = false)
@@ -30,9 +31,9 @@ public class Mate {
     @Column(columnDefinition = "LONGTEXT")
     private String introduce;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "mate")
     private List<ChatRoom> chatRoom;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "mate")
     private List<Match> match;
 }
