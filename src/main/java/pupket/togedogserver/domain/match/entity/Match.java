@@ -5,8 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
-import pupket.togedogserver.domain.user.entity.Mate;
 import pupket.togedogserver.domain.user.entity.Owner;
+import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 import java.util.Date;
 
@@ -43,6 +43,7 @@ public class Match {
     private String review;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean deleted = Boolean.FALSE;
 
     @ManyToOne(fetch = FetchType.LAZY)

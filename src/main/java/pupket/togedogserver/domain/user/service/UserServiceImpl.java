@@ -7,9 +7,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
+import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.constant.Visibility;
-import pupket.togedogserver.domain.user.dto.request.SignUpRequest;
-import pupket.togedogserver.domain.user.dto.request.UpdateRequest;
+import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
@@ -37,15 +37,19 @@ public class UserServiceImpl {
     private final PasswordUtil passwordUtil;
     private final OAuth2RevokeService oAuth2RevokeService;
 
-    public void create(CustomUserDetail userDetail, SignUpRequest request) {
+    public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
 
         String password = passwordUtil.generateRandomPassword();
         password = passwordEncoder.encode(password);
-        user.updateInfo(request);
-        user.updatePassword(password);
+        User createdUser = user.toBuilder()
+                .userGender(UserGender.valueOf(request.getUserGender()))
+                .genderVisibility(Visibility.valueOf(request.getGenderVisibility()))
+                .nickname(request.getNickname())
+                .password(password)
+                .build();
 
-        userRepository.save(user);
+        userRepository.save(createdUser);
     }
 
     public void logout(String refreshToken, HttpServletResponse response) {
@@ -71,21 +75,6 @@ public class UserServiceImpl {
         return userMapper.of(user);
     }
 
-    public void updateMember(CustomUserDetail userDetail, UpdateRequest updateReq) {
-        User findMember = getUserById(userDetail.getUuid());
-        validateExistingNickname(updateReq.getNickName());
-
-        findMember.toBuilder()
-                .nickname(updateReq.getNickName())
-                .address1(updateReq.getAddress1())
-                .address2(updateReq.getAddress2())
-                .genderVisibility(Visibility.valueOf(updateReq.getGenderVisibility()))
-                .build();
-
-        findMember.updateInfo(updateReq);
-        userRepository.save(findMember);
-    }
-
     private void validateExistingNickname(String nickname) {
         userRepository.findByNickname(nickname).ifPresent(member -> {
             throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
@@ -104,7 +93,9 @@ public class UserServiceImpl {
                     socialAccessTokenRepository.delete(accessToken);
                 }
         );
-        findUser.updateStatus();
+        findUser.updateStatusToDeleted();
+
+        userRepository.save(findUser);
     }
 
     private void revokeSocialAccessToken(User findUser, String socialAccessToken) {
@@ -115,6 +106,7 @@ public class UserServiceImpl {
         }
     }
 
+    //TODO:: filter로 생성하기
     public void validateUser(String name) {
         User findUser = userRepository.findByEmail(name).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
