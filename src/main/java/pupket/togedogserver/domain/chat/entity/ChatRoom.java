@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.user.entity.Mate;
 import pupket.togedogserver.domain.user.entity.Owner;
+import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 import java.util.List;
 

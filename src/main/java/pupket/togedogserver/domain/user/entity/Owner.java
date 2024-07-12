@@ -35,4 +35,6 @@ public class Owner {
 
     @OneToMany(mappedBy = "owner")
     private List<Match> match;
+
+
 }

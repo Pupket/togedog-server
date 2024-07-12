@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
@@ -65,11 +66,13 @@ public class JwtService {
 
         RefreshToken oldRefreshTokenDB = refreshTokenRepository.findByRefreshToken(oldRefreshToken)
                 .orElseThrow(() -> new JwtException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN));
+        refreshTokenRepository.deleteByRefreshToken(oldRefreshTokenDB.getRefreshToken());
         Authentication authentication = getAuthenticationFromMemberId(oldRefreshTokenDB.getMemberId());
 
         // 새로운 토큰 생성
         String newAccessToken = generateAccessToken(authentication);
         String newRefreshToken = generateRefreshToken(authentication);
+
 
         return JwtToken.builder()
                 .grantType("Bearer")
@@ -186,12 +189,14 @@ public class JwtService {
         }
     }
 
+    @Transactional
     public void deleteRefreshTokenDB(String refreshToken) {
         try {
             refreshTokenRepository.deleteByRefreshToken(refreshToken);
         } catch (Exception e) {
             String tokenInfo = refreshToken == null ? "null" : refreshToken;
             log.info("Failed to delete refreshToken, Token: {}", tokenInfo);
+            log.info("e={}", e.getMessage());
             throw new JwtException(ExceptionCode.INVALID_TOKEN);
         }
     }

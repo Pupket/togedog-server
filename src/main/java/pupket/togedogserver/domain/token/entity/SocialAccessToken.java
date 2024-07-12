@@ -2,6 +2,7 @@ package pupket.togedogserver.domain.token.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import pupket.togedogserver.domain.user.entity.User;
 
 @Entity
@@ -9,6 +10,7 @@ import pupket.togedogserver.domain.user.entity.User;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
+@Slf4j
 public class SocialAccessToken {
 
     @Id

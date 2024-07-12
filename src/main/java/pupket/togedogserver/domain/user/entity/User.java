@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Where;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,11 +14,8 @@ import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.constant.Visibility;
-import pupket.togedogserver.domain.user.dto.request.SignUpRequest;
-import pupket.togedogserver.domain.user.dto.request.UpdateRequest;
+import pupket.togedogserver.domain.user.entity.mate.Mate;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +29,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Where(clause = "account_status= 'ACTIVE' ")
 public class User {
 
     @Id
@@ -51,7 +50,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserGender userGender;
 
-    private LocalDate birthDay;
+    private int age;
+
+    private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
     @ColumnDefault("'HIDDEN'")
@@ -86,7 +87,7 @@ public class User {
     @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Mate> mate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -103,35 +104,19 @@ public class User {
         return Collections.singletonList(new SimpleGrantedAuthority(this.role.name()));
     }
 
+    //TODO:: toBuilder 잘 작동하면 다 지우고 toBuilder만 사용
     public void updatePassword(String password) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         this.password = passwordEncoder.encode(password);
     }
 
 
-    public void updateInfo(UpdateRequest updateReq) {
-        this.nickname = updateReq.getNickName();
-//        this.profileImage = updateReq.get();
-        this.address1 = updateReq.getAddress1();
-        this.address2 = updateReq.getAddress2();
-        this.genderVisibility = Visibility.valueOf(updateReq.getGenderVisibility());
-    }
-
-    public void updateInfo(SignUpRequest signUpRequest) {
-        this.nickname = signUpRequest.getNickname();
-//        this.profileImage = updateReq.get();
-        this.genderVisibility = Visibility.valueOf(signUpRequest.getGenderVisibility());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        this.birthDay = LocalDate.parse(signUpRequest.getBirthDay(), formatter);
-        ;
-    }
-
     public void updateProfile(String name, String picture) {
         this.nickname = name;
         this.profileImage = picture;
     }
 
-    public void updateStatus() {
+    public void updateStatusToDeleted() {
         this.accountStatus = AccountStatus.DELETED;
     }
 }

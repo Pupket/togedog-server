@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.token.entity.SocialAccessToken;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.constant.RoleType;
@@ -20,14 +21,13 @@ import pupket.togedogserver.global.auth.dto.OAuthAttributes;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.PasswordUtil;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
@@ -57,22 +57,22 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String picture = memberAttribute.get("picture") != null ? (String) memberAttribute.get("picture") : null;
         String nickname = memberAttribute.get("nickname") != null ? (String) memberAttribute.get("nickname") : null;
         UserGender gender = memberAttribute.get("gender") != null ? UserGender.valueOf(((String) memberAttribute.get("gender")).toUpperCase()) : null;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate birthDay = memberAttribute.get("birthday") != null ? LocalDate.parse((String) memberAttribute.get("birthday"), formatter) : null;
 
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> {
-                    existingUser.updateProfile(nickname, picture);
-
                     // SocialAccessToken 엔티티 업데이트 또는 생성 로직 수정
                     socialAccessTokenRepository.findByUser(existingUser).ifPresentOrElse(
-                            existingToken -> existingToken.updateSocialAccessToken(socialAccessToken),
-                            () -> socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, existingUser))
+                            existingToken -> {
+                                existingToken.updateSocialAccessToken(socialAccessToken);
+                                socialAccessTokenRepository.save(existingToken);
+                            },
+                            () -> socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, existingUser)
+                            )
                     );
                     return existingUser;
 
                 }).orElseGet(() -> {
-                    User newUser = userMapper.toEntity(email, name, picture, memberRole, nickname, gender, birthDay);
+                    User newUser = userMapper.toEntity(email, name, picture, memberRole, nickname, gender);
                     String tempPassword = passwordUtil.generateRandomPassword();
                     newUser.updatePassword(tempPassword);
                     userRepository.save(newUser);

@@ -22,7 +22,6 @@ public class OAuthAttributes {
     private String picture; // 프로필 사진
     private String provider; // 플랫폼
     private String socialAccessToken;
-    private String birthday;
     private String gender;
     private String nickname;
 
@@ -59,15 +58,12 @@ public class OAuthAttributes {
         String name = (String) kakaoAccount.get("name");
         String picture = kakaoProfile != null ? (String) kakaoProfile.get("profile_image_url") : null;
         String nickname = kakaoProfile != null ? (String) kakaoProfile.get("nickname") : null;
-        String birthYear = (String) kakaoAccount.get("birthyear");
-        String birthday = (String) kakaoAccount.get("birthday");
         String gender = (String) kakaoAccount.get("gender");
         return OAuthAttributes.builder()
                 .email(email)
                 .nickname(nickname)
                 .name(name)
                 .picture(picture)
-                .birthday(birthYear + "-" + birthday.substring(0, 2) + "-" + birthday.substring(2, 4))
                 .gender(gender)
                 .attributes(kakaoAccount)
                 .attributeKey(attributeKey)
@@ -84,8 +80,6 @@ public class OAuthAttributes {
         String name = (String) response.get("name");
         String picture = (String) response.get("profile_image");
         String nickname = (String) response.get("nickname");
-        String birthYear = (String) response.get("birthyear");
-        String birthday = (String) response.get("birthday");
         String gender = (String) response.get("gender");
         if (gender != null) {
             if (gender.equals("M")) {
@@ -100,7 +94,6 @@ public class OAuthAttributes {
                 .name(name)
                 .picture(picture)
                 .nickname(nickname)
-                .birthday(birthYear + "-" + birthday.split("-")[0] + "-" + birthday.split("-")[1])
                 .gender(gender)
                 .attributes(response)
                 .attributeKey(attributeKey)
@@ -119,7 +112,6 @@ public class OAuthAttributes {
         map.put("provider", provider);
         map.put("socialAccessToken", socialAccessToken);
         map.put("gender", gender);
-        map.put("birthday", birthday);
         map.put("nickname", nickname);
 
         return map;
