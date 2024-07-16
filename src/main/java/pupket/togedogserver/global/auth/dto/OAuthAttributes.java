@@ -21,12 +21,14 @@ public class OAuthAttributes {
     private String name; // 이름
     private String picture; // 프로필 사진
     private String provider; // 플랫폼
-    private String socialAccessToken;
-    private String gender;
-    private String nickname;
+    private String socialAccessToken; //토큰값
+    private String gender; //성별
+    private String nickname; //닉네임
+    private String birthday; //생일
+    private String birthyear; //생년
 
+    // 각 플랫폼 별로 제공해주는 데이터가 조금씩 다르기 때문에 분기 처리
     public static OAuthAttributes of(String provider, String attributeKey, Map<String, Object> attributes, String socialAccessToken) {
-        // 각 플랫폼 별로 제공해주는 데이터가 조금씩 다르기 때문에 분기 처리
         return switch (provider) {
             case "google" -> google(provider, attributeKey, attributes, socialAccessToken);
             case "kakao" -> kakao(provider, attributeKey, attributes, socialAccessToken);
@@ -53,12 +55,14 @@ public class OAuthAttributes {
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
         Map<String, Object> kakaoProfile = (Map<String, Object>) kakaoAccount.get("profile");
 
-
         String email = (String) kakaoAccount.get("email");
         String name = (String) kakaoAccount.get("name");
         String picture = kakaoProfile != null ? (String) kakaoProfile.get("profile_image_url") : null;
         String nickname = kakaoProfile != null ? (String) kakaoProfile.get("nickname") : null;
         String gender = (String) kakaoAccount.get("gender");
+        String birthyear = (String) kakaoAccount.get("birthyear");
+        String birthday = (String) kakaoAccount.get("birthday");
+
         return OAuthAttributes.builder()
                 .email(email)
                 .nickname(nickname)
@@ -69,9 +73,10 @@ public class OAuthAttributes {
                 .attributeKey(attributeKey)
                 .provider(provider)
                 .socialAccessToken(socialAccessToken)
+                .birthday(birthday)
+                .birthyear(birthyear)
                 .build();
     }
-
 
     private static OAuthAttributes naver(String provider, String attributeKey, Map<String, Object> attributes, String socialAccessToken) {
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
@@ -81,6 +86,8 @@ public class OAuthAttributes {
         String picture = (String) response.get("profile_image");
         String nickname = (String) response.get("nickname");
         String gender = (String) response.get("gender");
+        String birthday = (String) response.get("birthday");
+        String birthyear = (String) response.get("birthyear");
         if (gender != null) {
             if (gender.equals("M")) {
                 gender = "male";
@@ -99,6 +106,8 @@ public class OAuthAttributes {
                 .attributeKey(attributeKey)
                 .provider(provider)
                 .socialAccessToken(socialAccessToken)
+                .birthday(birthday)
+                .birthyear(birthyear)
                 .build();
     }
 
@@ -113,6 +122,8 @@ public class OAuthAttributes {
         map.put("socialAccessToken", socialAccessToken);
         map.put("gender", gender);
         map.put("nickname", nickname);
+        map.put("birthday", Integer.valueOf(birthday));
+        map.put("birthyear", Integer.valueOf(birthyear));
 
         return map;
     }

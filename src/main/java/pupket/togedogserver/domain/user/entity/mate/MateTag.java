@@ -22,5 +22,4 @@ public class MateTag {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mate_id")
     private Mate mate;
-
 }

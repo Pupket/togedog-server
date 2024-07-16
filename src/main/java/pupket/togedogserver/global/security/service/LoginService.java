@@ -30,6 +30,5 @@ public class LoginService implements UserDetailsService {
                 findUser.getUuid(),
                 findUser.getAuthorities()
         );
-
     }
 }

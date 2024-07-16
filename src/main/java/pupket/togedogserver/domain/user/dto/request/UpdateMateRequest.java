@@ -5,12 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
 import java.util.List;
 
 @Data
 public class UpdateMateRequest {
-
 
     @NotBlank(message = "닉네임은 필수 입력 값입니다.")
     @Size(max = 10, message = "닉네임은 10자 이하로 입력해야 합니다.")

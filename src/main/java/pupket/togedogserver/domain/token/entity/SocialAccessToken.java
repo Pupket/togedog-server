@@ -23,7 +23,6 @@ public class SocialAccessToken {
     @JoinColumn(name = "member_id")
     private User user;
 
-
     public static SocialAccessToken of(String socialAccessToken, User user) {
         return SocialAccessToken.builder()
                 .socialAccessToken(socialAccessToken)

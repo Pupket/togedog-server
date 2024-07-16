@@ -3,13 +3,11 @@ package pupket.togedogserver.global.exception;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
-
 import static org.springframework.http.HttpStatus.*;
 
 @Getter
 @AllArgsConstructor
 public enum ExceptionCode {
-
     // 500
     NOT_HANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, "Unhandled exception occurred.", 900),
     REDIS_CONNECTION_FAILURE(INTERNAL_SERVER_ERROR, "Failed to connect to Redis.", 500),
@@ -47,7 +45,9 @@ public enum ExceptionCode {
     NOT_MATCHED_WRITER(CONFLICT, "Writer does not match.", 403),
     INVALID_BOARD(CONFLICT, "Invalid board.", 403),
     MEMBER_ALREADY_WITHDRAW(CONFLICT, "Member has already withdrawn.", 403),
-    NOT_FOUND_BOARDCOMMENT(CONFLICT, "Board comment not found.", 403);
+    NOT_FOUND_BOARDCOMMENT(CONFLICT, "Board comment not found.", 403),
+    NOT_FOUND_DOG(CONFLICT, "Dog not found", 403),
+    DOG_ALREADY_EXISTS(CONFLICT, "Dog already exists.", 403);
 
     private final HttpStatus httpStatus;
     private final String message;

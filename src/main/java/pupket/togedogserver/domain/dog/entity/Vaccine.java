@@ -3,7 +3,6 @@ package pupket.togedogserver.domain.dog.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
-
 import java.util.Date;
 
 import static jakarta.persistence.GenerationType.IDENTITY;

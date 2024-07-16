@@ -15,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
-import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
@@ -30,12 +29,12 @@ public class UserController {
 
     private final UserServiceImpl userServiceImpl;
     private final CookieUtils cookieUtils;
-    private final RefreshTokenRepository refreshTokenRepository;
-
-
+    
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
     @GetMapping
-    public ResponseEntity<FindUserResponse> find(@AuthenticationPrincipal CustomUserDetail user) {
+    public ResponseEntity<FindUserResponse> find(
+            @AuthenticationPrincipal CustomUserDetail user
+    ) {
         FindUserResponse updateUser = userServiceImpl.getMemberDetails(user.getUuid());
         return ResponseEntity.status(HttpStatus.OK).body(updateUser);
     }
@@ -47,7 +46,10 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "리프레시 토큰이 쿠키에 없습니다.")
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
 
         String refreshToken = cookieUtils.getRefreshToken(request);
 
@@ -76,7 +78,6 @@ public class UserController {
                 .memberId(userDetail.getUuid())
                 .build();
 
-
         return ResponseEntity.status(HttpStatus.OK).body(newToken.getAccessToken());
     }
 
@@ -86,14 +87,13 @@ public class UserController {
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "해당 소셜 회원이 존재하지 않습니다.")
     })
-
-
     @DeleteMapping("/social/me")
-    public ResponseEntity<Void> deleteSocialMember(@AuthenticationPrincipal CustomUserDetail user) {
+    public ResponseEntity<Void> deleteSocialMember(
+            @AuthenticationPrincipal CustomUserDetail user
+    ) {
         userServiceImpl.deleteSocialMember(user.getUuid());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
-
 
 }

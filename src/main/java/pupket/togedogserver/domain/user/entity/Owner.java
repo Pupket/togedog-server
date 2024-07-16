@@ -6,7 +6,6 @@ import lombok.ToString;
 import org.hibernate.annotations.ColumnDefault;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.entity.Match;
-
 import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -35,6 +34,4 @@ public class Owner {
 
     @OneToMany(mappedBy = "owner")
     private List<Match> match;
-
-
 }

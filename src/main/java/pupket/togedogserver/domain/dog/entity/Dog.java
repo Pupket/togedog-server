@@ -1,13 +1,14 @@
 package pupket.togedogserver.domain.dog.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import pupket.togedogserver.domain.board.entity.OwnerBoard;
+import pupket.togedogserver.domain.dog.constant.Breed;
 import pupket.togedogserver.domain.user.entity.User;
-
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -15,6 +16,11 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @Getter
 @ToString
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@SQLDelete(sql = "UPDATE dog SET deleted = true WHERE dog_id = ?")
+@Where(clause = "deleted = false")
 public class Dog {
 
     @Id
@@ -33,6 +39,7 @@ public class Dog {
 
     @Column(nullable = false)
     @ColumnDefault("false")
+    @Builder.Default
     private Boolean neutered = Boolean.FALSE;
 
     private Date birthday;
@@ -44,9 +51,17 @@ public class Dog {
 
     private String dogImage;
 
+    private boolean Deleted;
+
+    @Enumerated(EnumType.STRING)
+    private Breed breed;
+
     @OneToMany(mappedBy = "dog")
     private List<Vaccine> vaccine;
 
     @OneToMany(mappedBy = "dog")
     private List<OwnerBoard> ownerBoard;
+
+    @OneToMany(mappedBy = "dog")
+    private List<DogPersonalityTag> dogPersonalityTags;
 }

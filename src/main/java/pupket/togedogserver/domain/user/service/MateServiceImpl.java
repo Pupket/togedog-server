@@ -21,6 +21,7 @@ import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,23 +43,20 @@ public class MateServiceImpl implements MateService {
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User findUser = getUserById(userDetail.getUuid());
 
-        mateRepository.findByUser(findUser).orElseThrow(() ->
-                new MateException(ExceptionCode.MATE_ALREADY_EXIST)
-        );
+        mateRepository.findByUser(findUser).ifPresent(mate -> {
+            throw new MateException(ExceptionCode.MATE_ALREADY_EXIST);
+        });
 
-        userRepository.findByNickname(request.getNickname()).orElseThrow(() ->
-                new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS)
-        );
+        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
+            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
+        });
 
         User savedUser = saveUpdatedUser(findUser, request);
 
         Mate savedMate = updatedMate(savedUser, request);
 
         saveMatePreferences(savedMate, request);
-
-
     }
-
 
     @Override
     public FindMateResponse find(CustomUserDetail userDetail) {
@@ -69,16 +67,16 @@ public class MateServiceImpl implements MateService {
 
         FindMateResponse findMateResponse = FindMateResponse.builder()
                 .nickname(findMate.getUser().getNickname())
-                .age(findMate.getUser().getAge())
                 .profileImage(findMate.getUser().getProfileImage())
                 .gender(String.valueOf(findMate.getUser().getUserGender()))
                 .region(String.valueOf(findMate.getRegion()))
+                .age(LocalDateTime.now().getYear() - findMate.getUser().getBirthyear())
+                .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .preferredStyle(findMate.getMateTag().stream().map(tag -> tag.getTagName()).collect(Collectors.toSet()))
                 .preferredTime(findMate.getPreferredTimes().stream().map(time -> time.getPreferredTime().toString()).collect(Collectors.toSet()))
                 .preferredWeek(findMate.getPreferredWeeks().stream().map(week -> week.getPreferredWeek().toString()).collect(Collectors.toSet()))
                 .preferredBreed(findMate.getPreferredBreed().stream().map(breed -> breed.getPreferredBreed().toString()).collect(Collectors.toSet()))
                 .build();
-
 
         return findMateResponse;
     }
@@ -87,20 +85,13 @@ public class MateServiceImpl implements MateService {
     public void update(CustomUserDetail userDetail, UpdateMateRequest request) {
         User findUser = getUserById(userDetail.getUuid());
 
-        userRepository.findByNickname(request.getNickname()).orElseThrow(
-                () -> new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS)
-        );
-
-        User savedUser = saveUpdatedUser(findUser, request);
-
-        mateRepository.findByUser(savedUser).orElseThrow(
-                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
-        );
+        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
+            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
+        });
 
         updatedMate(findUser, request);
         Mate savedMate = updatedMate(findUser, request);
         saveMatePreferences(savedMate, request);
-
 
     }
 
@@ -124,11 +115,9 @@ public class MateServiceImpl implements MateService {
                 );
     }
 
-
     private User saveUpdatedUser(User findUser, UpdateMateRequest request) {
         User updatedUser = findUser.toBuilder()
                 .nickname(request.getNickname())
-                .age(request.getAge())
                 .userGender(UserGender.valueOf(request.getUserGender()))
                 .phoneNumber(request.getPhoneNumber())
                 .build();
@@ -139,7 +128,6 @@ public class MateServiceImpl implements MateService {
     private User saveUpdatedUser(User findUser, RegistMateRequest request) {
         User updatedUser = findUser.toBuilder()
                 .nickname(request.getNickname())
-                .age(request.getAge())
                 .userGender(UserGender.valueOf(request.getUserGender()))
                 .phoneNumber(request.getPhoneNumber())
                 .build();
@@ -148,26 +136,29 @@ public class MateServiceImpl implements MateService {
     }
 
     private Mate updatedMate(User savedUser, RegistMateRequest request) {
+
         Mate mate = Mate.builder()
                 .user(savedUser)
                 .region(Region.valueOf(request.getRegion()))
                 .career(request.getCareer())
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
-
 
         return mateRepository.save(mate);
 
     }
 
     private Mate updatedMate(User savedUser, UpdateMateRequest request) {
-        Mate mate = Mate.builder()
+        Mate findMate = mateRepository.findByUser(savedUser).orElseThrow(
+                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
+        );
+
+        Mate mate = findMate.toBuilder()
                 .user(savedUser)
                 .region(Region.valueOf(request.getRegion()))
                 .career(request.getCareer())
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
-
 
         return mateRepository.save(mate);
 
@@ -274,6 +265,4 @@ public class MateServiceImpl implements MateService {
         mateRepository.save(updatedMate);
 
     }
-
-
 }

@@ -7,6 +7,5 @@ import pupket.togedogserver.domain.user.entity.mate.Mate;
 import java.util.Optional;
 
 public interface MateRepository extends JpaRepository<Mate, Long> {
-
-    Optional<Mate> findByUser(User findUserByNickname);
+    Optional<Mate> findByUser(User User);
 }
