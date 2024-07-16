@@ -20,7 +20,6 @@ import pupket.togedogserver.global.exception.customException.JwtException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
-
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,7 +48,6 @@ public class JwtService {
         this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.refreshTokenExpirationTime = refreshTokenExpirationTime;
     }
-
 
     public JwtToken generateToken(Authentication authentication) {
         return JwtToken.builder()
@@ -88,11 +86,9 @@ public class JwtService {
             throw new JwtException(ExceptionCode.INVALID_TOKEN);
         }
 
-
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
-
 
         CustomUserDetail userDetail = new CustomUserDetail(claims.getSubject(), "",
                 Long.parseLong(String.valueOf(claims.get("id"))), authorities);

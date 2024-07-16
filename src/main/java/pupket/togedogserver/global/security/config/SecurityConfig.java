@@ -22,7 +22,6 @@ import pupket.togedogserver.global.auth.service.CustomOAuth2UserService;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.security.filter.JwtAuthenticationProcessingFilter;
 import pupket.togedogserver.global.security.service.LoginService;
-
 import java.util.Arrays;
 
 @Configuration
@@ -51,10 +50,8 @@ public class SecurityConfig {
                         .successHandler(oAuth2LoginSuccessHandler))
                 .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 
-
         return http.build();
     }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

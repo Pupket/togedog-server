@@ -11,7 +11,6 @@ import pupket.togedogserver.domain.user.entity.User;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-
     //SignUpRequest - > User
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "email", ignore = true)
@@ -31,7 +30,6 @@ public interface UserMapper {
         return userGender != null ? UserGender.valueOf(userGender.toUpperCase()) : null;
     }
 
-
     FindUserResponse of(User user);
 
     @Mapping(target = "uuid", ignore = true)
@@ -47,7 +45,5 @@ public interface UserMapper {
     @Mapping(target = "address2", ignore = true)
     @Mapping(target = "mapX", ignore = true)
     @Mapping(target = "mapY", ignore = true)
-    User toEntity(String email, String name, String profileImage, RoleType role, String nickname, UserGender userGender);
-
-
+    User toEntity(String email, String name, String profileImage, RoleType role, String nickname, UserGender userGender, int birthday, int birthyear);
 }

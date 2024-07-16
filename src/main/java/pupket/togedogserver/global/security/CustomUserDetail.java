@@ -1,12 +1,10 @@
 package pupket.togedogserver.global.security;
 
-
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.security.util.PasswordUtil;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -17,22 +15,17 @@ public class CustomUserDetail extends org.springframework.security.core.userdeta
     private final Long uuid; // 회원 id
     private Map<String, Object> attributes;
 
-
-    // 일반 로그인시 사용되는 생성자
     public CustomUserDetail(String username, String password, Long id, Collection<? extends GrantedAuthority> authorities) {
         super(username, password, authorities);
         this.uuid = id;
     }
 
-
-    // OAuth2 인증시 사용되는 생성자
     public CustomUserDetail(User user, Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
         this(user.getEmail() != null ? user.getEmail() : UUID.randomUUID().toString().substring(0, 8) + "@social.com",
                 user.getPassword() != null ? user.getPassword() : PasswordUtil.generateRandomPassword(),
                 user.getUuid(), authorities);
         this.attributes = attributes;
     }
-
 
     @Override
     public Map<String, Object> getAttributes() {

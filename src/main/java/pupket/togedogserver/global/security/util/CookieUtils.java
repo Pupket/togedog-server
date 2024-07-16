@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
-
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
@@ -15,15 +14,12 @@ import java.util.Optional;
 @Component
 public class CookieUtils {
 
-
     public void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setMaxAge(maxAge);
-
         response.addCookie(cookie);
-        System.out.println("Cookie added: Name=" + name + ", Value=" + value + ", MaxAge=" + maxAge);
 
     }
 
@@ -36,10 +32,6 @@ public class CookieUtils {
         response.addCookie(cookie);
     }
 
-    /**
-     * jwtService에 있는 refreshToken검증
-     * jwtService.validateToken(refreshToken);
-     */
     public String getRefreshToken(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
 

@@ -18,6 +18,8 @@ import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.auth.dto.OAuthAttributes;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.PasswordUtil;
 
@@ -49,7 +51,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuthAttributes oAuth2Attribute = OAuthAttributes.of(registrationId, userNameAttributeName,
                 oAuth2User.getAttributes(), socialAccessToken);
 
-        // 각 플랫폼의 유저 정보를 공통화 처리해주는 부분
         Map<String, Object> memberAttribute = oAuth2Attribute.convertToMap();
         String email = (String) memberAttribute.get("email");
         RoleType memberRole = RoleType.of(registrationId);
@@ -57,9 +58,14 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String picture = memberAttribute.get("picture") != null ? (String) memberAttribute.get("picture") : null;
         String nickname = memberAttribute.get("nickname") != null ? (String) memberAttribute.get("nickname") : null;
         UserGender gender = memberAttribute.get("gender") != null ? UserGender.valueOf(((String) memberAttribute.get("gender")).toUpperCase()) : null;
+        int birthday = memberAttribute.get("birthday") != null ? (int) memberAttribute.get("birthday") : null;
+        int birthyear = memberAttribute.get("birthyear") != null ? (int) memberAttribute.get("birthyear") : null;
 
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> {
+                    if (existingUser.accountStatus.toString().equals("DELETED")) {
+                        throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
+                    }
                     // SocialAccessToken 엔티티 업데이트 또는 생성 로직 수정
                     socialAccessTokenRepository.findByUser(existingUser).ifPresentOrElse(
                             existingToken -> {
@@ -72,9 +78,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     return existingUser;
 
                 }).orElseGet(() -> {
-                    User newUser = userMapper.toEntity(email, name, picture, memberRole, nickname, gender);
+                    User newUser = userMapper.toEntity(email, name, picture, memberRole, nickname, gender, birthday, birthyear);
                     String tempPassword = passwordUtil.generateRandomPassword();
-                    newUser.updatePassword(tempPassword);
+                    newUser.toBuilder()
+                            .password(tempPassword)
+                            .build();
                     userRepository.save(newUser);
                     socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, newUser)); // 새로운 Member에 대한 SocialAccessToken 저장
                     return newUser;

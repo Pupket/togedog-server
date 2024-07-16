@@ -1,13 +1,11 @@
 package pupket.togedogserver.global.security.util;
 
 import org.springframework.stereotype.Component;
-
 import java.util.Random;
 
 
 @Component
 public class PasswordUtil {
-
 
     public static String generateRandomPassword() {
         int index = 0;

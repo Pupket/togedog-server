@@ -18,7 +18,6 @@ public class JwtUtils {
     private final RefreshTokenRepository refreshTokenRepository;
     private final CookieUtils cookieUtils;
 
-
     public void handleExpiredRefreshToken(String refreshToken, HttpServletResponse response) {
 
         cookieUtils.deleteCookie(response, "refreshToken");

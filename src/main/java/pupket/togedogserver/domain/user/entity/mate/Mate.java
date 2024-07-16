@@ -44,11 +44,9 @@ public class Mate {
     @Column(nullable = false)
     private int accommodatableDogsCount;
 
-
     @Column(nullable = false)
     @Builder.Default
     private boolean deleted = Boolean.FALSE;
-
 
     @OneToMany(mappedBy = "mate")
     private List<ChatRoom> chatRoom;
@@ -70,6 +68,4 @@ public class Mate {
 
     @Enumerated(EnumType.STRING)
     private Region region;
-
-
 }

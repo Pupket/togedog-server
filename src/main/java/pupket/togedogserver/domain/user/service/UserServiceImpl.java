@@ -79,8 +79,6 @@ public class UserServiceImpl {
         userRepository.findByNickname(nickname).ifPresent(member -> {
             throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
         });
-
-
     }
 
     public void deleteSocialMember(Long uuid) {
@@ -93,9 +91,8 @@ public class UserServiceImpl {
                     socialAccessTokenRepository.delete(accessToken);
                 }
         );
-        findUser.updateStatusToDeleted();
 
-        userRepository.save(findUser);
+        userRepository.delete(findUser);
     }
 
     private void revokeSocialAccessToken(User findUser, String socialAccessToken) {
@@ -106,7 +103,7 @@ public class UserServiceImpl {
         }
     }
 
-    //TODO:: filter로 생성하기
+    //TODO:: filter(Inteceptor)로 생성하기
     public void validateUser(String name) {
         User findUser = userRepository.findByEmail(name).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)

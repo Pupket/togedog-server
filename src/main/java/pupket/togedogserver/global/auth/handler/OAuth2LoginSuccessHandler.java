@@ -28,18 +28,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
 
-        // access token 헤더에 담기
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/")
+        String targetUrl = UriComponentsBuilder.fromUriString("togedog://togedog/login")
                 .queryParam("accessToken", jwtToken.getAccessToken())
                 .build().toUriString();
 
-        // refresh token 쿠키에 담기
         String refreshToken = jwtToken.getRefreshToken();
         cookieUtils.addCookie(response, "refreshToken", refreshToken, 24 * 60 * 60 * 7); // 7일
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
-
 }
-
-

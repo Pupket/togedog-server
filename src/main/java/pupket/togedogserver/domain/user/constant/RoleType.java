@@ -1,11 +1,7 @@
 package pupket.togedogserver.domain.user.constant;
 
 public enum RoleType {
-    MEMBER_NORMAL,
-    MEMBER_GOOGLE,
-    MEMBER_KAKAO,
-    MEMBER_NAVER,
-    ADMIN;
+    MEMBER_NORMAL, MEMBER_GOOGLE, MEMBER_KAKAO, MEMBER_NAVER, ADMIN;
 
     public static RoleType of(String provider) {
         return switch (provider.toLowerCase()) {
