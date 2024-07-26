@@ -55,7 +55,7 @@ public class Mate {
     private List<Match> match;
 
     @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY)
-    private Set<MatePreferredBreed> preferredBreed;
+    private Set<MatePreferredBreed> preferredBreeds;
 
     @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY)
     private Set<MatePreferredTime> preferredTimes;
@@ -64,7 +64,7 @@ public class Mate {
     private Set<MatePreferredWeek> preferredWeeks;
 
     @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY)
-    private Set<MateTag> mateTag;
+    private Set<MateTag> mateTags;
 
     @Enumerated(EnumType.STRING)
     private Region region;

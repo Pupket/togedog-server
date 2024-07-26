@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.user.repository;
+package pupket.togedogserver.domain.user.repository.mateRepo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import pupket.togedogserver.domain.user.entity.User;

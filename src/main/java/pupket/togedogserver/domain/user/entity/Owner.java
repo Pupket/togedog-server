@@ -1,9 +1,9 @@
 package pupket.togedogserver.domain.user.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SoftDelete;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.entity.Match;
 import java.util.List;
@@ -13,6 +13,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @Getter
 @ToString
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class Owner {
 
     @Id
@@ -24,10 +27,8 @@ public class Owner {
 
     @Column(nullable = false)
     @ColumnDefault("0")
+    @Builder.Default
     private Long matchCount = 0L;
-
-    @Column(columnDefinition = "LONGTEXT")
-    private String introduce;
 
     @OneToMany(mappedBy = "owner")
     private List<ChatRoom> chatRoom;

@@ -1,18 +1,45 @@
 package pupket.togedogserver.domain.dog.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import pupket.togedogserver.domain.user.constant.Region;
-import java.util.List;
+
+import java.util.Set;
 
 @Data
+@Schema(description = "강아지 수정 요청")
 public class DogUpdateRequest {
+
+    @Schema(description = "강아지 프로필 ID", example = "1", required = true)
     private Long id;
+
+    @Schema(description = "강아지 이름", example = "Buddy", required = true)
     private String name;
+
+    @Schema(description = "강아지 품종", example = "Golden Retriever", required = true)
     private String breed;
-    private boolean isNeuterized;
+
+    @Schema(description = "중성화 여부", example = "true", required = true)
+    private boolean neutered;
+
+    @Schema(description = "강아지 성별 (true: 남, false: 여)", example = "true", required = true)
     private boolean gender;
+
+    @Schema(description = "강아지 체중", example = "30", required = true)
     private int weight;
+
+    @Schema(description = "지역 (SEOUL, INCHEON, GYEONGGI, CHUNGCHEONG, GYEONGSANG, JEOLLA, GANGWON, JEJU)", example = "SEOUL", required = true)
     private Region region;
-    private String note;
-    private List<String> tag;
+
+    @Schema(description = "비고", example = "Very friendly", required = false)
+    private String notes;
+
+    @Schema(description = "태그", example = "[\"friendly\", \"energetic\"]", required = false)
+    private Set<String> tag;
+
+    @Schema(description = "백신접종 유무", example = "true", required = true)
+    private boolean vaccine;
+
+    @Schema(description = "나이", example = "21", required = true)
+    private int age;
 }

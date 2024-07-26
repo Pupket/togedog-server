@@ -8,9 +8,9 @@ import pupket.togedogserver.domain.match.repository.MatchRepository;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.MateRepository;
 import pupket.togedogserver.domain.user.repository.OwnerRepository;
 import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MatchingException;
 import pupket.togedogserver.global.exception.customException.MateException;
@@ -38,7 +38,6 @@ public class MatchServiceImpl implements MatchService {
                 () -> new OwnerException(ExceptionCode.NOT_FOUND_OWNER)
         );
 
-
         //Mate
         User findUserByNickname = userRepository.findByNickname(nickname).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
@@ -53,7 +52,6 @@ public class MatchServiceImpl implements MatchService {
                 .owner(owner)
                 .mate(mate)
                 .build();
-
 
         matchRepository.save(match);
 

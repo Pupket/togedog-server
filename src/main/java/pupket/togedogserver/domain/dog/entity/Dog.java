@@ -5,11 +5,12 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import pupket.togedogserver.domain.board.entity.OwnerBoard;
+import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -42,7 +43,7 @@ public class Dog {
     @Builder.Default
     private Boolean neutered = Boolean.FALSE;
 
-    private Date birthday;
+    private int age;
 
     @Column(nullable = false)
     private Long weight;
@@ -51,17 +52,26 @@ public class Dog {
 
     private String dogImage;
 
-    private boolean Deleted;
+    @Enumerated(EnumType.STRING)
+    private Region region;
+
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    @Builder.Default
+    private boolean deleted = Boolean.FALSE;
 
     @Enumerated(EnumType.STRING)
     private Breed breed;
 
-    @OneToMany(mappedBy = "dog")
-    private List<Vaccine> vaccine;
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    @Builder.Default
+    private boolean vaccine = Boolean.FALSE;
 
     @OneToMany(mappedBy = "dog")
-    private List<OwnerBoard> ownerBoard;
+    private Set<DogPersonalityTag> dogPersonalityTags;
 
     @OneToMany(mappedBy = "dog")
-    private List<DogPersonalityTag> dogPersonalityTags;
+    private List<Board> boards;
+
 }
