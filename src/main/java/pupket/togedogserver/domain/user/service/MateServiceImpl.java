@@ -1,36 +1,38 @@
 package pupket.togedogserver.domain.user.service;
 
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pupket.togedogserver.domain.dog.constant.Breed;
-import pupket.togedogserver.domain.user.constant.Region;
-import pupket.togedogserver.domain.user.constant.Time;
-import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.constant.Week;
+import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.*;
-import pupket.togedogserver.domain.user.repository.*;
+import pupket.togedogserver.domain.user.mapper.UserMapper;
+import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.mateRepo.*;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
+import pupket.togedogserver.global.exception.customException.MateTagException;
 import pupket.togedogserver.global.exception.customException.MemberException;
+import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 @Transactional
+@Slf4j
 public class MateServiceImpl implements MateService {
 
-    private static final Logger log = LoggerFactory.getLogger(MateServiceImpl.class);
     private final UserRepository userRepository;
     private final MatePreferredBreedRepository matePreferredBreedRepository;
     private final MatePreferredWeekRepository matePreferredWeekRepository;
@@ -38,9 +40,12 @@ public class MateServiceImpl implements MateService {
     private final MateRepository mateRepository;
     private final MateTagRepository mateTagRepository;
     private final UserServiceImpl userServiceImpl;
+    private final CustomMateRepositoryImpl customMateRepositoryImpl;
+    private final UserMapper userMapper;
+    private final S3FileUtilImpl s3FileUtilImpl;
 
     @Override
-    public void create(CustomUserDetail userDetail, RegistMateRequest request) {
+    public void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage) {
         User findUser = getUserById(userDetail.getUuid());
 
         mateRepository.findByUser(findUser).ifPresent(mate -> {
@@ -51,9 +56,29 @@ public class MateServiceImpl implements MateService {
             throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
         });
 
-        User savedUser = saveUpdatedUser(findUser, request);
+        String uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
 
-        Mate savedMate = updatedMate(savedUser, request);
+        findUser = findUser.toBuilder()
+                .nickname(request.getNickname())
+                .profileImage(uploadedProfileImage)
+                .userGender(request.getUserGender())
+                .genderVisibility(request.getGenderVisibility())
+                .phoneNumber(request.getPhoneNumber())
+                .build();
+
+        findUser = userRepository.save(findUser);
+
+        Mate createdMate = userMapper.toMate(request);
+
+        Mate updatedMate = createdMate.toBuilder()
+                .user(findUser)
+                .preferredBreeds(userMapper.mapPreferredBreeds(request.getPreferredBreed(), createdMate))
+                .preferredTimes(userMapper.mapPreferredTimes(request.getPreferredTime(), createdMate))
+                .preferredWeeks(userMapper.mapPreferredWeeks(request.getPreferredWeek(), createdMate))
+                .mateTags(userMapper.mapMateTags(request.getPreferredStyle(), createdMate))
+                .build();
+
+        Mate savedMate = mateRepository.save(updatedMate);
 
         saveMatePreferences(savedMate, request);
     }
@@ -72,27 +97,71 @@ public class MateServiceImpl implements MateService {
                 .region(String.valueOf(findMate.getRegion()))
                 .age(LocalDateTime.now().getYear() - findMate.getUser().getBirthyear())
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
-                .preferredStyle(findMate.getMateTag().stream().map(tag -> tag.getTagName()).collect(Collectors.toSet()))
+                .career(findMate.getCareer())
+                .preferredStyle(findMate.getMateTags().stream().map(tag -> tag.getTagName()).collect(Collectors.toSet()))
                 .preferredTime(findMate.getPreferredTimes().stream().map(time -> time.getPreferredTime().toString()).collect(Collectors.toSet()))
                 .preferredWeek(findMate.getPreferredWeeks().stream().map(week -> week.getPreferredWeek().toString()).collect(Collectors.toSet()))
-                .preferredBreed(findMate.getPreferredBreed().stream().map(breed -> breed.getPreferredBreed().toString()).collect(Collectors.toSet()))
+                .preferredBreed(findMate.getPreferredBreeds().stream().map(breed -> breed.getPreferredBreed().toString()).collect(Collectors.toSet()))
                 .build();
 
         return findMateResponse;
     }
 
     @Override
-    public void update(CustomUserDetail userDetail, UpdateMateRequest request) {
+    public Page<FindMateResponse> findRandom(Pageable pageable) {
+
+        return customMateRepositoryImpl.MateList(pageable);
+
+    }
+
+    @Override
+    public void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImage) {
         User findUser = getUserById(userDetail.getUuid());
 
-        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
-            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
-        });
+        if (userRepository.findByNickname(request.getNickname()).isPresent()) {
+            if (!findUser.getNickname().equals(request.getNickname())) {
+                throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
+            }
+        }
+        s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
+        String uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
 
-        updatedMate(findUser, request);
-        Mate savedMate = updatedMate(findUser, request);
+        findUser = findUser.toBuilder()
+                .nickname(request.getNickname())
+                .phoneNumber(request.getPhoneNumber())
+                .genderVisibility((request.getGenderVisibility()))
+                .profileImage(uploadedProfileImage)
+                .build();
+
+        userRepository.save(findUser);
+
+        Mate findMate = mateRepository.findByUser(findUser)
+                .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
+
+        deleteTags(findMate);
+
+        findMate = findMate.toBuilder()
+                .user(findUser)
+                .accommodatableDogsCount(request.getAccommodatableDogsCount())
+                .career(request.getCareer())
+                .region(request.getRegion())
+                .preferredBreeds(userMapper.mapPreferredBreeds(request.getPreferredBreed(), findMate))
+                .preferredTimes(userMapper.mapPreferredTimes(request.getPreferredTime(), findMate))
+                .preferredWeeks(userMapper.mapPreferredWeeks(request.getPreferredWeek(), findMate))
+                .mateTags(userMapper.mapMateTags(request.getPreferredStyle(), findMate))
+                .build();
+
+        Mate savedMate = mateRepository.save(findMate);
+
         saveMatePreferences(savedMate, request);
 
+    }
+
+    private void deleteTags(Mate findMate) {
+        mateTagRepository.deleteAllByMate(findMate);
+        matePreferredBreedRepository.deleteAllByMate(findMate);
+        matePreferredTimeRepository.deleteAllByMate(findMate);
+        matePreferredWeekRepository.deleteAllByMate(findMate);
     }
 
     @Override
@@ -104,165 +173,72 @@ public class MateServiceImpl implements MateService {
                 () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
         );
 
-        mateRepository.delete(findMate);
+        List<MateTag> findMateTag = mateTagRepository.findAllByMate(findMate).orElseThrow(
+                () -> new MateTagException(ExceptionCode.NOT_FOUND_MATE_TAG)
+        );
 
+        s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
+
+        mateRepository.delete(findMate);
+        mateTagRepository.deleteAll(findMateTag);
     }
 
     private User getUserById(Long memberUuid) {
-        return userRepository.findByUuid(memberUuid).
-                orElseThrow(
-                        () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-                );
-    }
-
-    private User saveUpdatedUser(User findUser, UpdateMateRequest request) {
-        User updatedUser = findUser.toBuilder()
-                .nickname(request.getNickname())
-                .userGender(UserGender.valueOf(request.getUserGender()))
-                .phoneNumber(request.getPhoneNumber())
-                .build();
-
-        return userRepository.save(updatedUser);
-    }
-
-    private User saveUpdatedUser(User findUser, RegistMateRequest request) {
-        User updatedUser = findUser.toBuilder()
-                .nickname(request.getNickname())
-                .userGender(UserGender.valueOf(request.getUserGender()))
-                .phoneNumber(request.getPhoneNumber())
-                .build();
-
-        return userRepository.save(updatedUser);
-    }
-
-    private Mate updatedMate(User savedUser, RegistMateRequest request) {
-
-        Mate mate = Mate.builder()
-                .user(savedUser)
-                .region(Region.valueOf(request.getRegion()))
-                .career(request.getCareer())
-                .accommodatableDogsCount(request.getAccommodatableDogsCount())
-                .build();
-
-        return mateRepository.save(mate);
-
-    }
-
-    private Mate updatedMate(User savedUser, UpdateMateRequest request) {
-        Mate findMate = mateRepository.findByUser(savedUser).orElseThrow(
-                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
+        return userRepository.findByUuid(memberUuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
-
-        Mate mate = findMate.toBuilder()
-                .user(savedUser)
-                .region(Region.valueOf(request.getRegion()))
-                .career(request.getCareer())
-                .accommodatableDogsCount(request.getAccommodatableDogsCount())
-                .build();
-
-        return mateRepository.save(mate);
-
     }
+
 
     private void saveMatePreferences(Mate savedMate, RegistMateRequest request) {
-
-        Set<MateTag> mateTags = request.getPreferredStyle().stream().map(
-                tag -> MateTag.builder()
-                        .tagName(tag)
-                        .mate(savedMate)
-                        .build()
-        ).collect(Collectors.toSet());
-
-        mateTagRepository.saveAll(mateTags);
-
-
-        Set<MatePreferredBreed> preferredBreeds = request.getPreferredBreed().stream()
-                .map(breed -> MatePreferredBreed.builder()
-                        .mate(savedMate)
-                        .preferredBreed(Breed.valueOf(breed))
-                        .build()
-                )
-                .collect(Collectors.toSet());
-
-
-        Set<MatePreferredTime> preferredTimes = request.getPreferredTime().stream()
-                .map(time -> MatePreferredTime.builder()
-                        .mate(savedMate)
-                        .preferredTime(Time.valueOf(time))
-                        .build())
-                .collect(Collectors.toSet());
-
-
-        Set<MatePreferredWeek> preferredWeeks = request.getPreferredWeek().stream()
-                .map(week -> MatePreferredWeek.builder()
-                        .mate(savedMate)
-                        .preferredWeek(Week.valueOf(week))
-                        .build())
-                .collect(Collectors.toSet());
+        Set<MatePreferredBreed> preferredBreeds = userMapper.mapPreferredBreeds(request.getPreferredBreed(), savedMate);
+        Set<MatePreferredTime> preferredTimes = userMapper.mapPreferredTimes(request.getPreferredTime(), savedMate);
+        Set<MatePreferredWeek> preferredWeeks = userMapper.mapPreferredWeeks(request.getPreferredWeek(), savedMate);
+        Set<MateTag> mateTags = userMapper.mapMateTags(request.getPreferredStyle(), savedMate);
 
         matePreferredBreedRepository.saveAll(preferredBreeds);
         matePreferredTimeRepository.saveAll(preferredTimes);
         matePreferredWeekRepository.saveAll(preferredWeeks);
+        mateTagRepository.saveAll(mateTags);
 
-        Mate updatedMate = savedMate.toBuilder()
-                .mateTag(mateTags)
-                .preferredBreed(preferredBreeds)
-                .preferredTimes(preferredTimes)
+        // 업데이트된 Mate 저장
+        savedMate.toBuilder()
+                .preferredBreeds(preferredBreeds)
                 .preferredWeeks(preferredWeeks)
+                .preferredTimes(preferredTimes)
                 .build();
 
-        mateRepository.save(updatedMate);
-
+        mateRepository.save(savedMate);
     }
 
+
     private void saveMatePreferences(Mate savedMate, UpdateMateRequest request) {
-
-        Set<MateTag> mateTags = request.getPreferredStyle().stream().map(
-                tag -> MateTag.builder()
-                        .tagName(tag)
-                        .mate(savedMate)
-                        .build()
-        ).collect(Collectors.toSet());
-
-        mateTagRepository.saveAll(mateTags);
-
-
-        Set<MatePreferredBreed> preferredBreeds = request.getPreferredBreed().stream()
-                .map(breed -> MatePreferredBreed.builder()
-                        .mate(savedMate)
-                        .preferredBreed(Breed.valueOf(breed))
-                        .build()
-                )
-                .collect(Collectors.toSet());
-
-
-        Set<MatePreferredTime> preferredTimes = request.getPreferredTime().stream()
-                .map(time -> MatePreferredTime.builder()
-                        .mate(savedMate)
-                        .preferredTime(Time.valueOf(time))
-                        .build())
-                .collect(Collectors.toSet());
-
-
-        Set<MatePreferredWeek> preferredWeeks = request.getPreferredWeek().stream()
-                .map(week -> MatePreferredWeek.builder()
-                        .mate(savedMate)
-                        .preferredWeek(Week.valueOf(week))
-                        .build())
-                .collect(Collectors.toSet());
+        Set<MatePreferredBreed> preferredBreeds = userMapper.mapPreferredBreeds(request.getPreferredBreed(), savedMate);
+        Set<MatePreferredTime> preferredTimes = userMapper.mapPreferredTimes(request.getPreferredTime(), savedMate);
+        Set<MatePreferredWeek> preferredWeeks = userMapper.mapPreferredWeeks(request.getPreferredWeek(), savedMate);
+        Set<MateTag> mateTags = userMapper.mapMateTags(request.getPreferredStyle(), savedMate);
 
         matePreferredBreedRepository.saveAll(preferredBreeds);
         matePreferredTimeRepository.saveAll(preferredTimes);
         matePreferredWeekRepository.saveAll(preferredWeeks);
+        mateTagRepository.saveAll(mateTags);
 
-        Mate updatedMate = savedMate.toBuilder()
-                .mateTag(mateTags)
-                .preferredBreed(preferredBreeds)
-                .preferredTimes(preferredTimes)
+        // 업데이트된 Mate 저장
+        savedMate.toBuilder()
+                .preferredBreeds(preferredBreeds)
                 .preferredWeeks(preferredWeeks)
+                .preferredTimes(preferredTimes)
                 .build();
 
-        mateRepository.save(updatedMate);
+        mateRepository.save(savedMate);
+    }
 
+    public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
+        User findUser = getUserById(userDetail.getUuid());
+
+        if (userRepository.findByNickname(nickname).isPresent() && !findUser.getNickname().equals(nickname)) {
+            return false;
+        }
+        return true;
     }
 }

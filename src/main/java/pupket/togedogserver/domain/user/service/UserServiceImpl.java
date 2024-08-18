@@ -7,8 +7,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
-import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.constant.Visibility;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.entity.User;
@@ -43,8 +41,8 @@ public class UserServiceImpl {
         String password = passwordUtil.generateRandomPassword();
         password = passwordEncoder.encode(password);
         User createdUser = user.toBuilder()
-                .userGender(UserGender.valueOf(request.getUserGender()))
-                .genderVisibility(Visibility.valueOf(request.getGenderVisibility()))
+                .userGender(request.getUserGender())
+                .genderVisibility(request.getGenderVisibility())
                 .nickname(request.getNickname())
                 .password(password)
                 .build();
@@ -71,7 +69,6 @@ public class UserServiceImpl {
     public FindUserResponse getMemberDetails(Long memberId) {
         User user = getUserById(memberId);
 
-        //TODO:: 사진 업로드 로직 필요(버킷 생성 후)
         return userMapper.of(user);
     }
 

@@ -19,4 +19,5 @@ public class FindMateResponse {
     private String region;
     private String profileImage;
     private int accommodatableDogsCount;
+    private String career;
 }

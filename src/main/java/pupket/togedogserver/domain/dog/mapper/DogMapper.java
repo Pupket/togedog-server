@@ -4,57 +4,47 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
-import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
-import java.util.List;
+import pupket.togedogserver.domain.user.entity.User;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface DogMapper {
 
-    @Mapping(target = "dogId", ignore = true)
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "vaccine", ignore = true)
-    @Mapping(target = "ownerBoard", ignore = true)
-    @Mapping(target = "dogPersonalityTags", ignore = true)
-    @Mapping(target = "birthday", source = "birthday", dateFormat = "yyyy-MM-dd")
-    Dog toDog(DogRegistRequest dogRegistRequest);
+    @Mapping(target = "dogId", ignore = true) // dogId는 새로 생성되는 엔티티에서만 사용하므로 무시
+    @Mapping(target = "user", source = "user") // user를 매핑
+    @Mapping(target = "vaccine", ignore = true) // vaccine은 무시
+    @Mapping(target = "dogPersonalityTags", ignore = true) // dogPersonalityTags는 별도로 처리
+    @Mapping(target = "deleted", ignore = true) // deleted는 기본값으로 설정됨
+    @Mapping(target = "dogImage", ignore = true) // dogImage는 기본값으로 설정됨
+    @Mapping(target = "name", source = "dogRegistRequest.name")
+    Dog toDog(DogRegistRequest dogRegistRequest, User user);
 
-    @AfterMapping
-    default void mapTags(@MappingTarget Dog dog, DogRegistRequest dogRegistRequest) {
-        List<DogPersonalityTag> tags = dogRegistRequest.getTag().stream()
+    // DogPersonalityTag 변환 메서드 추가
+    default Set<DogPersonalityTag> toDogPersonalityTags(Set<String> tags, Dog dog) {
+        return tags.stream()
                 .map(tag -> DogPersonalityTag.builder()
                         .tag(tag)
                         .dog(dog)
                         .build())
-                .collect(Collectors.toList());
-
-        int weight = dogRegistRequest.getWeight();
-        Breed breed = null;
-        if (weight >= 40) {
-            breed = Breed.SUPER;
-        } else if (weight >= 16 && weight < 40) {
-            breed = Breed.BIG;
-        } else if (weight > 7 && weight <= 15) {
-            breed = Breed.MID;
-        } else {
-            breed = Breed.SMALL;
-        }
-
-        dog.toBuilder()
-                .dogPersonalityTags(tags)
-                .birthday(dogRegistRequest.getBirthday())
-                .breed(breed)
-                .build();
-
+                .collect(Collectors.toSet());
     }
 
-    void updateDogFromRequest(DogUpdateRequest dogUpdateRequest, @MappingTarget Dog dog);
 
+    @Mapping(target = "dogPersonalityTags", source = "dogPersonalityTags", ignore = true)
     DogResponse toResponse(Dog findDog);
 
+    @AfterMapping
+    default void afterMapping(@MappingTarget DogResponse response, Dog dog) {
+        if (dog.getDogPersonalityTags() != null) {
+            response.setDogPersonalityTags(dog.getDogPersonalityTags().stream()
+                    .map(DogPersonalityTag::getTag)
+                    .collect(Collectors.toSet()));
+        }
+    }
 }

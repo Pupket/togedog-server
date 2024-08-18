@@ -7,7 +7,7 @@ import java.util.Date;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
-@Entity
+//@Entity
 @Getter
 @ToString
 public class Vaccine {
@@ -15,10 +15,6 @@ public class Vaccine {
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long vaccinationId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dog_id")
-    private Dog dog;
 
     private String vaccineName;
 

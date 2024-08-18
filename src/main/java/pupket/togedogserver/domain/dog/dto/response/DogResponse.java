@@ -1,22 +1,22 @@
 package pupket.togedogserver.domain.dog.dto.response;
 
 import lombok.Data;
-import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
-import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 @Data
 public class DogResponse {
 
-    private int id;
+    private Long dogId;
     private String name;
     private boolean dogGender;
     private boolean neutered;
-    private Date birthday;
     private Long weight;
     private String notes;
     private String dogImage;
-    private List<DogPersonalityTag> dogPersonalityTags;
+    private Set<String> dogPersonalityTags;
+    private boolean vaccine;
+    private int age;
+
 
 
 }

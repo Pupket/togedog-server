@@ -38,7 +38,6 @@ public class MatchController {
         return ResponseEntity.ok().build();
     }
 
-
     //매칭 거절
     @PatchMapping()
     public ResponseEntity<Void> matchingFail(@PathVariable("id") Long id) {
@@ -48,6 +47,4 @@ public class MatchController {
         return ResponseEntity.ok().build();
 
     }
-
-
 }

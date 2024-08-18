@@ -3,6 +3,7 @@ package pupket.togedogserver.global.auth.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -20,6 +21,7 @@ import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.auth.dto.OAuthAttributes;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
+import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.PasswordUtil;
 
@@ -36,6 +38,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final UserMapper userMapper;
     private final PasswordUtil passwordUtil;
+    private final S3FileUtilImpl s3FileUtilImpl;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -55,7 +58,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = (String) memberAttribute.get("email");
         RoleType memberRole = RoleType.of(registrationId);
         String name = (String) memberAttribute.get("name");
-        String picture = memberAttribute.get("picture") != null ? (String) memberAttribute.get("picture") : null;
+        String profileImage = memberAttribute.get("picture") != null ? (String) memberAttribute.get("picture") : null;
         String nickname = memberAttribute.get("nickname") != null ? (String) memberAttribute.get("nickname") : null;
         UserGender gender = memberAttribute.get("gender") != null ? UserGender.valueOf(((String) memberAttribute.get("gender")).toUpperCase()) : null;
         int birthday = memberAttribute.get("birthday") != null ? (int) memberAttribute.get("birthday") : null;
@@ -78,10 +81,12 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     return existingUser;
 
                 }).orElseGet(() -> {
-                    User newUser = userMapper.toEntity(email, name, picture, memberRole, nickname, gender, birthday, birthyear);
+                    User mappedUser = userMapper.toEntity(email, name, profileImage, memberRole, nickname, gender, birthday, birthyear);
                     String tempPassword = passwordUtil.generateRandomPassword();
-                    newUser.toBuilder()
-                            .password(tempPassword)
+                    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+                    String encodedPassword = passwordEncoder.encode(tempPassword);
+                    User newUser = mappedUser.toBuilder()
+                            .password(encodedPassword)
                             .build();
                     userRepository.save(newUser);
                     socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, newUser)); // 새로운 Member에 대한 SocialAccessToken 저장
