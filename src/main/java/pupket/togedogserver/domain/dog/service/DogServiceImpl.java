@@ -61,7 +61,11 @@ public class DogServiceImpl implements DogService {
 
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), createdDog);
 
-        String uploadedDogImage = s3FileUtilImpl.upload(profileImages);
+        String uploadedDogImage= null;
+        if (profileImages!=null) {
+            uploadedDogImage = s3FileUtilImpl.upload(profileImages);
+        }
+
 
         createdDog = createdDog.toBuilder()
                 .dogPersonalityTags(tags)

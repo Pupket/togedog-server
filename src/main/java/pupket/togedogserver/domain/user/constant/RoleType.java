@@ -1,5 +1,6 @@
 package pupket.togedogserver.domain.user.constant;
 
+
 public enum RoleType {
     MEMBER_NORMAL, MEMBER_GOOGLE, MEMBER_KAKAO, MEMBER_NAVER, ADMIN;
 
