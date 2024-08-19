@@ -1,8 +1,11 @@
 package pupket.togedogserver.domain.dog.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import pupket.togedogserver.domain.dog.service.DogTypeDeserializer;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.DogException;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @JsonDeserialize(using = DogTypeDeserializer.class)
@@ -216,6 +219,7 @@ public enum DogType {
         this.type = breed;
     }
 
+    @JsonValue
     public String getType() {
         return type;
     }
@@ -226,7 +230,8 @@ public enum DogType {
                 return data;
             }
         }
-        return null;
+        throw new DogException(ExceptionCode.INVALID_ENUM_PARAMETER);
     }
+
 }
 

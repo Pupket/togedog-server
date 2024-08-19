@@ -22,6 +22,7 @@ public enum ExceptionCode {
     NOT_FOUND_REFRESH_TOKEN_IN_COOKIE(BAD_REQUEST, "Refresh token not found in cookie.", 400),
     INVALID_PARAMETER(BAD_REQUEST, "Invalid request parameter.", 400),
     INVALID_FILE_EXTENTION(BAD_REQUEST, "Invalid File Extention", 400),
+    INVALID_ENUM_PARAMETER(BAD_REQUEST, "Invalid Enum Parameter", 400),
 
 
     // 401

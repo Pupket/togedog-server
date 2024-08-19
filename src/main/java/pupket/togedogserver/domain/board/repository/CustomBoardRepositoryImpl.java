@@ -9,7 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,16 +42,16 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                     return BoardFindResponse.builder()
                             .title(board.getTitle())
                             .pickUpDay(board.getPickUpDay())
-                            .fee(board.getFee())
-                            .startTime(board.getStartTime())
-                            .endTime(board.getEndTime())
+                            .fee(EnumMapper.enumToKorean(board.getFee()))
+                            .startTime(String.valueOf(board.getStartTime()))
+                            .endTime(String.valueOf(board.getEndTime()))
                             .pickupLocation2(board.getPickupLocation2())
                             .walkingPlaceTag(board.getWalkingPlaceTag().stream()
-                                    .map(tag -> tag.getPlaceName())
-                                    .collect(Collectors.toList())) // Assuming `getTagName` in WalkingPlaceTag entity
+                                    .map(WalkingPlaceTag::getPlaceName)
+                                    .collect(Collectors.toList()))
                             .name(dog.getName())
                             .age(dog.getAge())
-                            .breed(dog.getBreed())
+                            .dogType(EnumMapper.enumToKorean(dog.getBreed()))
                             .build();
                 })
                 .collect(Collectors.toList());

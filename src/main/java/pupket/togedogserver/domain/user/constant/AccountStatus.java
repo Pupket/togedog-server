@@ -1,8 +1,11 @@
 package pupket.togedogserver.domain.user.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.MemberException;
 
-//@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum AccountStatus {
     ACTIVE("활성화"), DOMANT("휴면"), DELETED("삭제");
 
@@ -10,6 +13,8 @@ public enum AccountStatus {
     AccountStatus(final String status) {
         this.status = status;
     }
+
+    @JsonValue
     public String getStatus() {
         return status;
     }
@@ -20,6 +25,6 @@ public enum AccountStatus {
                 return data;
             }
         }
-        return null;
+        throw new MemberException(ExceptionCode.INVALID_ENUM_PARAMETER);
     }
 }

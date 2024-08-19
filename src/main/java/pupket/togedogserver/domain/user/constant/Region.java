@@ -1,8 +1,11 @@
 package pupket.togedogserver.domain.user.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import pupket.togedogserver.domain.user.service.RegionDeserializer;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.MemberException;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @JsonDeserialize(using = RegionDeserializer.class)
@@ -15,6 +18,7 @@ public enum Region {
         this.region = region;
     }
 
+    @JsonValue
     public String getRegion() {
         return region;
     }
@@ -25,7 +29,7 @@ public enum Region {
                 return data;
             }
         }
-        return null;
+        throw new MemberException(ExceptionCode.INVALID_ENUM_PARAMETER);
     }
 
 }

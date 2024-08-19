@@ -7,8 +7,10 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
+
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +33,9 @@ public class Dog {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "users_uuid")
     private User user;
+
+    @Column(nullable = false)
+    private DogType dogType;
 
     @Column(nullable = false)
     private String name;

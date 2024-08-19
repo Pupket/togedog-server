@@ -1,5 +1,6 @@
 package pupket.togedogserver.domain.user.mapper;
 
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -12,6 +13,7 @@ import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.*;
+import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,7 +61,16 @@ public interface UserMapper {
                 .collect(Collectors.toSet());
     }
 
+    @Mapping(target = "userGender", ignore = true) // userGender는 매핑 이후에 처리
     FindUserResponse of(User user);
+
+    @AfterMapping
+    default void afterMapping(@MappingTarget FindUserResponse response, User user) {
+        // userGender를 한글로 변환하여 설정
+        if (user.getUserGender() != null) {
+            response.setUserGender(EnumMapper.enumToKorean(user.getUserGender()));
+        }
+    }
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "password", ignore = true)

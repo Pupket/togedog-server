@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
+import pupket.togedogserver.domain.board.constant.FeeType;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.MatchStatus;

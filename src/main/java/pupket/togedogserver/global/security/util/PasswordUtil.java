@@ -1,6 +1,7 @@
 package pupket.togedogserver.global.security.util;
 
 import org.springframework.stereotype.Component;
+
 import java.util.Random;
 
 

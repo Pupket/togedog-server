@@ -10,7 +10,9 @@ import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.global.mapper.EnumMapper;
 
+import java.time.LocalTime;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
@@ -52,12 +54,15 @@ public interface BoardMapper {
     @Mapping(target = "pickupLocation2", source = "board.pickupLocation2")
     @Mapping(target = "walkingPlaceTag", ignore = true)
     @Mapping(target = "name", source = "dog.name")
-    @Mapping(target = "age", ignore = true)
-    @Mapping(target = "breed", source = "dog.breed")
+    @Mapping(target = "dogType", source = "dog.dogType")
+    @Mapping(target= "feeType", source = "board.feeType")
     BoardFindResponse toResponse(Board board, Dog dog);
 
     @AfterMapping
     default void afterMapping(@MappingTarget BoardFindResponse response, Board board, Dog dog) {
+        response.setDogType(EnumMapper.enumToKorean(dog.getBreed()));
+        response.setFeeType(EnumMapper.enumToKorean(board.getFeeType()));
+
         if (board.getWalkingPlaceTag() != null) {
             response.setWalkingPlaceTag(board.getWalkingPlaceTag().stream()
                     .map(WalkingPlaceTag::getPlaceName)

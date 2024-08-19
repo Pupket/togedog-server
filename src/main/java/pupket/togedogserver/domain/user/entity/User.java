@@ -14,6 +14,7 @@ import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.constant.Visibility;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

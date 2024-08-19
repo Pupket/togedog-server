@@ -29,7 +29,7 @@ public class DogUpdateRequest {
     @Schema(description = "강아지 체중", example = "30", required = true)
     private int weight;
 
-    @Schema(description = "지역 (SEOUL, INCHEON, GYEONGGI, CHUNGCHEONG, GYEONGSANG, JEOLLA, GANGWON, JEJU)", example = "SEOUL", required = true)
+    @Schema(description = "지역 (서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "강원", required = true)
     private Region region;
 
     @Schema(description = "비고", example = "Very friendly", required = false)

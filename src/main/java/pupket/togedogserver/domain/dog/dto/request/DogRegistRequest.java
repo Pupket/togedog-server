@@ -34,7 +34,7 @@ public class DogRegistRequest {
     @Schema(description = "태그", example = "[\"친근한\", \"활발한\"]", required = false)
     private Set<String> tags;
 
-    @Schema(description = "백신접종 유무", example = "true", required = true)
+    @Schema(description = "백신접종 유무(true:접종, flase:미접종)", example = "true", required = true)
     private boolean vaccine;
 
     @Schema(description = "나이", example = "21", required = true)

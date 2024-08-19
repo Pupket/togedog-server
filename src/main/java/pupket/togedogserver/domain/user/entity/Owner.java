@@ -3,9 +3,9 @@ package pupket.togedogserver.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.SoftDelete;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.entity.Match;
+
 import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;

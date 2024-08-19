@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pupket.togedogserver.domain.board.entity.FeeType;
+import pupket.togedogserver.domain.board.constant.FeeType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,7 +54,7 @@ public class BoardCreateRequest {
     @Schema(description = "종료 시간", example = "12:11:00", required = true)
     private LocalTime endTime;
 
-    @Schema(description = "요금 종류(PER_HOUR, PER_CASE)", example = "PER_HOUR", required = true)
+    @Schema(description = "요금 종류(시급,건별)", example = "건별", required = true)
     private FeeType feeType;
 
     @Schema(description = "요금", example = "20000", required = true)

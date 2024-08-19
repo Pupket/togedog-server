@@ -23,6 +23,7 @@ import pupket.togedogserver.global.exception.customException.DogException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -61,8 +62,8 @@ public class DogServiceImpl implements DogService {
 
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), createdDog);
 
-        String uploadedDogImage= null;
-        if (profileImages!=null) {
+        String uploadedDogImage = null;
+        if (profileImages != null) {
             uploadedDogImage = s3FileUtilImpl.upload(profileImages);
         }
 
@@ -103,8 +104,14 @@ public class DogServiceImpl implements DogService {
 
         Breed breed = getBreed(request);
 
-        s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
-        String uploadedDogImage = s3FileUtilImpl.upload(profileImage);
+        if (findDog.getDogImage() != null) {
+            s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
+        }
+
+        String uploadedDogImage = null;
+        if (profileImage != null) {
+            uploadedDogImage = s3FileUtilImpl.upload(profileImage);
+        }
 
         findDog = findDog.toBuilder()
                 .breed(breed)
@@ -155,7 +162,9 @@ public class DogServiceImpl implements DogService {
                 () -> new DogException(ExceptionCode.NOT_FOUND_DOG)
         );
 
-        s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
+        if (findDog.getDogImage() != null) {
+            s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
+        }
 
         dogRepository.deleteById(id);
         dogPersonalityTagRepository.deleteByDog(findDog);
