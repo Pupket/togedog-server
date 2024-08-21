@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import pupket.togedogserver.domain.board.entity.FeeType;
+import pupket.togedogserver.domain.board.constant.FeeType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

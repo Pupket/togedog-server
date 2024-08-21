@@ -42,8 +42,8 @@ public class MateController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart("signUpRequest") RegistMateRequest signUpRequest,
-            @RequestPart("multipartFile") MultipartFile profileImages) {
+            @Valid @RequestPart(value = "signUpRequest") RegistMateRequest signUpRequest,
+            @RequestPart(value = "multipartFile", required = false) MultipartFile profileImages) {
 
         mateService.create(userDetail, signUpRequest, profileImages);
 
@@ -59,8 +59,8 @@ public class MateController {
     @PatchMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart UpdateMateRequest updateMateRequest,
-            @RequestPart("multipartFile") MultipartFile profileImages
+            @Valid @RequestPart(value = "updateMateRequest", required = false) UpdateMateRequest updateMateRequest,
+            @RequestPart(value = "multipartFile",required = false) MultipartFile profileImages
     ) {
         mateService.update(userDetail, updateMateRequest,profileImages);
 

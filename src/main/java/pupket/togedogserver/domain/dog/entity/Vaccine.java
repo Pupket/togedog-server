@@ -1,8 +1,10 @@
 package pupket.togedogserver.domain.dog.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.ToString;
+
 import java.util.Date;
 
 import static jakarta.persistence.GenerationType.IDENTITY;

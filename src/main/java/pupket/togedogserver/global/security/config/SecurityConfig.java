@@ -17,11 +17,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.auth.handler.OAuth2LoginSuccessHandler;
 import pupket.togedogserver.global.auth.service.CustomOAuth2UserService;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.security.filter.JwtAuthenticationProcessingFilter;
 import pupket.togedogserver.global.security.service.LoginService;
+
 import java.util.Arrays;
 
 @Configuration
@@ -35,7 +37,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, UserRepository userRepository) throws Exception {
         http
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -43,12 +45,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .headers(headers -> headers.frameOptions(option -> option.disable()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeRequests(request -> request
+                .authorizeHttpRequests(request -> request
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(login -> login.userInfoEndpoint(config -> config.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler))
-                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService,userRepository), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

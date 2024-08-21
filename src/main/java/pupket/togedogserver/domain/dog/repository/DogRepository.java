@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.entity.User;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;

@@ -7,7 +7,9 @@ import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
+
 import java.util.Date;
+
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity(name = "matching")

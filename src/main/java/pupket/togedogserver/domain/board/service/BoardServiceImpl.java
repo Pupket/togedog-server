@@ -22,6 +22,7 @@ import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.DogException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.exception.customException.WalkingPlaceTagException;
+import pupket.togedogserver.global.mapper.EnumMapper;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
@@ -56,8 +57,10 @@ public class BoardServiceImpl implements BoardService {
     }
 
     public BoardFindResponse find(CustomUserDetail userDetail, Long boardId) {
+        // 유저 찾기
         User findUser = getUserById(userDetail.getUuid());
 
+        // 보드와 도그 찾기
         Board findBoard = boardRepository.findByUserAndBoardId(findUser, boardId).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
@@ -65,10 +68,32 @@ public class BoardServiceImpl implements BoardService {
                 () -> new DogException(ExceptionCode.NOT_FOUND_DOG)
         );
 
-        BoardFindResponse response = boardMapper.toResponse(findBoard, findDog);
+        // 필요한 변환 작업 수행
+        String fee = findBoard.getFee().toString();
+        String startTime = findBoard.getStartTime().toString();
+        String endTime = findBoard.getEndTime().toString();
+        String feeType = EnumMapper.enumToKorean(findBoard.getFeeType());
+        String dogType = EnumMapper.enumToKorean(findDog.getDogType());
+        List<String> walkingPlaceTags = findBoard.getWalkingPlaceTag().stream()
+                .map(WalkingPlaceTag::getPlaceName)
+                .collect(Collectors.toList());
 
-        return response;
+        // BoardFindResponse 객체 생성
+        return BoardFindResponse.builder()
+                .title(findBoard.getTitle())
+                .pickUpDay(findBoard.getPickUpDay())
+                .fee(fee)
+                .age(findDog.getAge())
+                .startTime(startTime)
+                .endTime(endTime)
+                .pickupLocation2(findBoard.getPickupLocation2())
+                .walkingPlaceTag(walkingPlaceTags)
+                .feeType(feeType)
+                .name(findDog.getName())
+                .dogType(dogType)
+                .build();
     }
+
 
     public void update(CustomUserDetail userDetail, BoardUpdateRequest request) {
         User findUser = getUserById(userDetail.getUuid());

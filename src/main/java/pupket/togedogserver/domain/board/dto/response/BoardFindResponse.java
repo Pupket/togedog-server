@@ -4,10 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pupket.togedogserver.domain.dog.constant.Breed;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -18,14 +16,15 @@ public class BoardFindResponse {
 
     private String title;
     private LocalDate pickUpDay;
-    private Long fee;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private String fee;  // String으로 변경하여 한글 반환
+    private String startTime;  // String으로 변경
+    private String endTime;  // String으로 변경
     private String pickupLocation2;
     private List<String> walkingPlaceTag;
+    private String feeType;
 
     private String name;
     private int age;
-    private Breed breed;
+    private String dogType;  // String으로 변경하여 한글 반환
 
 }

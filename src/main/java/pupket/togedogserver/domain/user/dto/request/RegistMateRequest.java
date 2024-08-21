@@ -1,15 +1,14 @@
 package pupket.togedogserver.domain.user.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import pupket.togedogserver.domain.dog.constant.Breed;
-import pupket.togedogserver.domain.user.constant.*;
-
-import java.util.Set;
+import pupket.togedogserver.domain.user.constant.Region;
+import pupket.togedogserver.domain.user.constant.UserGender;
+import pupket.togedogserver.domain.user.constant.Visibility;
 
 @Data
 @Schema(description = "산책 메이트 프로필 등록 요청")
@@ -21,7 +20,7 @@ public class RegistMateRequest {
     @Pattern(regexp = "^[\\p{L}0-9]+$", message = "닉네임에는 특수 문자를 사용할 수 없습니다.")
     private String nickname;
 
-    @Schema(description = "사용자 성별(MALE,FEMALE)", example = "MALE", required = true)
+    @Schema(description = "사용자 성별(남성,여성)", example = "남성", required = true)
     private UserGender userGender;
 
     @Schema(description = "성별 공개 여부(ACTIVE,HIDDEN)", example = "ACTIVE", required = true)
@@ -40,18 +39,9 @@ public class RegistMateRequest {
     @Size(max = 500, message = "경력은 500자 이하로 입력해야 합니다.")
     private String career;
 
-    @Schema(description = "선호하는 견종(SMALL, MID, BIG, SUPER)", example = "[\"MID\", \"SUPER\"]", required = true)
-    private Set<Breed> preferredBreed;
+    @Schema(description = "선호하는 상세 정보", required = true)
+    private Preferred preferredDetails;
 
-    @Schema(description = "선호하는 스타일", example = "[\"귀여운\"]", required = true)
-    private Set<String> preferredStyle;
-
-    @Schema(description = "선호하는 요일(MON~SUN)", example = "[\"MON\",\"TUE\",\"WED\"]", required = true)
-    private Set<Week> preferredWeek;
-
-    @Schema(description = "선호하는 시간대(MORNING, LUNCH, AFTERNOON, EVENING, DAWN)", example = "[\"MORNING\",\"EVENING\"]", required = true)
-    private Set<Time> preferredTime;
-
-    @Schema(description = "지역(SEOUL, INCHEON, GYEONGGI, CHUNGCHEONG, GYEONGSANG, JEOLLA, GANGWON, JEJU)", example = "JEJU", required = true)
+    @Schema(description = "지역(서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "제주", required = true)
     private Region region;
 }

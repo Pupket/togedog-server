@@ -4,12 +4,13 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
 import pupket.togedogserver.domain.user.entity.User;
+import pupket.togedogserver.global.mapper.EnumMapper;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,8 +40,13 @@ public interface DogMapper {
     @Mapping(target = "dogPersonalityTags", source = "dogPersonalityTags", ignore = true)
     DogResponse toResponse(Dog findDog);
 
+
+
     @AfterMapping
     default void afterMapping(@MappingTarget DogResponse response, Dog dog) {
+
+        response.setDogType(EnumMapper.enumToKorean(dog.getBreed()));
+
         if (dog.getDogPersonalityTags() != null) {
             response.setDogPersonalityTags(dog.getDogPersonalityTags().stream()
                     .map(DogPersonalityTag::getTag)

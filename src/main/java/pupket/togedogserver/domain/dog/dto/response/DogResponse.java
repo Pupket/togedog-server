@@ -1,6 +1,7 @@
 package pupket.togedogserver.domain.dog.dto.response;
 
 import lombok.Data;
+
 import java.util.Set;
 
 @Data
@@ -8,6 +9,7 @@ public class DogResponse {
 
     private Long dogId;
     private String name;
+    private String dogType;
     private boolean dogGender;
     private boolean neutered;
     private Long weight;

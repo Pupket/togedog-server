@@ -8,7 +8,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
+import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
+import pupket.togedogserver.domain.user.entity.mate.MateTag;
+import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,24 +39,33 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         // 엔티티를 DTO로 변환
         List<FindMateResponse> MateResponse = mateList.stream()
                 .map(board -> {
-                            return FindMateResponse.builder()
-                                    .nickname(board.getUser().getNickname())
-                                    .profileImage(board.getUser().getProfileImage())
-                                    .gender(String.valueOf(board.getUser().getUserGender()))
-                                    .region(String.valueOf(board.getRegion()))
-                                    .age(LocalDateTime.now().getYear() - board.getUser().getBirthyear())
-                                    .accommodatableDogsCount(board.getAccommodatableDogsCount())
-                                    .career(board.getCareer())
-                                    .preferredStyle(board.getMateTags().stream().map(tag -> tag.getTagName()).collect(Collectors.toSet()))
-                                    .preferredTime(board.getPreferredTimes().stream().map(time -> time.getPreferredTime().toString()).collect(Collectors.toSet()))
-                                    .preferredWeek(board.getPreferredWeeks().stream().map(week -> week.getPreferredWeek().toString()).collect(Collectors.toSet()))
-                                    .preferredBreed(board.getPreferredBreeds().stream().map(breed -> breed.getPreferredBreed().toString()).collect(Collectors.toSet()))
-                                    .build();
-                        }
-                ).collect(Collectors.toList());
+                    PreferredDetailsResponse preferred = PreferredDetailsResponse.builder()
+                            .week(board.getPreferredWeeks().stream()
+                                    .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
+                                    .collect(Collectors.toSet()))
+                            .time(board.getPreferredTimes().stream()
+                                    .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
+                                    .collect(Collectors.toSet()))
+                            .style(board.getMateTags().stream()
+                                    .map(MateTag::getTagName)
+                                    .collect(Collectors.toSet()))
+                            .breed(board.getPreferredBreeds().stream()
+                                    .map(breed -> EnumMapper.enumToKorean(breed.getPreferredBreed())) // preferredBreed 변환
+                                    .collect(Collectors.toSet()))
+                            .build();
+
+                    return FindMateResponse.builder()
+                            .nickname(board.getUser().getNickname())
+                            .profileImage(board.getUser().getProfileImage())
+                            .gender(EnumMapper.enumToKorean(board.getUser().getUserGender())) // gender 변환
+                            .region(EnumMapper.enumToKorean(board.getRegion())) // region 변환
+                            .age(LocalDateTime.now().getYear() - board.getUser().getBirthyear())
+                            .accommodatableDogsCount(board.getAccommodatableDogsCount())
+                            .career(board.getCareer())
+                            .preferred(preferred)
+                            .build();
+                }).collect(Collectors.toList());
 
         return new PageImpl<>(MateResponse, pageable, count);
-
     }
 }
-

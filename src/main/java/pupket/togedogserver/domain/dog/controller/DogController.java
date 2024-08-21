@@ -35,8 +35,8 @@ public class DogController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart @Valid DogRegistRequest request,
-            @RequestPart("multipartFile") MultipartFile profileImage
+            @RequestPart(value = "request") @Valid DogRegistRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
 
     ) {
         dogService.create(userDetail, request, profileImage);

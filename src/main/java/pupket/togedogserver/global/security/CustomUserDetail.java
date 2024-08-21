@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.security.util.PasswordUtil;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;

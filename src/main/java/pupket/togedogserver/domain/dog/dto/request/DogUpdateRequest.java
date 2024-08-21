@@ -2,6 +2,7 @@ package pupket.togedogserver.domain.dog.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Region;
 
 import java.util.Set;
@@ -16,8 +17,8 @@ public class DogUpdateRequest {
     @Schema(description = "강아지 이름", example = "Buddy", required = true)
     private String name;
 
-    @Schema(description = "강아지 품종", example = "Golden Retriever", required = true)
-    private String breed;
+    @Schema(description = "강아지 품종", example = "아프간 하운드", required = true)
+    private DogType dogType;
 
     @Schema(description = "중성화 여부", example = "true", required = true)
     private boolean neutered;
@@ -28,7 +29,7 @@ public class DogUpdateRequest {
     @Schema(description = "강아지 체중", example = "30", required = true)
     private int weight;
 
-    @Schema(description = "지역 (SEOUL, INCHEON, GYEONGGI, CHUNGCHEONG, GYEONGSANG, JEOLLA, GANGWON, JEJU)", example = "SEOUL", required = true)
+    @Schema(description = "지역 (서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "강원", required = true)
     private Region region;
 
     @Schema(description = "비고", example = "Very friendly", required = false)

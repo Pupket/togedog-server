@@ -72,12 +72,6 @@ public class UserServiceImpl {
         return userMapper.of(user);
     }
 
-    private void validateExistingNickname(String nickname) {
-        userRepository.findByNickname(nickname).ifPresent(member -> {
-            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
-        });
-    }
-
     public void deleteSocialMember(Long uuid) {
         User findUser = getUserById(uuid);
 
@@ -101,13 +95,12 @@ public class UserServiceImpl {
     }
 
     //TODO:: filter(Inteceptor)로 생성하기
-    public void validateUser(String name) {
-        User findUser = userRepository.findByEmail(name).orElseThrow(
+    public void validateUser(Long uuid) {
+        User findUser = userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
         if (!findUser.getAccountStatus().equals(AccountStatus.valueOf("ACTIVE"))) {
             throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
         }
-
     }
 }
