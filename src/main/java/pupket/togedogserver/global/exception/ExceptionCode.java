@@ -41,6 +41,7 @@ public enum ExceptionCode {
     NOT_FOUND_MATE(CONFLICT, "Mate not found.", 403),
     NOT_FOUND_BOARD(CONFLICT, "Board not found.", 403),
     NOT_FOUND_MATCH(CONFLICT, "Match not found.", 403),
+    NOT_FOUND_CHATROOM(CONFLICT, "Room not found.", 403),
     MEMBER_ALREADY_EXISTS(CONFLICT, "Member already exists.", 403),
     MATE_ALREADY_EXIST(CONFLICT, "MATE already exists", 403),
     NICKNAME_ALREADY_EXISTS(CONFLICT, "Nickname already exists.", 403),

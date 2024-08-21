@@ -18,7 +18,7 @@ public class ChatRoom {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    private Long roomId;
+    private String roomId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "onwer_id")
@@ -34,4 +34,12 @@ public class ChatRoom {
 
     @OneToMany(mappedBy = "chatRoom")
     private List<Chatting> chatting;
+
+    public ChatRoom createChatRoom(Owner owner, Mate mate, Board board) {
+        ChatRoom chatRoom = new ChatRoom();
+        this.owner = owner;
+        this.mate = mate;
+        this.board = board;
+        return chatRoom;
+    }
 }

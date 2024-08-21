@@ -65,6 +65,14 @@ dependencies {
 
     //Json Parsing
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    //aws s3
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
+    //AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    implementation 'com.corundumstudio.socketio:netty-socketio:2.0.3'
 }
 
 tasks.named('test') {
