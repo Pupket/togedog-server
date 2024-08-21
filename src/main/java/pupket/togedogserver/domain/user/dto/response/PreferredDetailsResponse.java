@@ -2,6 +2,7 @@ package pupket.togedogserver.domain.user.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.util.Set;
 
 @Builder

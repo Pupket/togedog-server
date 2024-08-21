@@ -4,18 +4,16 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import pupket.togedogserver.domain.dog.constant.Breed;
 import pupket.togedogserver.domain.user.constant.RoleType;
-import pupket.togedogserver.domain.user.constant.Time;
 import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.constant.Week;
+import pupket.togedogserver.domain.user.dto.request.Preferred;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
+import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.*;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
@@ -32,33 +30,38 @@ public interface UserMapper {
     @Mapping(target = "mateTags", ignore = true)
     Mate toMate(RegistMateRequest request);
 
+    // RegistMateRequest -> Mate 매핑
+    @Mapping(target = "mateUuid", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "matchCount", ignore = true)
+    @Mapping(target = "chatRoom", ignore = true)
+    @Mapping(target = "preferredBreeds", ignore = true)
+    @Mapping(target = "preferredTimes", ignore = true)
+    @Mapping(target = "preferredWeeks", ignore = true)
+    @Mapping(target = "mateTags", ignore = true)
+    Mate toMate(UpdateMateRequest request);
 
-    // 커스텀 매핑 메서드: List<String> -> Set<MatePreferredBreed>
-    default Set<MatePreferredBreed> mapPreferredBreeds(Set<Breed> breeds, @MappingTarget Mate mate) {
-        return breeds.stream()
-                .map(breed -> MatePreferredBreed.builder().mate(mate).preferredBreed(breed).build())
-                .collect(Collectors.toSet());
-    }
 
-    // 커스텀 매핑 메서드: List<String> -> Set<MatePreferredTime>
-    default Set<MatePreferredTime> mapPreferredTimes(Set<Time> times, @MappingTarget Mate mate) {
-        return times.stream()
-                .map(time -> MatePreferredTime.builder().mate(mate).preferredTime(time).build())
-                .collect(Collectors.toSet());
-    }
-
-    // 커스텀 매핑 메서드: List<String> -> Set<MatePreferredWeek>
-    default Set<MatePreferredWeek> mapPreferredWeeks(Set<Week> weeks, @MappingTarget Mate mate) {
-        return weeks.stream()
-                .map(week -> MatePreferredWeek.builder().mate(mate).preferredWeek(week).build())
-                .collect(Collectors.toSet());
-    }
-
-    // 커스텀 매핑 메서드: List<String> -> Set<MateTag>
-    default Set<MateTag> mapMateTags(Set<String> tags, @MappingTarget Mate mate) {
-        return tags.stream()
-                .map(tag -> MateTag.builder().mate(mate).tagName(tag).build())
-                .collect(Collectors.toSet());
+    // 커스텀 매핑 메서드: PreferredDetailsRequest -> Set<MatePreferredBreed>, Set<MatePreferredTime>, Set<MatePreferredWeek>, Set<MateTag>
+    default Mate mapPreferredDetails(Preferred details, Mate mate) {
+        return Mate.builder()
+                .mateUuid(mate.getMateUuid())
+                .user(mate.getUser())
+                .matchCount(mate.getMatchCount())
+                .chatRoom(mate.getChatRoom())
+                .preferredBreeds(details.getBreeds().stream()
+                        .map(breed -> MatePreferredBreed.builder().mate(mate).preferredBreed(breed).build())
+                        .collect(Collectors.toSet()))
+                .preferredTimes(details.getTimes().stream()
+                        .map(time -> MatePreferredTime.builder().mate(mate).preferredTime(time).build())
+                        .collect(Collectors.toSet()))
+                .preferredWeeks(details.getWeeks().stream()
+                        .map(week -> MatePreferredWeek.builder().mate(mate).preferredWeek(week).build())
+                        .collect(Collectors.toSet()))
+                .mateTags(details.getStyles().stream()
+                        .map(style -> MateTag.builder().mate(mate).tagName(style).build())
+                        .collect(Collectors.toSet()))
+                .build();
     }
 
     @Mapping(target = "userGender", ignore = true) // userGender는 매핑 이후에 처리

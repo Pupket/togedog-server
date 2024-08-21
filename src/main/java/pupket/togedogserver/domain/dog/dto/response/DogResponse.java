@@ -1,7 +1,6 @@
 package pupket.togedogserver.domain.dog.dto.response;
 
 import lombok.Data;
-import pupket.togedogserver.domain.dog.constant.DogType;
 
 import java.util.Set;
 

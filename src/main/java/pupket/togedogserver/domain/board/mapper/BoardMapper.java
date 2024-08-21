@@ -12,7 +12,6 @@ import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
-import java.time.LocalTime;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")

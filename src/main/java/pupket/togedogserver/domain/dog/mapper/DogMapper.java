@@ -1,11 +1,13 @@
 package pupket.togedogserver.domain.dog.mapper;
 
-import org.mapstruct.*;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
-import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.mapper.EnumMapper;
 

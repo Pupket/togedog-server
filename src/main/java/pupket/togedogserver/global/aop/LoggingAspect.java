@@ -20,9 +20,13 @@ public class LoggingAspect {
 
     @Around("cut()")
     public Object aroundLog(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+
+        // 클래스 정보 받아오기
+        log.info("class name = {}", proceedingJoinPoint.getClass().getName());
         // 메서드 정보 받아오기
         Method method = getMethod(proceedingJoinPoint);
         log.info("======= method name = {} =======", method.getName());
+
 
         // 파라미터 받아오기
         Object[] args = proceedingJoinPoint.getArgs();

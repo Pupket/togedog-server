@@ -12,7 +12,8 @@ import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.entity.mate.*;
+import pupket.togedogserver.domain.user.entity.mate.Mate;
+import pupket.togedogserver.domain.user.entity.mate.MateTag;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.domain.user.repository.mateRepo.*;
@@ -26,7 +27,6 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,13 +77,11 @@ public class MateServiceImpl implements MateService {
         findUser = userRepository.save(findUser);
 
         Mate createdMate = userMapper.toMate(request);
+        createdMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), createdMate);
+
 
         Mate updatedMate = createdMate.toBuilder()
                 .user(findUser)
-                .preferredBreeds(userMapper.mapPreferredBreeds(request.getPreferredBreed(), createdMate))
-                .preferredTimes(userMapper.mapPreferredTimes(request.getPreferredTime(), createdMate))
-                .preferredWeeks(userMapper.mapPreferredWeeks(request.getPreferredWeek(), createdMate))
-                .mateTags(userMapper.mapMateTags(request.getPreferredStyle(), createdMate))
                 .build();
 
         Mate savedMate = mateRepository.save(updatedMate);
@@ -164,16 +162,10 @@ public class MateServiceImpl implements MateService {
 
         deleteTags(findMate);
 
-        findMate = findMate.toBuilder()
-                .user(findUser)
-                .accommodatableDogsCount(request.getAccommodatableDogsCount())
-                .career(request.getCareer())
-                .region(request.getRegion())
-                .preferredBreeds(userMapper.mapPreferredBreeds(request.getPreferredBreed(), findMate))
-                .preferredTimes(userMapper.mapPreferredTimes(request.getPreferredTime(), findMate))
-                .preferredWeeks(userMapper.mapPreferredWeeks(request.getPreferredWeek(), findMate))
-                .mateTags(userMapper.mapMateTags(request.getPreferredStyle(), findMate))
-                .build();
+        findMate = userMapper.toMate(request);
+
+        // Apply custom mapping for preferred details
+        findMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), findMate);
 
         Mate savedMate = mateRepository.save(findMate);
 
@@ -215,48 +207,32 @@ public class MateServiceImpl implements MateService {
         );
     }
 
-
     private void saveMatePreferences(Mate savedMate, RegistMateRequest request) {
-        Set<MatePreferredBreed> preferredBreeds = userMapper.mapPreferredBreeds(request.getPreferredBreed(), savedMate);
-        Set<MatePreferredTime> preferredTimes = userMapper.mapPreferredTimes(request.getPreferredTime(), savedMate);
-        Set<MatePreferredWeek> preferredWeeks = userMapper.mapPreferredWeeks(request.getPreferredWeek(), savedMate);
-        Set<MateTag> mateTags = userMapper.mapMateTags(request.getPreferredStyle(), savedMate);
+        // Use the mapPreferredDetails method from UserMapper to map and update the Mate object
+        Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        matePreferredBreedRepository.saveAll(preferredBreeds);
-        matePreferredTimeRepository.saveAll(preferredTimes);
-        matePreferredWeekRepository.saveAll(preferredWeeks);
-        mateTagRepository.saveAll(mateTags);
+        // Save the individual preference entities after mapping
+        matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
+        matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
+        matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
+        mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        // 업데이트된 Mate 저장
-        savedMate.toBuilder()
-                .preferredBreeds(preferredBreeds)
-                .preferredWeeks(preferredWeeks)
-                .preferredTimes(preferredTimes)
-                .build();
-
-        mateRepository.save(savedMate);
+        // Save the updated Mate object
+        mateRepository.save(updatedMate);
     }
 
-
     private void saveMatePreferences(Mate savedMate, UpdateMateRequest request) {
-        Set<MatePreferredBreed> preferredBreeds = userMapper.mapPreferredBreeds(request.getPreferredBreed(), savedMate);
-        Set<MatePreferredTime> preferredTimes = userMapper.mapPreferredTimes(request.getPreferredTime(), savedMate);
-        Set<MatePreferredWeek> preferredWeeks = userMapper.mapPreferredWeeks(request.getPreferredWeek(), savedMate);
-        Set<MateTag> mateTags = userMapper.mapMateTags(request.getPreferredStyle(), savedMate);
+        // Use the mapPreferredDetails method from UserMapper to map and update the Mate object
+        Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        matePreferredBreedRepository.saveAll(preferredBreeds);
-        matePreferredTimeRepository.saveAll(preferredTimes);
-        matePreferredWeekRepository.saveAll(preferredWeeks);
-        mateTagRepository.saveAll(mateTags);
+        // Save the individual preference entities after mapping
+        matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
+        matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
+        matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
+        mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        // 업데이트된 Mate 저장
-        savedMate.toBuilder()
-                .preferredBreeds(preferredBreeds)
-                .preferredWeeks(preferredWeeks)
-                .preferredTimes(preferredTimes)
-                .build();
-
-        mateRepository.save(savedMate);
+        // Save the updated Mate object
+        mateRepository.save(updatedMate);
     }
 
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {

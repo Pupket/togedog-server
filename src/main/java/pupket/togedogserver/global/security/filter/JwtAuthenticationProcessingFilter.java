@@ -45,8 +45,8 @@ public class JwtAuthenticationProcessingFilter
             userRepository.findByUuid(userDetail.getUuid()).orElseThrow(
                     () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
             );
-            filterChain.doFilter(request, response);
         }
+            filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
