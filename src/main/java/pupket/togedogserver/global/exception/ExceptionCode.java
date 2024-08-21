@@ -58,7 +58,8 @@ public enum ExceptionCode {
     IO_EXCEPTION_ON_IMAGE_UPLOAD(CONFLICT, "IO Exception happened on Image Upload", 403),
     NO_FILE_EXTENTION(CONFLICT, "No file Extention", 403),
     PUT_OBJECT_EXCEPTION(CONFLICT, "Put Object Exception", 403),
-    IO_EXCEPTION_ON_IMAGE_DELETE(CONFLICT, "IO Exception on Image Delete", 403),;
+    IO_EXCEPTION_ON_IMAGE_DELETE(CONFLICT, "IO Exception on Image Delete", 403),
+    NOT_FOUND_CHATROOM(CONFLICT, "Room not found.", 403);
 
 
     private final HttpStatus httpStatus;

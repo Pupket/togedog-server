@@ -72,6 +72,7 @@ dependencies {
     //AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    implementation 'com.corundumstudio.socketio:netty-socketio:2.0.3'
 }
 
 tasks.named('test') {
