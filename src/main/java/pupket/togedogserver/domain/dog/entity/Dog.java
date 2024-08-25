@@ -35,6 +35,7 @@ public class Dog {
     private User user;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private DogType dogType;
 
     @Column(nullable = false)

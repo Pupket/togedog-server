@@ -18,14 +18,14 @@ public class ChatRoom {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    private String roomId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "onwer_id")
-    private Owner owner;
+    private Long roomId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "onwer_uuid")
+    private Owner owner;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mate_uuid")
     private Mate mate;
 
     @ManyToOne(fetch = FetchType.LAZY)

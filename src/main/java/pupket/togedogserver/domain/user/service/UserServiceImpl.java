@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
-import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.entity.User;
@@ -32,13 +31,12 @@ public class UserServiceImpl {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final SocialAccessTokenRepository socialAccessTokenRepository;
-    private final PasswordUtil passwordUtil;
     private final OAuth2RevokeService oAuth2RevokeService;
 
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
 
-        String password = passwordUtil.generateRandomPassword();
+        String password = PasswordUtil.generateRandomPassword();
         password = passwordEncoder.encode(password);
         User createdUser = user.toBuilder()
                 .userGender(request.getUserGender())
@@ -91,16 +89,6 @@ public class UserServiceImpl {
             case MEMBER_KAKAO -> oAuth2RevokeService.revokeKakao(socialAccessToken);
             case MEMBER_GOOGLE -> oAuth2RevokeService.revokeGoogle(socialAccessToken);
             case MEMBER_NAVER -> oAuth2RevokeService.revokeNaver(socialAccessToken);
-        }
-    }
-
-    //TODO:: filter(Inteceptor)로 생성하기
-    public void validateUser(Long uuid) {
-        User findUser = userRepository.findByUuid(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-        if (!findUser.getAccountStatus().equals(AccountStatus.valueOf("ACTIVE"))) {
-            throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
         }
     }
 }

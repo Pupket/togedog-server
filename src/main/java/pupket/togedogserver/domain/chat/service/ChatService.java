@@ -13,7 +13,7 @@ public class ChatService {
 
     private final ChatRepository chatRepository;
 
-    public List<Chatting> getChats(String roomId) {
+    public List<Chatting> getChats(Long roomId) {
         return chatRepository.findByChatRoom_RoomId(roomId);
     }
 

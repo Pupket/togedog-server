@@ -4,5 +4,5 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 public interface MatchService {
 
-    void match(CustomUserDetail userDetail, String nickname);
+    void match(CustomUserDetail userDetail, String nickname, Long boardId);
 }

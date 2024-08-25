@@ -28,6 +28,8 @@ public interface UserMapper {
     @Mapping(target = "preferredTimes", ignore = true)
     @Mapping(target = "preferredWeeks", ignore = true)
     @Mapping(target = "mateTags", ignore = true)
+    @Mapping(target = "deleted" , ignore = true)
+    @Mapping(target = "match", ignore = true)
     Mate toMate(RegistMateRequest request);
 
     // RegistMateRequest -> Mate 매핑
@@ -39,12 +41,13 @@ public interface UserMapper {
     @Mapping(target = "preferredTimes", ignore = true)
     @Mapping(target = "preferredWeeks", ignore = true)
     @Mapping(target = "mateTags", ignore = true)
-    Mate toMate(UpdateMateRequest request);
+    @Mapping(target = "match", ignore = true)
+    Mate toMate(UpdateMateRequest request, User findUser, @MappingTarget Mate findMate);
 
 
     // 커스텀 매핑 메서드: PreferredDetailsRequest -> Set<MatePreferredBreed>, Set<MatePreferredTime>, Set<MatePreferredWeek>, Set<MateTag>
     default Mate mapPreferredDetails(Preferred details, Mate mate) {
-        return Mate.builder()
+        return mate.toBuilder()
                 .mateUuid(mate.getMateUuid())
                 .user(mate.getUser())
                 .matchCount(mate.getMatchCount())

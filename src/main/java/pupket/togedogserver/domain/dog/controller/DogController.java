@@ -53,8 +53,8 @@ public class DogController {
     @PatchMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart @Valid DogUpdateRequest request,
-            @RequestPart("multipartFile") MultipartFile profileImage
+            @RequestPart(value = "request") @Valid DogUpdateRequest request,
+            @RequestPart(value = "multipartFile",required = false) MultipartFile profileImage
 
     ) {
         dogService.update(userDetail, request, profileImage);

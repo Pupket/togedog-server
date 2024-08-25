@@ -14,17 +14,18 @@ import java.util.List;
 @NoArgsConstructor
 public class BoardFindResponse {
 
+    private Long boardId;
     private String title;
     private LocalDate pickUpDay;
-    private String fee;  // String으로 변경하여 한글 반환
-    private String startTime;  // String으로 변경
-    private String endTime;  // String으로 변경
+    private String fee;
+    private String startTime;
+    private String endTime;
     private String pickupLocation2;
     private List<String> walkingPlaceTag;
     private String feeType;
 
     private String name;
     private int age;
-    private String dogType;  // String으로 변경하여 한글 반환
+    private String dogType;
 
 }

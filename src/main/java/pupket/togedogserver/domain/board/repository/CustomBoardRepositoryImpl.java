@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.board.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -18,13 +19,13 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Repository
+@Slf4j
 public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
     private final EntityManager em;
 
     @Override
     public Page<BoardFindResponse> BoardList(Pageable pageable) {
-        // JPQL query to select fields from Board and Dog
         String query = "SELECT b, d FROM Board b " +
                 "JOIN b.dog d " +
                 "WHERE b.deleted = false AND d.deleted = false";
@@ -40,6 +41,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                     Dog dog = (Dog) row[1];
 
                     return BoardFindResponse.builder()
+                            .boardId(board.getBoardId())
                             .title(board.getTitle())
                             .pickUpDay(board.getPickUpDay())
                             .fee(EnumMapper.enumToKorean(board.getFee()))
@@ -56,10 +58,54 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                 })
                 .collect(Collectors.toList());
 
-        // Count query for pagination
         String countQuery = "SELECT COUNT(b) FROM Board b JOIN b.dog d WHERE b.deleted = false AND d.deleted = false";
         Long count = em.createQuery(countQuery, Long.class).getSingleResult();
 
         return new PageImpl<>(boardResponses, pageable, count);
     }
+
+    @Override
+    public Page<BoardFindResponse> findMyBoardList(Long uuid, Pageable pageable) {
+        String query = "SELECT b, d FROM Board b " +
+                "JOIN Dog d ON b.dog = d " +
+                "WHERE b.deleted = false AND d.deleted = false " +
+                "AND b.user.uuid = :uuid";
+
+        TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
+        result.setParameter("uuid", uuid); // uuid 파라미터에 값 설정
+        result.setFirstResult((int) pageable.getOffset());
+        result.setMaxResults(pageable.getPageSize());
+
+        List<Object[]> results = result.getResultList();
+        List<BoardFindResponse> boardResponses = results.stream()
+                .map(row -> {
+                    Board board = (Board) row[0];
+                    Dog dog = (Dog) row[1];
+
+                    return BoardFindResponse.builder()
+                            .boardId(board.getBoardId())
+                            .title(board.getTitle())
+                            .pickUpDay(board.getPickUpDay())
+                            .fee(EnumMapper.enumToKorean(board.getFee()))
+                            .startTime(String.valueOf(board.getStartTime()))
+                            .endTime(String.valueOf(board.getEndTime()))
+                            .pickupLocation2(board.getPickupLocation2())
+                            .walkingPlaceTag(board.getWalkingPlaceTag().stream()
+                                    .map(WalkingPlaceTag::getPlaceName)
+                                    .collect(Collectors.toList()))
+                            .name(dog.getName())
+                            .age(dog.getAge())
+                            .dogType(EnumMapper.enumToKorean(dog.getBreed()))
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        String countQuery = "SELECT COUNT(b) FROM Board b JOIN Dog d ON b.dog = d WHERE b.deleted = false AND d.deleted = false AND b.user.uuid = :uuid";
+        Long count = em.createQuery(countQuery, Long.class)
+                .setParameter("uuid", uuid)
+                .getSingleResult();
+
+        return new PageImpl<>(boardResponses, pageable, count);
+    }
+
 }

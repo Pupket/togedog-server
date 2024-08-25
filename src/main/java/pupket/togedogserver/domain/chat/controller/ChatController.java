@@ -1,12 +1,9 @@
 package pupket.togedogserver.domain.chat.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
-import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.CookieUtils;
 
