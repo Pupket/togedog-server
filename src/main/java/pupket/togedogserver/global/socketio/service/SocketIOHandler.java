@@ -32,7 +32,7 @@ public class SocketIOHandler {
             String room = params.get("room").stream().collect(Collectors.joining());
             String sender = params.get("sender").stream().collect(Collectors.joining());
             client.joinRoom(room);
-            socketIOService.saveServerChatting(client, sender + ServerMessage.JOINED, room);
+            socketIOService.saveServerChatting(client, sender + ServerMessage.JOINED, Long.valueOf(room));
             log.info(sender + " joined " + room);
         };
     }
@@ -42,7 +42,7 @@ public class SocketIOHandler {
             var params = client.getHandshakeData().getUrlParams();
             String room = params.get("room").stream().collect(Collectors.joining());
             String sender = params.get("sender").stream().collect(Collectors.joining());
-            socketIOService.saveServerChatting(client, sender + ServerMessage.LEFT, room);
+            socketIOService.saveServerChatting(client, sender + ServerMessage.LEFT, Long.valueOf(room));
             log.info(sender + " left " + room);
         };
     }

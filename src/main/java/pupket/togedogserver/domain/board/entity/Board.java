@@ -9,6 +9,7 @@ import pupket.togedogserver.domain.board.constant.FeeType;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.entity.User;
 
 import java.time.LocalDate;
@@ -95,6 +96,9 @@ public class Board {
 
     @OneToMany(mappedBy = "board")
     private Set<WalkingPlaceTag> walkingPlaceTag;
+
+    @OneToOne(mappedBy = "board")
+    private Match match;
 
     @PrePersist
     protected void onCreate() {

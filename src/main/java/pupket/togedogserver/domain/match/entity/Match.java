@@ -3,12 +3,11 @@ package pupket.togedogserver.domain.match.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-
-import java.util.Date;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -23,10 +22,6 @@ public class Match {
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long matchId;
-
-    private Date startTime;
-
-    private Date endTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -53,4 +48,7 @@ public class Match {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mate_uuid")
     private Mate mate;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Board board;
 }

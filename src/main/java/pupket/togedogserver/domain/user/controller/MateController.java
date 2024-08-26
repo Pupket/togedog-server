@@ -59,7 +59,7 @@ public class MateController {
     @PatchMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart(value = "updateMateRequest", required = false) UpdateMateRequest updateMateRequest,
+            @Valid @RequestPart(value = "updateMateRequest") UpdateMateRequest updateMateRequest,
             @RequestPart(value = "multipartFile",required = false) MultipartFile profileImages
     ) {
         mateService.update(userDetail, updateMateRequest,profileImages);
@@ -84,9 +84,9 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 랜덤 반환", description = "산책 메이트 프로필을 랜덤으로 반환합니다. (페이지 시작 0부터, 사이즈 4부터 시작)")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 삭제 성공",
+            @ApiResponse(responseCode = "201", description = "프로필 랜덤 반환 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "프로필 삭제 실패")
+            @ApiResponse(responseCode = "400", description = "프로필 랜덤 반환 실패")
     })
 
     @GetMapping("/random")
@@ -113,9 +113,9 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 닉네임 중복 체크", description = "산책 메이트 닉네임 중복 여부 체크")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 삭제 성공",
+            @ApiResponse(responseCode = "201", description = "프로필 중복체크 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "프로필 삭제 실패")
+            @ApiResponse(responseCode = "400", description = "프로필 중복체크 실패")
     })
     @Parameter(name = "nickname", description = "닉네임", example = "surno123", required = true, schema = @Schema(type = "string"))
     @GetMapping("/{nickname}")

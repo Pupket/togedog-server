@@ -60,7 +60,9 @@ public enum ExceptionCode {
     NO_FILE_EXTENTION(CONFLICT, "No file Extention", 403),
     PUT_OBJECT_EXCEPTION(CONFLICT, "Put Object Exception", 403),
     IO_EXCEPTION_ON_IMAGE_DELETE(CONFLICT, "IO Exception on Image Delete", 403),
-    NOT_FOUND_CHATROOM(CONFLICT, "Room not found.", 403);
+    YOUR_OWN_NICKNAME(CONFLICT,"Parameter is your own nickname" ,403 ),
+    ALREADY_ACCEPTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
+    ALREADY_REJECTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403);
 
 
     private final HttpStatus httpStatus;

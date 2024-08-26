@@ -29,6 +29,8 @@ public interface BoardMapper {
     @Mapping(target = "pickUpDay", source = "pickUpDay", dateFormat = "yyyy-MM-dd")
     @Mapping(target = "dog", ignore = true)
     @Mapping(target = "walkingPlaceTag", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "match", ignore = true)
     Board toBoard(BoardCreateRequest boardCreateRequest);
 
     @Mapping(target = "boardId", ignore = true)
@@ -42,6 +44,8 @@ public interface BoardMapper {
     @Mapping(target = "pickUpDay", source = "pickUpDay", dateFormat = "yyyy-MM-dd")
     @Mapping(target = "dog", ignore = true)
     @Mapping(target = "walkingPlaceTag", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "match", ignore = true)
     Board toBoard(BoardUpdateRequest boardCreateRequest);
 
 

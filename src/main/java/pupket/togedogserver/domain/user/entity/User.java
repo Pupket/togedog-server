@@ -82,6 +82,7 @@ public class User {
     @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
+    //Mate는 하나만 등록가능하므로 OneToOne으로 변경하고 테스트하기
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Mate> mate;
 

@@ -14,8 +14,9 @@ import lombok.NoArgsConstructor;
 public class DogPersonalityTag {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long DogPersonalityTagId;
+
 
     private String tag;
 

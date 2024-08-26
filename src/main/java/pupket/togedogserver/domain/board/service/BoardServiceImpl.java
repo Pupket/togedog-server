@@ -44,11 +44,12 @@ public class BoardServiceImpl implements BoardService {
     public void create(CustomUserDetail userDetail, BoardCreateRequest boardCreateRequest) {
         User findUser = getUserById(userDetail.getUuid());
 
+        Dog findDog = dogRepository.findById(boardCreateRequest.getDog_id()).orElseThrow(() ->
+                new DogException(ExceptionCode.NOT_FOUND_DOG));
+
         Board mapperBoard = boardMapper.toBoard(boardCreateRequest);
         boardRepository.save(mapperBoard);
 
-        Dog findDog = dogRepository.findById(boardCreateRequest.getDog_id()).orElseThrow(() ->
-                new DogException(ExceptionCode.NOT_FOUND_DOG));
         Board savedDogBoard = mapperBoard.toBuilder().dog(findDog).build();
 
         Board newMapperBoard = saveTags(boardCreateRequest, savedDogBoard, findUser);

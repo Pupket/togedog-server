@@ -76,7 +76,7 @@ public class DogServiceImpl implements DogService {
         dogRepository.save(createdDog);
 
 
-        tags.forEach(dogPersonalityTagRepository::save);
+        dogPersonalityTagRepository.saveAll(tags);
 
     }
 
@@ -136,7 +136,7 @@ public class DogServiceImpl implements DogService {
 
         dogRepository.save(findDog);
 
-        tags.forEach(dogPersonalityTagRepository::save);
+        dogPersonalityTagRepository.saveAll(tags);
     }
 
     private static Breed getBreed(DogUpdateRequest request) {

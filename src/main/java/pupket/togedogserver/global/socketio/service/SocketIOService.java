@@ -54,10 +54,10 @@ public class SocketIOService {
 
         chatRepository.save(chatting);
 
-        sendChatting(senderClient, data.getContent(), data.getChatRoom().getRoomId());
+        sendChatting(senderClient, data.getContent(), String.valueOf(data.getChatRoom().getRoomId()));
     }
 
-    public void saveServerChatting(SocketIOClient senderClient, String chat, String room) {
+    public void saveServerChatting(SocketIOClient senderClient, String chat, Long room) {
         var params = senderClient.getHandshakeData().getUrlParams();
 
         String sender = params.get("sender").stream().collect(Collectors.joining());
@@ -79,7 +79,7 @@ public class SocketIOService {
         chatRoomRepository.findByRoomId(room)
                 .orElse(chatRoomRepository.save(new ChatRoom().createChatRoom(owner, mate, board)));
 
-        sendChatting(senderClient, chat, room);
+        sendChatting(senderClient, chat, String.valueOf(room));
     }
 
 }

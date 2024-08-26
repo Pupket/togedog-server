@@ -162,12 +162,19 @@ public class MateServiceImpl implements MateService {
 
         deleteTags(findMate);
 
-        findMate = userMapper.toMate(request);
+        findMate = userMapper.toMate(request, findUser,findMate);
 
-        // Apply custom mapping for preferred details
-        findMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), findMate);
+        Mate savedMate = findMate.toBuilder()
+                .career(request.getCareer())
+                .region(request.getRegion())
+                .accommodatableDogsCount(request.getAccommodatableDogsCount())
+                .build();
 
-        Mate savedMate = mateRepository.save(findMate);
+        savedMate = mateRepository.save(savedMate);
+
+        savedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
+
+        savedMate = mateRepository.save(savedMate);
 
         saveMatePreferences(savedMate, request);
 
@@ -208,36 +215,30 @@ public class MateServiceImpl implements MateService {
     }
 
     private void saveMatePreferences(Mate savedMate, RegistMateRequest request) {
-        // Use the mapPreferredDetails method from UserMapper to map and update the Mate object
         Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        // Save the individual preference entities after mapping
         matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
         matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
         matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
         mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        // Save the updated Mate object
         mateRepository.save(updatedMate);
     }
 
     private void saveMatePreferences(Mate savedMate, UpdateMateRequest request) {
-        // Use the mapPreferredDetails method from UserMapper to map and update the Mate object
         Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        // Save the individual preference entities after mapping
         matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
         matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
         matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
         mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        // Save the updated Mate object
         mateRepository.save(updatedMate);
     }
 
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
         User findUser = getUserById(userDetail.getUuid());
 
-        return userRepository.findByNickname(nickname).isEmpty() || !findUser.getNickname().equals(nickname);
+        return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isEmpty();
     }
 }

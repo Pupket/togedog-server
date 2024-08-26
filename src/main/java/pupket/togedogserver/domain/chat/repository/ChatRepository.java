@@ -10,7 +10,7 @@ import java.util.List;
 public interface ChatRepository extends JpaRepository<Chatting, Long> {
     Chatting findByChatId(Long chatId);
 
-    List<Chatting> findByChatRoom_RoomId(String roomId);
+    List<Chatting> findByChatRoom_RoomId(Long roomId);
 
-    boolean existsByChatRoom_RoomId(String roomId);
+    boolean existsByChatRoom_RoomId(Long roomId);
 }
