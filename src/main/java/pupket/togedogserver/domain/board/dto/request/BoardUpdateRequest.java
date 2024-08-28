@@ -27,8 +27,8 @@ public class BoardUpdateRequest {
     @Schema(description = "도로명 주소", example = "서울특별시 관악구 청룡동 ~로", required = false)
     private String pickupLocation1;
 
-    @Schema(description = "세부 주소", example = "oo아파트 102동 301호", required = false)
-    private String pickupLocation2;
+//    @Schema(description = "세부 주소", example = "oo아파트 102동 301호", required = false)
+//    private String pickupLocation2;
 
     @Schema(description = "x좌표", example = "24.1298371", required = false)
     private Double mapX;

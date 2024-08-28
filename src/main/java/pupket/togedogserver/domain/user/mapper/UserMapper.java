@@ -52,8 +52,8 @@ public interface UserMapper {
                 .user(mate.getUser())
                 .matchCount(mate.getMatchCount())
                 .chatRoom(mate.getChatRoom())
-                .preferredBreeds(details.getBreeds().stream()
-                        .map(breed -> MatePreferredBreed.builder().mate(mate).preferredBreed(breed).build())
+                .preferredBreeds(details.getDogTypes().stream()
+                        .map(breed -> MatePreferredBreed.builder().mate(mate).preferredDogType(breed).build())
                         .collect(Collectors.toSet()))
                 .preferredTimes(details.getTimes().stream()
                         .map(time -> MatePreferredTime.builder().mate(mate).preferredTime(time).build())
@@ -61,13 +61,15 @@ public interface UserMapper {
                 .preferredWeeks(details.getWeeks().stream()
                         .map(week -> MatePreferredWeek.builder().mate(mate).preferredWeek(week).build())
                         .collect(Collectors.toSet()))
-                .mateTags(details.getStyles().stream()
+                .mateTags(details.getHashTag().stream()
                         .map(style -> MateTag.builder().mate(mate).tagName(style).build())
                         .collect(Collectors.toSet()))
+                .preferredRegion(mate.getPreferredRegion())
                 .build();
     }
 
     @Mapping(target = "userGender", ignore = true) // userGender는 매핑 이후에 처리
+    @Mapping(target = "platform",ignore = true)
     FindUserResponse of(User user);
 
     @AfterMapping
@@ -76,6 +78,14 @@ public interface UserMapper {
         if (user.getUserGender() != null) {
             response.setUserGender(EnumMapper.enumToKorean(user.getUserGender()));
         }
+
+        switch (user.getRole()) {
+            case MEMBER_GOOGLE -> response.setPlatform("GOOGLE");
+            case MEMBER_KAKAO -> response.setPlatform("KAKAO");
+            case MEMBER_NAVER -> response.setPlatform("NAVER");
+            default -> response.setPlatform(null);
+        }
+
     }
 
     @Mapping(target = "uuid", ignore = true)

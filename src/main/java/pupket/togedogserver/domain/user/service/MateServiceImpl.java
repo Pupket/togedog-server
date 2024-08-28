@@ -103,11 +103,11 @@ public class MateServiceImpl implements MateService {
                 .time(findMate.getPreferredTimes().stream()
                         .map(time -> EnumMapper.enumToKorean(time.getPreferredTime()))
                         .collect(Collectors.toSet()))
-                .style(findMate.getMateTags().stream()
+                .hashTag(findMate.getMateTags().stream()
                         .map(MateTag::getTagName)
                         .collect(Collectors.toSet()))
                 .breed(findMate.getPreferredBreeds().stream()
-                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredBreed()))
+                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType()))
                         .collect(Collectors.toSet()))
                 .build();
 
@@ -120,6 +120,8 @@ public class MateServiceImpl implements MateService {
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .career(findMate.getCareer())
                 .preferred(preferredDetails)
+                .preferredRegion(EnumMapper.enumToKorean(findMate.getRegion()))
+                .birth(findMate.getUser().getBirthyear()+"."+String.valueOf(findMate.getUser().getBirthday()).substring(0,2)+"."+String.valueOf(findMate.getUser().getBirthday()).substring(2,4))
                 .build();
     }
 

@@ -25,10 +25,10 @@ public class EnumMapper {
             return ((Time) enumValue).getTime();
         } else if (enumValue instanceof Week) {
             return ((Week) enumValue).getWeek();
-        } else if (enumValue instanceof Breed) {
-            return ((Breed) enumValue).getBreed();
         } else if (enumValue instanceof DogType) {
-            return ((DogType) enumValue).getType();
+            return ((DogType) enumValue).getBreed();
+        } else if (enumValue instanceof Breed) {
+            return ((Breed) enumValue).getType();
         } else if (enumValue instanceof FeeType) {
             return ((FeeType) enumValue).getFeeType();
         } else {

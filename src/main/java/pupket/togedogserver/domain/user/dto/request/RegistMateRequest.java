@@ -44,4 +44,7 @@ public class RegistMateRequest {
 
     @Schema(description = "지역(서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "제주", required = true)
     private Region region;
+
+    @Schema(description = "지역(서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "경상", required = true)
+    private Region preferredRegion;
 }

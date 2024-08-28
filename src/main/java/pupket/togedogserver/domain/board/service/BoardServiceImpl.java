@@ -74,7 +74,7 @@ public class BoardServiceImpl implements BoardService {
         String startTime = findBoard.getStartTime().toString();
         String endTime = findBoard.getEndTime().toString();
         String feeType = EnumMapper.enumToKorean(findBoard.getFeeType());
-        String dogType = EnumMapper.enumToKorean(findDog.getDogType());
+        String dogType = EnumMapper.enumToKorean(findDog.getBreed());
         List<String> walkingPlaceTags = findBoard.getWalkingPlaceTag().stream()
                 .map(WalkingPlaceTag::getPlaceName)
                 .collect(Collectors.toList());
@@ -87,11 +87,11 @@ public class BoardServiceImpl implements BoardService {
                 .age(findDog.getAge())
                 .startTime(startTime)
                 .endTime(endTime)
-                .pickupLocation2(findBoard.getPickupLocation2())
+                .pickupLocation1(findBoard.getPickupLocation1())
                 .walkingPlaceTag(walkingPlaceTags)
                 .feeType(feeType)
                 .name(findDog.getName())
-                .dogType(dogType)
+                .breed(dogType)
                 .build();
     }
 
@@ -116,7 +116,6 @@ public class BoardServiceImpl implements BoardService {
                 .mapX(request.getMapX())
                 .mapY(request.getMapY())
                 .pickupLocation1(request.getPickupLocation1())
-                .pickupLocation2(request.getPickupLocation2())
                 .dog(findDog)
                 .pickUpDay(request.getPickUpDay())
                 .startTime(request.getStartTime())

@@ -4,7 +4,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
@@ -24,20 +24,20 @@ public interface DogMapper {
     @Mapping(target = "dogPersonalityTags", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "dogImage", ignore = true)
-    @Mapping(target = "breed", expression = "java(mapWeightToBreed(dogRegistRequest.getWeight()))")
+    @Mapping(target = "dogType", expression = "java(mapWeightToBreed(dogRegistRequest.getWeight()))")
     @Mapping(target = "name", source = "dogRegistRequest.name")
     Dog toDog(DogRegistRequest dogRegistRequest, User user);
 
     // weight에 따른 breed 매핑
-    default Breed mapWeightToBreed(int weight) {
+    default DogType mapWeightToBreed(int weight) {
         if (weight <= 7) {
-            return Breed.SMALL;
+            return DogType.SMALL;
         } else if (weight <= 15) {
-            return Breed.MID;
+            return DogType.MID;
         } else if (weight < 40) {
-            return Breed.BIG;
+            return DogType.BIG;
         } else {
-            return Breed.SUPER;
+            return DogType.SUPER;
         }
     }
     // DogPersonalityTag 변환 메서드 추가
@@ -60,7 +60,8 @@ public interface DogMapper {
     @AfterMapping
     default void afterMapping(@MappingTarget DogResponse response, Dog dog) {
 
-        response.setDogType(EnumMapper.enumToKorean(dog.getBreed()));
+        response.setDogType(EnumMapper.enumToKorean(dog.getDogType()));
+        response.setBreed(EnumMapper.enumToKorean(dog.getBreed()));
 
         if (dog.getDogPersonalityTags() != null) {
             response.setDogPersonalityTags(dog.getDogPersonalityTags().stream()

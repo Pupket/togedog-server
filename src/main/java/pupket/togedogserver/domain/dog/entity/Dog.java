@@ -36,7 +36,7 @@ public class Dog {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private DogType dogType;
+    private Breed breed;
 
     @Column(nullable = false)
     private String name;
@@ -67,7 +67,7 @@ public class Dog {
     private boolean deleted = Boolean.FALSE;
 
     @Enumerated(EnumType.STRING)
-    private Breed breed;
+    private DogType dogType;
 
     @Column(nullable = false)
     @ColumnDefault("false")

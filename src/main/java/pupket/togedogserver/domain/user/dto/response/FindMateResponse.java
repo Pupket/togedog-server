@@ -10,9 +10,11 @@ public class FindMateResponse {
     private String nickname;
     private String gender;
     private int age;
+    private String birth;
     PreferredDetailsResponse preferred;
     private String region;
     private String profileImage;
     private int accommodatableDogsCount;
     private String career;
+    private String preferredRegion;
 }

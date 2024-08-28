@@ -55,10 +55,10 @@ public class Board {
      * 도로명 주소
      */
     private String pickupLocation1;
-    /**
-     * 세부 주소
-     */
-    private String pickupLocation2;
+//    /**
+//     * 세부 주소
+//     */
+//    private String pickupLocation2;
 
     private Double mapX;
 
