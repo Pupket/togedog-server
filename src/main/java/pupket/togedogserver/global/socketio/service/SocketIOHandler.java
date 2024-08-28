@@ -1,5 +1,6 @@
 package pupket.togedogserver.global.socketio.service;
 
+import com.corundumstudio.socketio.BroadcastOperations;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
@@ -52,6 +53,12 @@ public class SocketIOHandler {
             socketIOService.saveChatting(senderClient, data);
             log.info("message from" + data);
         };
+    }
+
+    public void onNotificationReceived(String message) {
+        BroadcastOperations broadcastOperations = server.getNamespace("/server").getBroadcastOperations();
+        broadcastOperations.sendEvent("notification", message);
+        log.info("notification " + message);
     }
 
 }
