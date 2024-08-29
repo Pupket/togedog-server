@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 
 @Entity
 @Getter
@@ -23,5 +23,5 @@ public class MatePreferredBreed {
     private Mate mate;
 
     @Enumerated(EnumType.STRING)
-    private Breed preferredBreed;
+    private DogType preferredDogType;
 }

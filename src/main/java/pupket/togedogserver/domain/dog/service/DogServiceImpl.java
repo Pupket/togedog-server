@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
@@ -102,7 +102,7 @@ public class DogServiceImpl implements DogService {
                 new DogException(ExceptionCode.NOT_FOUND_DOG)
         );
 
-        Breed breed = getBreed(request);
+        DogType dogType = getBreed(request);
 
         if (findDog.getDogImage() != null) {
             s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
@@ -114,7 +114,7 @@ public class DogServiceImpl implements DogService {
         }
 
         findDog = findDog.toBuilder()
-                .breed(breed)
+                .dogType(dogType)
                 .name(request.getName())
                 .neutered(request.isNeutered())
                 .weight((long) request.getWeight())
@@ -139,19 +139,19 @@ public class DogServiceImpl implements DogService {
         dogPersonalityTagRepository.saveAll(tags);
     }
 
-    private static Breed getBreed(DogUpdateRequest request) {
+    private static DogType getBreed(DogUpdateRequest request) {
         int weight = request.getWeight();
-        Breed breed = null;
+        DogType dogType = null;
         if (weight >= 40) {
-            breed = Breed.SUPER;
+            dogType = DogType.SUPER;
         } else if (weight >= 16 && weight < 40) {
-            breed = Breed.BIG;
+            dogType = DogType.BIG;
         } else if (weight > 7 && weight <= 15) {
-            breed = Breed.MID;
+            dogType = DogType.MID;
         } else {
-            breed = Breed.SMALL;
+            dogType = DogType.SMALL;
         }
-        return breed;
+        return dogType;
     }
 
     @Override

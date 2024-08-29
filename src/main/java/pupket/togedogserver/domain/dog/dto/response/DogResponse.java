@@ -10,6 +10,7 @@ public class DogResponse {
     private Long dogId;
     private String name;
     private String dogType;
+    private String breed;
     private boolean dogGender;
     private boolean neutered;
     private Long weight;

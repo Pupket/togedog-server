@@ -2,7 +2,7 @@ package pupket.togedogserver.domain.user.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Time;
 import pupket.togedogserver.domain.user.constant.Week;
 
@@ -19,8 +19,9 @@ public class Preferred {
     private Set<Time> times;
 
     @Schema(description = "선호하는 스타일", example = "[\"귀여운\"]", required = true)
-    private Set<String> Styles;
+    private Set<String> hashTag;
 
     @Schema(description = "선호하는 견종(소형견, 중형견, 대형견, 초대형견)", example = "[\"중형견\", \"대형견\"]", required = true)
-    private Set<Breed> breeds;
+    private Set<DogType> dogTypes;
+
 }

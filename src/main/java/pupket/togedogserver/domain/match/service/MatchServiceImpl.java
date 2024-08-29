@@ -77,7 +77,7 @@ public class MatchServiceImpl implements MatchService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
-        Match findMatch = matchRepository.findByBoardAndMate(findBoard, findUser.getMate().get(0)).orElseThrow(
+        Match findMatch = matchRepository.findById(findBoard.getMatch().getMatchId()).orElseThrow(
                 () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
         );
         if(findBoard.getMatched().equals(MatchStatus.MATCHED) && findMatch.getMatched().equals(MatchStatus.MATCHED) ){

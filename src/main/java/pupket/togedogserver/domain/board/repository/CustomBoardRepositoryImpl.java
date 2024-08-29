@@ -28,7 +28,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
     public Page<BoardFindResponse> BoardList(Pageable pageable) {
         String query = "SELECT b, d FROM Board b " +
                 "JOIN b.dog d " +
-                "WHERE b.deleted = false AND d.deleted = false";
+                "WHERE b.deleted = false AND d.deleted = false order by rand()";
 
         TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
         result.setFirstResult((int) pageable.getOffset());
@@ -42,18 +42,20 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
                     return BoardFindResponse.builder()
                             .boardId(board.getBoardId())
+                            .userId(board.getUser().getUuid())
                             .title(board.getTitle())
                             .pickUpDay(board.getPickUpDay())
                             .fee(EnumMapper.enumToKorean(board.getFee()))
                             .startTime(String.valueOf(board.getStartTime()))
                             .endTime(String.valueOf(board.getEndTime()))
-                            .pickupLocation2(board.getPickupLocation2())
+                            .pickupLocation1(board.getPickupLocation1())
                             .walkingPlaceTag(board.getWalkingPlaceTag().stream()
                                     .map(WalkingPlaceTag::getPlaceName)
                                     .collect(Collectors.toList()))
                             .name(dog.getName())
                             .age(dog.getAge())
-                            .dogType(EnumMapper.enumToKorean(dog.getBreed()))
+                            .breed(EnumMapper.enumToKorean(dog.getBreed()))
+                            .dogType(EnumMapper.enumToKorean(dog.getDogType()))
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -84,18 +86,21 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
                     return BoardFindResponse.builder()
                             .boardId(board.getBoardId())
+                            .userId(board.getUser().getUuid())
                             .title(board.getTitle())
                             .pickUpDay(board.getPickUpDay())
                             .fee(EnumMapper.enumToKorean(board.getFee()))
+                            .feeType(EnumMapper.enumToKorean(board.getFeeType()))
                             .startTime(String.valueOf(board.getStartTime()))
                             .endTime(String.valueOf(board.getEndTime()))
-                            .pickupLocation2(board.getPickupLocation2())
+                            .pickupLocation1(board.getPickupLocation1())
                             .walkingPlaceTag(board.getWalkingPlaceTag().stream()
                                     .map(WalkingPlaceTag::getPlaceName)
                                     .collect(Collectors.toList()))
                             .name(dog.getName())
                             .age(dog.getAge())
-                            .dogType(EnumMapper.enumToKorean(dog.getBreed()))
+                            .breed(EnumMapper.enumToKorean(dog.getBreed()))
+                            .dogType(EnumMapper.enumToKorean(dog.getDogType()))
                             .build();
                 })
                 .collect(Collectors.toList());

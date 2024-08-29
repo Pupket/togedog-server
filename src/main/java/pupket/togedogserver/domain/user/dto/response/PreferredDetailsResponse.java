@@ -10,6 +10,6 @@ import java.util.Set;
 public class PreferredDetailsResponse {
     private Set<String> week;
     private Set<String> time;
-    private Set<String> style;
+    private Set<String> hashTag;
     private Set<String> breed;
 }

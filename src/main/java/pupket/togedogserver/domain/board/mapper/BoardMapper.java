@@ -54,16 +54,18 @@ public interface BoardMapper {
     @Mapping(target = "fee", source = "board.fee")
     @Mapping(target = "startTime", source = "board.startTime")
     @Mapping(target = "endTime", source = "board.endTime")
-    @Mapping(target = "pickupLocation2", source = "board.pickupLocation2")
+    @Mapping(target = "pickupLocation1", source = "board.pickupLocation1")
     @Mapping(target = "walkingPlaceTag", ignore = true)
     @Mapping(target = "name", source = "dog.name")
+    @Mapping(target = "breed", source = "dog.breed")
     @Mapping(target = "dogType", source = "dog.dogType")
     @Mapping(target= "feeType", source = "board.feeType")
+    @Mapping(target = "userId", source = "board.user.uuid")
     BoardFindResponse toResponse(Board board, Dog dog);
 
     @AfterMapping
     default void afterMapping(@MappingTarget BoardFindResponse response, Board board, Dog dog) {
-        response.setDogType(EnumMapper.enumToKorean(dog.getBreed()));
+        response.setBreed(EnumMapper.enumToKorean(dog.getDogType()));
         response.setFeeType(EnumMapper.enumToKorean(board.getFeeType()));
 
         if (board.getWalkingPlaceTag() != null) {

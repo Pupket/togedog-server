@@ -15,17 +15,18 @@ import java.util.List;
 public class BoardFindResponse {
 
     private Long boardId;
+    private Long userId;
     private String title;
     private LocalDate pickUpDay;
     private String fee;
     private String startTime;
     private String endTime;
-    private String pickupLocation2;
+    private String pickupLocation1;
     private List<String> walkingPlaceTag;
     private String feeType;
 
     private String name;
     private int age;
+    private String breed;
     private String dogType;
-
 }
