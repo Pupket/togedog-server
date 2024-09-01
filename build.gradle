@@ -72,7 +72,12 @@ dependencies {
     //AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    //socketio
     implementation 'com.corundumstudio.socketio:netty-socketio:2.0.3'
+
+    //fcm
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
 }
 
 tasks.named('test') {

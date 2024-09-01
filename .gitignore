@@ -1,5 +1,4 @@
 HELP.md
-.gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -97,10 +96,6 @@ gradle-app.setting
 .gradletasknamecache
 
 # Eclipse Gradle plugin generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
 
 ### Gradle Patch ###
 # Java heap dump
@@ -109,3 +104,4 @@ gradle-app.setting
 *.yaml
 *.gz
 Dockerfile
+src/main/resources/firebase/firebase_service_key.json

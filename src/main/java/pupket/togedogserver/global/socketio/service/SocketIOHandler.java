@@ -55,10 +55,4 @@ public class SocketIOHandler {
         };
     }
 
-    public void onNotificationReceived(String message) {
-        BroadcastOperations broadcastOperations = server.getNamespace("/server").getBroadcastOperations();
-        broadcastOperations.sendEvent("notification", message);
-        log.info("notification " + message);
-    }
-
 }
