@@ -7,6 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
+import pupket.togedogserver.domain.token.entity.RefreshToken;
+import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
@@ -35,6 +37,7 @@ public class UserServiceImpl {
     private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final OAuth2RevokeService oAuth2RevokeService;
     private final FcmService fcmService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
@@ -51,8 +54,8 @@ public class UserServiceImpl {
         userRepository.save(createdUser);
     }
 
-    public void logout(String refreshToken, HttpServletResponse response, CustomUserDetail userDetail) {
-        jwtUtils.handleExpiredRefreshToken(refreshToken, response);
+    public void logout(String refreshToken, CustomUserDetail userDetail) {
+        jwtUtils.handleExpiredRefreshToken(refreshToken);
         fcmService.deleteToken(userDetail.getUuid());
     }
 
@@ -61,15 +64,19 @@ public class UserServiceImpl {
     }
 
 
-    private User getUserById(Long memberUuid) {
-        return userRepository.findByUuid(memberUuid).
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
+        );
+        return userRepository.findByUuid(uuid).
                 orElseThrow(
                         () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
                 );
     }
 
-    public FindUserResponse getMemberDetails(Long memberId) {
-        User user = getUserById(memberId);
+    public FindUserResponse getMemberDetails(Long uuid) {
+        User user = getUserById(uuid);
+
 
         return userMapper.of(user);
     }
@@ -94,5 +101,13 @@ public class UserServiceImpl {
             case MEMBER_GOOGLE -> oAuth2RevokeService.revokeGoogle(socialAccessToken);
             case MEMBER_NAVER -> oAuth2RevokeService.revokeNaver(socialAccessToken);
         }
+    }
+
+    public String getRefreshToken(Long uuid) {
+        User findUser = getUserById(uuid);
+        RefreshToken refreshToken = refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+        return refreshToken.getRefreshToken();
     }
 }

@@ -104,6 +104,7 @@ public class JwtService {
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
+            log.error("Token validation failed for token: {}", token, e);
             deleteRefreshTokenDB(token);
             throw handlingJwtException(e);
         }
@@ -200,6 +201,7 @@ public class JwtService {
 
     private JwtException handlingJwtException(Exception e) {
         if (e instanceof SecurityException || e instanceof MalformedJwtException) {
+            log.info("securityException or Malformed");
             return new JwtException(ExceptionCode.INVALID_TOKEN);
         } else if (e instanceof ExpiredJwtException) {
             return new JwtException(ExceptionCode.TOKEN_EXPIRED);

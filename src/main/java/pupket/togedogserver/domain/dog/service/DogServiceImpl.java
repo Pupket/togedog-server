@@ -14,6 +14,7 @@ import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
 import pupket.togedogserver.domain.dog.mapper.DogMapper;
 import pupket.togedogserver.domain.dog.repository.DogPersonalityTagRepository;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.OwnerRepository;
@@ -40,6 +41,7 @@ public class DogServiceImpl implements DogService {
     private final DogPersonalityTagRepository dogPersonalityTagRepository;
     private final OwnerRepository ownerRepository;
     private final S3FileUtilImpl s3FileUtilImpl;
+    private final RefreshTokenRepository refreshTokenRepository;
 
 
     @Override
@@ -198,8 +200,11 @@ public class DogServiceImpl implements DogService {
 
     }
 
-    private User getUserById(Long memberUuid) {
-        return userRepository.findByUuid(memberUuid).orElseThrow(
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
+        );
+        return userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
     }

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -45,6 +46,7 @@ public class MateServiceImpl implements MateService {
     private final CustomMateRepositoryImpl customMateRepositoryImpl;
     private final UserMapper userMapper;
     private final S3FileUtilImpl s3FileUtilImpl;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage) {
@@ -210,8 +212,11 @@ public class MateServiceImpl implements MateService {
         mateTagRepository.deleteAll(findMateTag);
     }
 
-    private User getUserById(Long memberUuid) {
-        return userRepository.findByUuid(memberUuid).orElseThrow(
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
+        );
+        return userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
     }
