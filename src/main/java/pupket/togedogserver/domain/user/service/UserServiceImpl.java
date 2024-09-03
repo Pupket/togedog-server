@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.notification.service.FcmService;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
@@ -32,6 +34,7 @@ public class UserServiceImpl {
     private final PasswordEncoder passwordEncoder;
     private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final OAuth2RevokeService oAuth2RevokeService;
+    private final FcmService fcmService;
 
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
@@ -48,8 +51,9 @@ public class UserServiceImpl {
         userRepository.save(createdUser);
     }
 
-    public void logout(String refreshToken, HttpServletResponse response) {
+    public void logout(String refreshToken, HttpServletResponse response, CustomUserDetail userDetail) {
         jwtUtils.handleExpiredRefreshToken(refreshToken, response);
+        fcmService.deleteToken(userDetail.getUuid());
     }
 
     public JwtToken reissueToken(String refreshToken) {

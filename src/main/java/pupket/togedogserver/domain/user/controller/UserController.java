@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
@@ -28,6 +29,7 @@ public class UserController {
 
     private final UserServiceImpl userServiceImpl;
     private final CookieUtils cookieUtils;
+    private final NotificationServiceImpl notificationService;
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
     @GetMapping
@@ -46,13 +48,14 @@ public class UserController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
+            @AuthenticationPrincipal CustomUserDetail userDetail,
             HttpServletRequest request,
             HttpServletResponse response
     ) {
 
         String refreshToken = cookieUtils.getRefreshToken(request);
 
-        userServiceImpl.logout(refreshToken, response);
+        userServiceImpl.logout(refreshToken, response, userDetail);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
