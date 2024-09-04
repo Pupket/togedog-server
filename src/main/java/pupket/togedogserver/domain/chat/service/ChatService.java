@@ -4,6 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.entity.Chatting;
 import pupket.togedogserver.domain.chat.repository.ChatRepository;
+import pupket.togedogserver.domain.notification.dto.NotificationRequest;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
+import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
 
@@ -11,9 +15,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatService {
 
+    private final UserRepository userRepository;
     private final ChatRepository chatRepository;
+    private final NotificationServiceImpl notificationService;
 
-    public List<Chatting> getChats(Long roomId) {
+    public List<Chatting> getChats(CustomUserDetail userDetail, Long roomId) {
         return chatRepository.findByChatRoom_RoomId(roomId);
     }
 

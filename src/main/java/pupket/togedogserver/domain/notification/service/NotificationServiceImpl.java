@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationServiceImpl implements Notification {
+public class NotificationServiceImpl implements NotificationService {
 
     private final FcmService fcmService;
 
