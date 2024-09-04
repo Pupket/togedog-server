@@ -15,6 +15,7 @@ import pupket.togedogserver.domain.board.repository.CustomBoardRepositoryImpl;
 import pupket.togedogserver.domain.board.repository.WalkingPlaceTagRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
@@ -39,6 +40,7 @@ public class BoardServiceImpl implements BoardService {
     private final WalkingPlaceTagRepository walkingPlaceTagRepository;
     private final DogRepository dogRepository;
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public void create(CustomUserDetail userDetail, BoardCreateRequest boardCreateRequest) {
@@ -159,8 +161,11 @@ public class BoardServiceImpl implements BoardService {
         return newMapperBoard;
     }
 
-    private User getUserById(Long memberUuid) {
-        return userRepository.findByUuid(memberUuid).orElseThrow(
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
+        );
+        return userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
     }

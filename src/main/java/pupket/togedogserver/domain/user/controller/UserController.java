@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,7 +41,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(updateUser);
     }
 
-    @Operation(summary = "로그아웃", description = "쿠키에 저장된 리프레쉬 토큰을 사용하여 로그아웃")
+    @Operation(summary = "로그아웃", description = "DB에 저장된 리프레쉬 토큰을 사용하여 로그아웃")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "로그아웃 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
@@ -48,14 +49,13 @@ public class UserController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @AuthenticationPrincipal CustomUserDetail userDetail,
-            HttpServletRequest request,
-            HttpServletResponse response
+            @AuthenticationPrincipal CustomUserDetail userDetail
+
     ) {
 
-        String refreshToken = cookieUtils.getRefreshToken(request);
+        String refreshToken = userServiceImpl.getRefreshToken(userDetail.getUuid());
 
-        userServiceImpl.logout(refreshToken, response, userDetail);
+        userServiceImpl.logout(refreshToken, userDetail);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -69,14 +69,18 @@ public class UserController {
     @GetMapping("/reissue-token")
     @Transactional
     public ResponseEntity<String> reissue(
-            @AuthenticationPrincipal CustomUserDetail userDetail,
-            HttpServletRequest request, HttpServletResponse response) {
+            @AuthenticationPrincipal CustomUserDetail userDetail,HttpServletResponse response) {
 
-        String refreshToken = cookieUtils.getRefreshToken(request);
+        String refreshToken = userServiceImpl.getRefreshToken(userDetail.getUuid());
         JwtToken newToken = userServiceImpl.reissueToken(refreshToken);
-        cookieUtils.addCookie(response, "refreshToken", newToken.getRefreshToken(), 24 * 60 * 60 * 7);
+//        App에는 Cookie개념이 없기 때문에 사용하지 않음
+//        cookieUtils.addCookie(response, "refreshToken", newToken.getRefreshToken(), 24 * 60 * 60 * 7);
 
-        return ResponseEntity.status(HttpStatus.OK).body(newToken.getAccessToken());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("accessToken", newToken.getAccessToken());
+        headers.add("refreshToken", newToken.getRefreshToken());
+
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).build();
     }
 
     @Operation(summary = "소셜 회원 탈퇴", description = "소셜 회원은 재로그인을 통해 검증, 재발급 받은 액세스 토큰을 통해 서비스 탈퇴")

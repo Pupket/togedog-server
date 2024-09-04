@@ -30,10 +30,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         String targetUrl = UriComponentsBuilder.fromUriString("togedog://togedog/login")
                 .queryParam("accessToken", jwtToken.getAccessToken())
+                .queryParam("refreshToken",jwtToken.getRefreshToken())
                 .build().toUriString();
 
-        String refreshToken = jwtToken.getRefreshToken();
-        cookieUtils.addCookie(response, "refreshToken", refreshToken, 24 * 60 * 60 * 7); // 7일
+//        cookieUtils.addCookie(response, "refreshToken", refreshToken, 24 * 60 * 60 * 7); // 7일
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }

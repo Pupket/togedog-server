@@ -44,8 +44,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MemberException.class)
     public ResponseEntity<ExceptionResponse> handleMemberException(MemberException ex) {
-        defaultLogger.error(ex.getMessage(), ex);
-        exceptionLogger.error(ex.getMessage(), ex);
+        defaultLogger.error("error message={}", ex.getMessage(), ex);
+        exceptionLogger.error("exception message={}",ex.getMessage(), ex);
         ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
         return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
     }
