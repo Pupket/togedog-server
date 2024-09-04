@@ -1,6 +1,5 @@
 package pupket.togedogserver.global.socketio.service;
 
-import com.corundumstudio.socketio.BroadcastOperations;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
@@ -9,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pupket.togedogserver.domain.chat.constant.ServerMessage;
 import pupket.togedogserver.domain.chat.entity.Chatting;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
+import pupket.togedogserver.domain.user.repository.UserRepository;
 
 import java.util.stream.Collectors;
 
@@ -29,9 +30,9 @@ public class SocketIOHandler {
 
     private ConnectListener onConnected() {
         return client -> {
-            var params = client.getHandshakeData().getUrlParams();
-            String room = params.get("room").stream().collect(Collectors.joining());
-            String sender = params.get("sender").stream().collect(Collectors.joining());
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            String sender = client.getHandshakeData().getSingleUrlParam("sender");
+            String receiver = client.getHandshakeData().getSingleUrlParam("receiver");
             client.joinRoom(room);
             socketIOService.saveServerChatting(client, sender + ServerMessage.JOINED, Long.valueOf(room));
             log.info(sender + " joined " + room);
@@ -40,9 +41,9 @@ public class SocketIOHandler {
 
     private DisconnectListener onDisconnected() {
         return client -> {
-            var params = client.getHandshakeData().getUrlParams();
-            String room = params.get("room").stream().collect(Collectors.joining());
-            String sender = params.get("sender").stream().collect(Collectors.joining());
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            String sender = client.getHandshakeData().getSingleUrlParam("sender");
+            String receiver = client.getHandshakeData().getSingleUrlParam("receiver");
             socketIOService.saveServerChatting(client, sender + ServerMessage.LEFT, Long.valueOf(room));
             log.info(sender + " left " + room);
         };

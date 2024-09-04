@@ -27,17 +27,22 @@ public class Chatting {
     private String imageURL;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "users_uuid")
-    private User user;
+    @JoinColumn(name = "users_uuid", insertable = false, updatable = false)
+    private User sender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "users_uuid", insertable = false, updatable = false)
+    private User receiver;
 
     private Date writtenTime;
 
-    public Chatting createChatting(ChatRoom chatRoom, String content, String imageURL, User user, Date writtenTime) {
+    public Chatting createChatting(ChatRoom chatRoom, String content, String imageURL, User sender, User receiver, Date writtenTime) {
         Chatting chatting = new Chatting();
         this.chatRoom = chatRoom;
         this.content = content;
         this.imageURL = imageURL;
-        this.user = user;
+        this.sender = sender;
+        this.receiver = receiver;
         this.writtenTime = writtenTime;
         return chatting;
     }

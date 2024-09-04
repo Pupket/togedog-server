@@ -4,6 +4,6 @@ import pupket.togedogserver.domain.notification.dto.NotificationRequest;
 
 import java.util.concurrent.ExecutionException;
 
-public interface Notification {
+public interface NotificationService {
     public void sendNotification(Long sender, NotificationRequest notification) throws ExecutionException, InterruptedException;
 }
