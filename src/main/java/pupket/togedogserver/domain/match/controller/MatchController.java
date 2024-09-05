@@ -21,7 +21,7 @@ public class MatchController {
     private final MatchServiceImpl matchService;
     @Operation(summary = "매칭 요청", description = "매칭을 신청합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "매칭 신청 완료",
+            @ApiResponse(responseCode = "200", description = "매칭 신청 완료",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "매칭 신청 실패")
     })
@@ -38,7 +38,7 @@ public class MatchController {
 
     @Operation(summary = "매칭 수락", description = "매칭을 수락합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "매칭 수락 성공",
+            @ApiResponse(responseCode = "200", description = "매칭 수락 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "매칭 수락 실패")
     })
@@ -55,7 +55,7 @@ public class MatchController {
 
     @Operation(summary = "매칭 거절", description = "매칭을 거절합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "매칭 거절 성공",
+            @ApiResponse(responseCode = "200", description = "매칭 거절 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "매칭 거절 실패")
     })

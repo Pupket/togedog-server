@@ -3,7 +3,6 @@ package pupket.togedogserver.domain.token.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
-import pupket.togedogserver.domain.user.entity.User;
 
 import java.util.Optional;
 

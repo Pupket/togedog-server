@@ -2,9 +2,12 @@ package pupket.togedogserver.domain.dog.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
@@ -12,6 +15,7 @@ import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
 import pupket.togedogserver.domain.dog.mapper.DogMapper;
+import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
 import pupket.togedogserver.domain.dog.repository.DogPersonalityTagRepository;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
@@ -42,6 +46,7 @@ public class DogServiceImpl implements DogService {
     private final OwnerRepository ownerRepository;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomDogRepositoryImpl customDogRepository;
 
 
     @Override
@@ -181,6 +186,7 @@ public class DogServiceImpl implements DogService {
         );
 
         DogResponse dogResponse = dogMapper.toResponse(findDog);
+        dogMapper.afterMapping(dogResponse, findDog);
 
         return dogResponse;
     }
@@ -194,7 +200,12 @@ public class DogServiceImpl implements DogService {
         );
 
         List<DogResponse> dogResponseList = new ArrayList<>();
-        dogList.forEach(dog -> dogResponseList.add(dogMapper.toResponse(dog)));
+        dogList.forEach(
+                dog -> {
+                    DogResponse dogresponse = dogMapper.toResponse(dog);
+                    dogMapper.afterMapping(dogresponse, dog);
+                    dogResponseList.add(dogresponse);
+                });
 
         return dogResponseList;
 
@@ -207,5 +218,9 @@ public class DogServiceImpl implements DogService {
         return userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
+    }
+
+    public Page<DogResponse> findRandom(Pageable pageable) {
+        return customDogRepository.dogList(pageable);
     }
 }
