@@ -32,7 +32,7 @@ public class OwnerController {
 
     @Operation(summary = "내 산책 게시글 리스트 반환", description = "내 산책 게시글을 반환합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 반환 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 반환 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 반환 실패")
     })
@@ -63,7 +63,7 @@ public class OwnerController {
 
     @Operation(summary = "내 산책 일정 리스트 반환", description = "내 산책 일정을 반환합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "산책 일정 반환 성공",
+            @ApiResponse(responseCode = "200", description = "산책 일정 반환 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "산책 일정 반환 실패")
     })

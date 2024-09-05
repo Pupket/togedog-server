@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.entity.Chatting;
 import pupket.togedogserver.domain.chat.repository.ChatRepository;
-import pupket.togedogserver.domain.notification.dto.NotificationRequest;
 import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.security.CustomUserDetail;

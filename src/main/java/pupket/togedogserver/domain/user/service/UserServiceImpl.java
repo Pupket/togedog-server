@@ -1,12 +1,10 @@
 package pupket.togedogserver.domain.user.service;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.notification.service.FcmService;
-import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
