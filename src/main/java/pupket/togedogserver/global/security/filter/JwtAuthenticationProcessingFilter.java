@@ -46,7 +46,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
         if (token == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Not Found Token");
+            handleJwtException(response, new JwtException(ExceptionCode.NOT_FOUND_TOKEN));
             return;
         }
 
@@ -86,6 +86,22 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
             return token;
         }
         return null;
+    }
+
+    private void handleJwtException(HttpServletResponse response, JwtException e) throws IOException {
+        response.setStatus(e.getExceptionCode().getHttpStatus().value());
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String jsonResponse = String.format(
+                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"}",
+                e.getExceptionCode().getHttpStatus().name(),
+                e.getExceptionCode().getCode(),
+                e.getExceptionCode().getMessage()
+        );
+
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
     }
 }
 

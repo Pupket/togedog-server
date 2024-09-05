@@ -69,10 +69,12 @@ public class UserController {
     @GetMapping("/reissue-token")
     @Transactional
     public ResponseEntity<String> reissue(
-            @AuthenticationPrincipal CustomUserDetail userDetail,HttpServletResponse response) {
+            @AuthenticationPrincipal CustomUserDetail userDetail,HttpServletRequest request) {
 
-        String refreshToken = userServiceImpl.getRefreshToken(userDetail.getUuid());
-        JwtToken newToken = userServiceImpl.reissueToken(refreshToken);
+        String refreshTokenInRequest = request.getHeader("Authorization");
+
+        String refreshTokenInDB = userServiceImpl.getRefreshToken(userDetail.getUuid());
+        JwtToken newToken = userServiceImpl.reissueToken(refreshTokenInDB);
 //        App에는 Cookie개념이 없기 때문에 사용하지 않음
 //        cookieUtils.addCookie(response, "refreshToken", newToken.getRefreshToken(), 24 * 60 * 60 * 7);
 
