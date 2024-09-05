@@ -7,11 +7,7 @@ import com.corundumstudio.socketio.listener.DisconnectListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pupket.togedogserver.domain.chat.constant.ServerMessage;
-import pupket.togedogserver.domain.chat.entity.Chatting;
-import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
-import pupket.togedogserver.domain.user.repository.UserRepository;
-
-import java.util.stream.Collectors;
+import pupket.togedogserver.domain.chat.dto.ChattingDto;
 
 @Component
 @Slf4j
@@ -25,7 +21,7 @@ public class SocketIOHandler {
         this.socketIOService = socketIOService;
         server.addConnectListener(onConnected());
         server.addDisconnectListener(onDisconnected());
-        server.addEventListener("chat_received", Chatting.class, onChatReceived());
+        server.addEventListener("chat_received", ChattingDto.class, onChatReceived());
     }
 
     private ConnectListener onConnected() {
@@ -49,7 +45,7 @@ public class SocketIOHandler {
         };
     }
 
-    private DataListener<Chatting> onChatReceived() {
+    private DataListener<ChattingDto> onChatReceived() {
         return (senderClient, data, ackSender) -> {
             socketIOService.saveChatting(senderClient, data);
             log.info("message from" + data);

@@ -10,6 +10,7 @@ import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.entity.Chatting;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.chat.service.ChatService;
+import pupket.togedogserver.domain.chat.dto.ChattingDto;
 import pupket.togedogserver.domain.notification.dto.NotificationRequest;
 import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.user.entity.Owner;
@@ -21,7 +22,9 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.OwnerException;
+import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -37,6 +40,7 @@ public class SocketIOService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatService chatService;
     private final NotificationServiceImpl notificationService;
+    private final S3FileUtilImpl s3FileUtilImpl;
 
     public void sendChatting(SocketIOClient senderClient, String chat, String room) {
         for (SocketIOClient client : senderClient.getNamespace().getRoomOperations(room).getClients()) {
@@ -46,17 +50,18 @@ public class SocketIOService {
         }
     }
 
-    public void saveChatting(SocketIOClient senderClient, Chatting data) throws ExecutionException, InterruptedException {
+    public void saveChatting(SocketIOClient senderClient, ChattingDto data) throws ExecutionException, InterruptedException {
         sendChatting(senderClient, data.getContent(), String.valueOf(data.getChatRoom().getRoomId()));
-        Chatting chatting = new Chatting().createChatting(
-                chatRoomRepository.findByRoomId(data.getChatRoom().getRoomId())
-                        .orElseThrow(() -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)),
-                data.getContent(),
-                data.getImageURL(),
-                data.getSender(),
-                data.getReceiver(),
-                new java.util.Date()
-        );
+        String imageUrl = s3FileUtilImpl.upload(data.getImage());
+        Chatting chatting = Chatting.userchat()
+                .chatRoom(chatRoomRepository.findByRoomId(data.getChatRoom().getRoomId())
+                        .orElseThrow(() -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)))
+                .content(data.getContent())
+                .imageURL(imageUrl)
+                .sender(data.getSender())
+                .receiver(data.getReceiver())
+                .writtenTime(new java.util.Date())
+                .build();
 
         chatService.saveChatting(chatting);
 
@@ -64,7 +69,7 @@ public class SocketIOService {
         notification.setReceiver(data.getReceiver().getUuid());
         notification.setTitle(data.getSender().getName());
         notification.setMessage(data.getContent());
-        notification.setImage(data.getImageURL());
+        notification.setImage(imageUrl);
 
         notificationService.sendNotification(chatting.getSender().getUuid(), notification);
     }
@@ -93,14 +98,11 @@ public class SocketIOService {
 
         sendChatting(senderClient, chat, String.valueOf(room));
 
-        Chatting chatting = new Chatting().createChatting(
-                chatRoomRepository.findByRoomId(room).get(),
-                chat,
-                null,
-                null,
-                null,
-                new java.util.Date()
-        );
+        Chatting chatting = Chatting.serverchat()
+                .chatRoom(chatRoomRepository.findByRoomId(room)
+                        .orElseThrow(() -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)))
+                .writtenTime(new Date())
+                .build();
         chatService.saveChatting(chatting);
     }
 
