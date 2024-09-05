@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.user.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -26,4 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("update users u set u.fcmToken = null where u.uuid = :uuid")
     int updateFcmTokenToNullByUuid(Long uuid);
+
+    @Query("select u.name from users u")
+    List<String> findAllNickname();
 }

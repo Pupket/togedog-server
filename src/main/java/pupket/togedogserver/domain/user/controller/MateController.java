@@ -25,6 +25,8 @@ import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.service.MateServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.util.List;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -36,7 +38,7 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 프로필 등록", description = "산책 메이트 프로필 정보를 등록합니다")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 등록 성공",
+            @ApiResponse(responseCode = "200", description = "프로필 등록 성공",
                     content = @Content(schema = @Schema(implementation = ResponseEntity.class))),
     })
     @PostMapping(consumes = {"multipart/form-data"})
@@ -47,12 +49,12 @@ public class MateController {
 
         mateService.create(userDetail, signUpRequest, profileImages);
 
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.status(200).build();
     }
 
     @Operation(summary = "산책 메이트 프로필 수정", description = "산책 메이트 프로필 정보를 수정합니다")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 수정 성공",
+            @ApiResponse(responseCode = "200", description = "프로필 수정 성공",
                     content = @Content(schema = @Schema(implementation = ResponseEntity.class))),
             @ApiResponse(responseCode = "400", description = "프로필 수정 실패")
     })
@@ -69,7 +71,7 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 프로필 조회", description = "산책 메이트 프로필 정보를 조회합니다")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 조회 성공",
+            @ApiResponse(responseCode = "200", description = "프로필 조회 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "프로필 조회 실패")
     })
@@ -84,7 +86,7 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 랜덤 반환", description = "산책 메이트 프로필을 랜덤으로 반환합니다. (페이지 시작 0부터, 사이즈 4부터 시작)")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 랜덤 반환 성공",
+            @ApiResponse(responseCode = "200", description = "프로필 랜덤 반환 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "프로필 랜덤 반환 실패")
     })
@@ -113,7 +115,7 @@ public class MateController {
 
     @Operation(summary = "산책 메이트 닉네임 중복 체크", description = "산책 메이트 닉네임 중복 여부 체크")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "프로필 중복체크 성공",
+            @ApiResponse(responseCode = "200", description = "프로필 중복체크 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "프로필 중복체크 실패")
     })
@@ -131,5 +133,22 @@ public class MateController {
 
         return ResponseEntity.ok().body(flag);
     }
+
+    @Operation(summary = "산책 메이트 닉네임 자동 완성", description = "산책 메이트 닉네임 자동 완성")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "검색 성공",
+                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
+            @ApiResponse(responseCode = "400", description = "검색 실패")
+    })
+    @GetMapping("/keyword/{keyword}")
+    public ResponseEntity<List<String>> autoCompleteKeyword(
+            @PathVariable("keyword") String keyword
+    ) {
+        List<String> result = mateService.autoCompleteKeyword(keyword);
+
+        return ResponseEntity.ok().body(result);
+    }
+
+
 
 }
