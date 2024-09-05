@@ -126,19 +126,26 @@ public class JwtService {
                 .claim("id", customUserDetail.getUuid())
                 .claim("auth", authorities)
                 .setExpiration(accessTokenExpiresIn)
-                .signWith(SignatureAlgorithm.HS256, key)
+                .signWith(key, SignatureAlgorithm.HS256) //deprecated된 메서드 변경
                 .compact();
     }
 
     private String generateRefreshToken(Authentication authentication) {
+        String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
         CustomUserDetail customUserDetail = (CustomUserDetail) authentication.getPrincipal();
 
         long now = (new Date()).getTime();
         Date refreshTokenExpiresIn = new Date(now + refreshTokenExpirationTime);
 
         String refreshToken = Jwts.builder()
+                .setSubject(authentication.getName())
+                .claim("id", customUserDetail.getUuid())
+                .claim("auth", authorities)
                 .setExpiration(refreshTokenExpiresIn)
-                .signWith(SignatureAlgorithm.HS256, key)
+                .signWith(key, SignatureAlgorithm.HS256) //deprecated된 메서드 변경
                 .compact();
 
         // 사용자 ID로 기존 리프레시 토큰이 있는지 확인
