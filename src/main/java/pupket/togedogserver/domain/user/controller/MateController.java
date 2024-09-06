@@ -18,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -44,10 +43,9 @@ public class MateController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart(value = "signUpRequest") RegistMateRequest signUpRequest,
-            @RequestPart(value = "multipartFile", required = false) MultipartFile profileImages) {
+            @Valid @ModelAttribute RegistMateRequest signUpRequest) {
 
-        mateService.create(userDetail, signUpRequest, profileImages);
+        mateService.create(userDetail, signUpRequest, signUpRequest.getProfileImage());
 
         return ResponseEntity.status(200).build();
     }
@@ -61,10 +59,9 @@ public class MateController {
     @PatchMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart(value = "updateMateRequest") UpdateMateRequest updateMateRequest,
-            @RequestPart(value = "multipartFile",required = false) MultipartFile profileImages
+            @Valid @ModelAttribute(value = "updateMateRequest") UpdateMateRequest updateMateRequest
     ) {
-        mateService.update(userDetail, updateMateRequest,profileImages);
+        mateService.update(userDetail, updateMateRequest,updateMateRequest.getProfileImage());
 
         return ResponseEntity.ok().build();
     }
@@ -134,6 +131,7 @@ public class MateController {
         return ResponseEntity.ok().body(flag);
     }
 
+    //TODO:: performance 보고 @Async적용 여부 결정
     @Operation(summary = "산책 메이트 닉네임 자동 완성", description = "산책 메이트 닉네임 자동 완성")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "검색 성공",
