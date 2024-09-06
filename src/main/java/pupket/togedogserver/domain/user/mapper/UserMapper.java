@@ -40,6 +40,7 @@ public interface UserMapper {
     @Mapping(target = "preferredBreeds", ignore = true)
     @Mapping(target = "preferredTimes", ignore = true)
     @Mapping(target = "preferredWeeks", ignore = true)
+    @Mapping(target = "preferredRegion", ignore = true)
     @Mapping(target = "mateTags", ignore = true)
     @Mapping(target = "match", ignore = true)
     Mate toMate(UpdateMateRequest request, User findUser, @MappingTarget Mate findMate);
@@ -64,7 +65,7 @@ public interface UserMapper {
                 .mateTags(details.getHashTag().stream()
                         .map(style -> MateTag.builder().mate(mate).tagName(style).build())
                         .collect(Collectors.toSet()))
-                .preferredRegion(mate.getPreferredRegion())
+                .preferredRegion(details.getRegion())
                 .build();
     }
 

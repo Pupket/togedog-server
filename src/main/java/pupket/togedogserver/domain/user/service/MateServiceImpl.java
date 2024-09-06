@@ -59,6 +59,10 @@ public class MateServiceImpl implements MateService {
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
         List<String> allUserNickname = userRepository.findAllNickname();
+        allUserNickname.forEach(
+                name->
+                log.info("name={}",name)
+        );
         log.info("size={}",allUserNickname.size());
         saveAllSubstring(allUserNickname); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
         log.info("수행됨");
@@ -68,10 +72,10 @@ public class MateServiceImpl implements MateService {
     private void saveAllSubstring(List<String> userNickName) { //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
         // long start1 = System.currentTimeMillis(); //뒤에서 성능 비교를 위해 시간을 재는 용도
         for (String name : userNickName) {
-            redisSortedSetService.addToSortedSet(name);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
+            redisSortedSetService.addToSortedSetFromMate(name+suffix);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
 
             for (int i = name.length(); i > 0; --i) { //음절 단위로 잘라서 모든 Substring 구하기
-                redisSortedSetService.addToSortedSet(name.substring(0, i)); //곧바로 redis에 저장
+                redisSortedSetService.addToSortedSetFromMate(name.substring(0, i)); //곧바로 redis에 저장
             }
         }
         // long end1 = System.currentTimeMillis(); //뒤에서 성능 비교를 위해 시간을 재는 용도
@@ -200,7 +204,6 @@ public class MateServiceImpl implements MateService {
 
         Mate savedMate = findMate.toBuilder()
                 .career(request.getCareer())
-                .region(request.getRegion())
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
 
@@ -284,18 +287,18 @@ public class MateServiceImpl implements MateService {
 
     }
     public List<String> autocorrect(String keyword) { //검색어 자동 완성 기능 관련 로직
-        Long index = redisSortedSetService.findFromSortedSet(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
+        Long index = redisSortedSetService.findFromSortedSetFromMate(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
         if (index == null) {
             log.info("index가 비어있음");
             return new ArrayList<>();   //만약 사용자 검색어 바탕으로 자동 완성 검색어를 만들 수 없으면 Empty Array 리턴
         }
 
-        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
+        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInMateAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
 
         //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
 
         return allValuesAfterIndexFromSortedSet.stream()
-                .filter(value -> value.endsWith(suffix) || value.startsWith(keyword))
+                .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
                 .map(this::removeEnd)
                 .limit(maxSize)
                 .toList();

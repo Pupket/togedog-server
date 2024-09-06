@@ -15,8 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
@@ -41,11 +39,9 @@ public class DogController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogRegistRequest request,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
-
+            @ModelAttribute @Valid DogRegistRequest request
     ) {
-        dogService.create(userDetail, request, profileImage);
+        dogService.create(userDetail, request, request.getProfileImage());
 
         return ResponseEntity.ok().build();
     }
@@ -59,11 +55,9 @@ public class DogController {
     @PatchMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogUpdateRequest request,
-            @RequestPart(value = "multipartFile",required = false) MultipartFile profileImage
-
+            @RequestPart(value = "request") @Valid DogUpdateRequest request
     ) {
-        dogService.update(userDetail, request, profileImage);
+        dogService.update(userDetail, request, request.getProfileImage());
 
         return ResponseEntity.ok().build();
     }
@@ -133,5 +127,21 @@ public class DogController {
         dogService.delete(userDetail, id);
 
         return ResponseEntity.ok().build();
+    }
+
+    //TODO:: performance 보고 Async적용 여부 결정
+    @Operation(summary = "견종 이름 자동완성", description = "입력할때마다 관련 키워드 제공")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 삭제 성공",
+                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
+            @ApiResponse(responseCode = "400", description = "프로필 삭제 실패")
+    })
+    @GetMapping("/keyword/{keyword}")
+    public ResponseEntity<List<String>> autoCompleteKeyword(
+            @PathVariable("keyword") String keyword
+    ) {
+        List<String> result = dogService.autoCompleteKeyword(keyword);
+
+        return ResponseEntity.ok().body(result);
     }
 }

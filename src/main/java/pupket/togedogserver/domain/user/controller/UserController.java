@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.CookieUtils;
@@ -68,19 +70,26 @@ public class UserController {
     @GetMapping("/reissue-token")
     @Transactional
     public ResponseEntity<String> reissue(
-            @AuthenticationPrincipal CustomUserDetail userDetail,HttpServletRequest request) {
+            @AuthenticationPrincipal CustomUserDetail userDetail, HttpServletRequest request) {
 
         String refreshTokenInRequest = request.getHeader("Authorization");
 
+        if (refreshTokenInRequest != null && refreshTokenInRequest.startsWith("Bearer ")) {
+            refreshTokenInRequest = refreshTokenInRequest.substring(7); // "Bearer " 부분 제거
+        }
+
         String refreshTokenInDB = userServiceImpl.getRefreshToken(userDetail.getUuid());
-        JwtToken newToken = userServiceImpl.reissueToken(refreshTokenInDB);
+        JwtToken newToken = null;
+        if (refreshTokenInRequest.equals(refreshTokenInDB)) {
+            newToken = userServiceImpl.reissueToken(refreshTokenInDB);
+        } else {
+            throw new MemberException(ExceptionCode.INVALID_TOKEN);
+        }
 //        App에는 Cookie개념이 없기 때문에 사용하지 않음
 //        cookieUtils.addCookie(response, "refreshToken", newToken.getRefreshToken(), 24 * 60 * 60 * 7);
-
         HttpHeaders headers = new HttpHeaders();
         headers.add("accessToken", newToken.getAccessToken());
         headers.add("refreshToken", newToken.getRefreshToken());
-
         return ResponseEntity.status(HttpStatus.OK).headers(headers).build();
     }
 

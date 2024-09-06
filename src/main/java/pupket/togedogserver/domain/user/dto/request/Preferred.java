@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.user.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import pupket.togedogserver.domain.dog.constant.DogType;
+import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.constant.Time;
 import pupket.togedogserver.domain.user.constant.Week;
 
@@ -23,5 +24,8 @@ public class Preferred {
 
     @Schema(description = "선호하는 견종(소형견, 중형견, 대형견, 초대형견)", example = "[\"중형견\", \"대형견\"]", required = true)
     private Set<DogType> dogTypes;
+
+    @Schema(description = "선호하는 지역", example = "경상", required = true)
+    private Region region;
 
 }
