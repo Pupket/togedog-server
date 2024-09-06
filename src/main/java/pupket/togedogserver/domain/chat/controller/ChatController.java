@@ -15,7 +15,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 import java.util.List;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
 public class ChatController {
 
@@ -33,7 +33,7 @@ public class ChatController {
             @ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/chat/{roomId}")
+    @GetMapping("/{roomId}")
     public List<Chatting> chatConnect(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @PathVariable Long roomId
