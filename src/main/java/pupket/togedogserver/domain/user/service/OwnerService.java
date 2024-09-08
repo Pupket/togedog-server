@@ -46,6 +46,7 @@ public class OwnerService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
+
         List<FindMatchedScheduleResponse> matchedBoardResponses = findBoards.stream()
                 .filter(board -> board.getMatched().equals(MatchStatus.MATCHED))
                 .map(board -> {
@@ -56,6 +57,7 @@ public class OwnerService {
                             .startTime(board.getStartTime().toString()) // 시간
                             .endTime(board.getEndTime().toString())
                             .fee(board.getFee().toString()) // 가격
+                            .feeType(board.getFeeType().toString())
                             .mateNickname(mate.getUser().getNickname())
                             .matePhotoUrl(mate.getUser().getProfileImage()) // Mate 사진 URL
                             .mateId(mate.getMateUuid())

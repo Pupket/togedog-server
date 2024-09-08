@@ -176,6 +176,7 @@ public class MateServiceImpl implements MateService {
                 throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
             }
         }
+
         if (findUser.getProfileImage() != null) {
             s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
         }

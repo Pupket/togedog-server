@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.constant.Visibility;

@@ -2,9 +2,6 @@ package pupket.togedogserver.domain.dog.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
-import pupket.togedogserver.domain.dog.constant.Breed;
-import pupket.togedogserver.domain.user.constant.Region;
 
 import java.util.Set;
 
@@ -45,6 +42,4 @@ public class DogUpdateRequest {
     @Schema(description = "나이", example = "21", required = true)
     private int age;
 
-    @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-    private MultipartFile profileImage;
 }

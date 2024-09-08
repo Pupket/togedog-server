@@ -29,4 +29,6 @@ public class BoardFindResponse {
     private int age;
     private String breed;
     private String dogType;
+    private String dogGender;
+    private String dogProfileImage;
 }

@@ -40,9 +40,9 @@ public class DogController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @ModelAttribute(value = "request") @Valid DogRegistRequest request,
+            @RequestPart(value = "request") @Valid DogRegistRequest request,
             @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-            @RequestParam(value = "profileImage") MultipartFile profileImage
+            @RequestPart(value = "profileImage",required = false) MultipartFile profileImage
     ) {
         dogService.create(userDetail, request, profileImage);
 
@@ -58,9 +58,10 @@ public class DogController {
     @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogUpdateRequest request
+            @RequestPart(value = "request") @Valid DogUpdateRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-        dogService.update(userDetail, request, request.getProfileImage());
+        dogService.update(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();
     }

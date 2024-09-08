@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.constant.Visibility;
@@ -42,9 +41,6 @@ public class UpdateMateRequest {
 
     @Schema(description = "선호하는 상세 정보 (예: 선호하는 강아지 타입, 산책 시간 등)", required = true)
     private Preferred preferredDetails;
-
-    @Schema(description = "프로필 이미지 파일", type = "string", format = "binary")
-    private MultipartFile profileImage;
 
     @Schema(description = "선호하는 지역", example = "경상", required = true)
     private Region region;

@@ -57,6 +57,8 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                             .age(dog.getAge())
                             .breed(EnumMapper.enumToKorean(dog.getBreed()))
                             .dogType(EnumMapper.enumToKorean(dog.getDogType()))
+                            .dogGender(dog.getDogGender()?"수컷":"암컷")
+                            .dogProfileImage(dog.getDogImage())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -102,6 +104,8 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                             .age(dog.getAge())
                             .breed(EnumMapper.enumToKorean(dog.getBreed()))
                             .dogType(EnumMapper.enumToKorean(dog.getDogType()))
+                            .dogGender(dog.getDogGender()?"수컷":"암컷")
+                            .dogProfileImage(dog.getDogImage())
                             .build();
                 })
                 .collect(Collectors.toList());

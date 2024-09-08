@@ -88,7 +88,10 @@ public class DogServiceImpl implements DogService {
                     throw new DogException(ExceptionCode.DOG_ALREADY_EXISTS);
                 }
         );
-        saveOwner(findUser);
+        Owner findOwner = ownerRepository.findByUser(findUser).orElse(null);
+        if (findOwner == null) {
+            saveOwner(findUser);
+        }
 
         Dog createdDog = dogMapper.toDog(request, findUser);
 
@@ -139,6 +142,7 @@ public class DogServiceImpl implements DogService {
         DogType dogType = getBreed(request);
 
         if (findDog.getDogImage() != null) {
+
             s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
         }
 
@@ -152,7 +156,7 @@ public class DogServiceImpl implements DogService {
                 .name(request.getName())
                 .neutered(request.isNeutered())
                 .weight((long) request.getWeight())
-                .region(Region.valueOf(request.getRegion()))
+                .region(Region.nameOf(request.getRegion()))
                 .notes(request.getNotes())
                 .age(request.getAge())
                 .dogImage(uploadedDogImage)
@@ -271,6 +275,7 @@ public class DogServiceImpl implements DogService {
 
 
     }
+
     private String removeEnd(String str) {
         if (str != null && str.endsWith("*")) {
             return str.substring(0, str.length() - "*".length());
