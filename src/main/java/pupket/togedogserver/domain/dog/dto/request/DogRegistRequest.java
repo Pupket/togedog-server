@@ -41,5 +41,6 @@ public class DogRegistRequest {
     @Schema(description = "나이", example = "21", required = true)
     private int age;
 
-    private MultipartFile profileImage;
+//    @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
+//    private MultipartFile profileImage;
 }

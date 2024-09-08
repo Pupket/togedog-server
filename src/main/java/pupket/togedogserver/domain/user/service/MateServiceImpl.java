@@ -59,13 +59,8 @@ public class MateServiceImpl implements MateService {
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
         List<String> allUserNickname = userRepository.findAllNickname();
-        allUserNickname.forEach(
-                name->
-                log.info("name={}",name)
-        );
         log.info("size={}",allUserNickname.size());
         saveAllSubstring(allUserNickname); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-        log.info("수행됨");
 
     }
 
@@ -128,9 +123,10 @@ public class MateServiceImpl implements MateService {
     @Override
     public FindMateResponse find(CustomUserDetail userDetail) {
         User finduser = getUserById(userDetail.getUuid());
-        Mate findMate = mateRepository.findByUser(finduser).orElseThrow(
-                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
-        );
+        Mate findMate = mateRepository.findByUser(finduser).orElse(null);
+        if (findMate==null) {
+            return null;
+        }
 
         PreferredDetailsResponse preferredDetails = PreferredDetailsResponse.builder()
                 .week(findMate.getPreferredWeeks().stream()
@@ -145,9 +141,12 @@ public class MateServiceImpl implements MateService {
                 .breed(findMate.getPreferredBreeds().stream()
                         .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType()))
                         .collect(Collectors.toSet()))
+                .region(String.valueOf(findMate.getRegion()))
                 .build();
 
         return FindMateResponse.builder()
+                .uuid(findMate.getUser().getUuid())
+                .mateId(findMate.getMateUuid())
                 .nickname(findMate.getUser().getNickname())
                 .profileImage(findMate.getUser().getProfileImage())
                 .gender(EnumMapper.enumToKorean(findMate.getUser().getUserGender()))  // Convert gender to Korean
@@ -156,7 +155,6 @@ public class MateServiceImpl implements MateService {
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .career(findMate.getCareer())
                 .preferred(preferredDetails)
-                .preferredRegion(EnumMapper.enumToKorean(findMate.getRegion()))
                 .birth(findMate.getUser().getBirthyear()+"."+String.valueOf(findMate.getUser().getBirthday()).substring(0,2)+"."+String.valueOf(findMate.getUser().getBirthday()).substring(2,4))
                 .build();
     }
@@ -187,6 +185,7 @@ public class MateServiceImpl implements MateService {
             uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
         }
             findUser = findUser.toBuilder()
+                    .userGender(request.getUserGender())
                     .nickname(request.getNickname())
                     .phoneNumber(request.getPhoneNumber())
                     .genderVisibility((request.getGenderVisibility()))
@@ -204,6 +203,7 @@ public class MateServiceImpl implements MateService {
 
         Mate savedMate = findMate.toBuilder()
                 .career(request.getCareer())
+                .region(request.getRegion())
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
 

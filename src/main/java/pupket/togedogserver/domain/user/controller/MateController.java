@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -43,9 +44,11 @@ public class MateController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @ModelAttribute RegistMateRequest signUpRequest) {
+            @Valid @ModelAttribute RegistMateRequest signUpRequest,
+            @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
+            @ModelAttribute MultipartFile profileImage) {
 
-        mateService.create(userDetail, signUpRequest, signUpRequest.getProfileImage());
+        mateService.create(userDetail, signUpRequest, profileImage);
 
         return ResponseEntity.status(200).build();
     }

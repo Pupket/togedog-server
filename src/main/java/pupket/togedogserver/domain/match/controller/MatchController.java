@@ -16,7 +16,6 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 @RestController
 @RequestMapping("/api/v1/match")
 @RequiredArgsConstructor
-//TODO:: 상대방에게 알림이 가도록 설정해야 함
 public class MatchController {
     private final MatchServiceImpl matchService;
     @Operation(summary = "매칭 요청", description = "매칭을 신청합니다.")

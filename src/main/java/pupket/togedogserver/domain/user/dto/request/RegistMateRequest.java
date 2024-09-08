@@ -46,8 +46,7 @@ public class RegistMateRequest {
     @Schema(description = "거주 지역", example = "제주", required = true)
     private Region region;
 
-    @Schema(description = "프로필 이미지 파일", type = "string", format = "binary")
-    private MultipartFile profileImage;
+//    private MultipartFile profileImage;
 
 
 }

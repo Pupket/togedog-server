@@ -46,6 +46,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                             .title(board.getTitle())
                             .pickUpDay(board.getPickUpDay())
                             .fee(EnumMapper.enumToKorean(board.getFee()))
+                            .feeType(EnumMapper.enumToKorean(board.getFeeType()))
                             .startTime(String.valueOf(board.getStartTime()))
                             .endTime(String.valueOf(board.getEndTime()))
                             .pickupLocation1(board.getPickupLocation1())

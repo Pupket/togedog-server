@@ -19,6 +19,7 @@ import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
 import pupket.togedogserver.domain.dog.repository.DogPersonalityTagRepository;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
+import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.OwnerRepository;
@@ -151,7 +152,7 @@ public class DogServiceImpl implements DogService {
                 .name(request.getName())
                 .neutered(request.isNeutered())
                 .weight((long) request.getWeight())
-                .region(request.getRegion())
+                .region(Region.valueOf(request.getRegion()))
                 .notes(request.getNotes())
                 .age(request.getAge())
                 .dogImage(uploadedDogImage)

@@ -12,4 +12,5 @@ public class PreferredDetailsResponse {
     private Set<String> time;
     private Set<String> hashTag;
     private Set<String> breed;
+    private String region;
 }
