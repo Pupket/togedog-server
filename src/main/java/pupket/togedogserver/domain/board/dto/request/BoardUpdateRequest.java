@@ -51,7 +51,7 @@ public class BoardUpdateRequest {
     @Schema(description = "종료 시간", example = "20:00:00", required = false)
     private LocalTime endTime;
 
-    @Schema(description = "요금 종류(PER_HOUR, PER_CASE)", example = "PER_HOUR", required = false)
+    @Schema(description = "요금 종류(시급,건별)", example = "시급", required = false)
     private FeeType feeType;
 
     @Schema(description = "요금", example = "20000", required = false)

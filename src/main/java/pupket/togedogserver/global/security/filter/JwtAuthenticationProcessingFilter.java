@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.TogedogException;
 import pupket.togedogserver.global.exception.customException.JwtException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.service.JwtService;
@@ -56,15 +57,15 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JwtException e) {
-            log.info("JWeT Exception", e);
-            throw new JwtException(ExceptionCode.INVALID_TOKEN);
+            log.info("JWT Exception", e);
+            handleJwtException(response, e);
         }
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetail userDetail) {
-            userRepository.findByUuid(userDetail.getUuid()).orElseThrow(
-                    () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-            );
+            if (userRepository.findByUuid(userDetail.getUuid()).isEmpty()) {
+                handleJwtException(response, new MemberException(ExceptionCode.NOT_FOUND_MEMBER));
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -88,7 +89,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void handleJwtException(HttpServletResponse response, JwtException e) throws IOException {
+    private void handleJwtException(HttpServletResponse response, TogedogException e) throws IOException {
         response.setStatus(e.getExceptionCode().getHttpStatus().value());
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
@@ -102,6 +103,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();
+        response.getWriter().close();
     }
 }
 

@@ -48,10 +48,10 @@ public class BoardCreateRequest {
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = true)
     private LocalDate pickUpDay;
 
-    @Schema(description = "시작 시간", example = "12:11:00", required = true)
+    @Schema(description = "시작 시간", example = "12:11:00", required = true, format="time")
     private LocalTime startTime;
 
-    @Schema(description = "종료 시간", example = "12:11:00", required = true)
+    @Schema(description = "종료 시간", example = "12:11:00", required = true, format="time")
     private LocalTime endTime;
 
     @Schema(description = "요금 종류(시급,건별)", example = "건별", required = true)

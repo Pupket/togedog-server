@@ -13,7 +13,11 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
     Optional<Board> findByBoardId(Long boardId);
 
-    @Query("SELECT b FROM Board b WHERE b.user.uuid = (SELECT u.uuid FROM users u WHERE u.owner.ownerUuid = (SELECT m.owner.ownerUuid FROM matching m WHERE m.matched = 'MATCHED'))")
+    @Query("SELECT b FROM Board b " +
+            "JOIN b.user u " +
+            "JOIN u.owner o " +
+            "JOIN matching m ON m.owner.ownerUuid = o.ownerUuid " +
+            "WHERE m.matched = 'MATCHED'")
     Optional<List<Board>> findByUser(User findUser);
 
 }

@@ -30,6 +30,7 @@ public class FindMatchedScheduleResponse {
     private String fee;
     private String mateNickname;
     private String matePhotoUrl;
+    private String feeType;
     private Long mateId;
     private MatchStatus matchStatus;
 

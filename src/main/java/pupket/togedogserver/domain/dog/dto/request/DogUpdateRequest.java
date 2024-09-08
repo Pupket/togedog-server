@@ -2,9 +2,6 @@ package pupket.togedogserver.domain.dog.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
-import pupket.togedogserver.domain.dog.constant.Breed;
-import pupket.togedogserver.domain.user.constant.Region;
 
 import java.util.Set;
 
@@ -19,7 +16,7 @@ public class DogUpdateRequest {
     private String name;
 
     @Schema(description = "강아지 품종", example = "아프간 하운드", required = true)
-    private Breed breed;
+    private String breed;
 
     @Schema(description = "중성화 여부", example = "true", required = true)
     private boolean neutered;
@@ -31,7 +28,7 @@ public class DogUpdateRequest {
     private int weight;
 
     @Schema(description = "지역 (서울, 인천, 경기, 충청, 경상, 전라, 강원, 제주)", example = "강원", required = true)
-    private Region region;
+    private String region;
 
     @Schema(description = "비고", example = "Very friendly", required = false)
     private String notes;
@@ -45,5 +42,4 @@ public class DogUpdateRequest {
     @Schema(description = "나이", example = "21", required = true)
     private int age;
 
-    private MultipartFile profileImage;
 }

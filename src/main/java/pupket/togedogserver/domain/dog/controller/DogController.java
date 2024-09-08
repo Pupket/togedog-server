@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
@@ -39,9 +40,11 @@ public class DogController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @ModelAttribute @Valid DogRegistRequest request
+            @RequestPart(value = "request") @Valid DogRegistRequest request,
+            @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
+            @RequestPart(value = "profileImage",required = false) MultipartFile profileImage
     ) {
-        dogService.create(userDetail, request, request.getProfileImage());
+        dogService.create(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();
     }
@@ -52,12 +55,13 @@ public class DogController {
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "프로필 수정 실패")
     })
-    @PatchMapping(consumes = {"multipart/form-data"})
+    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogUpdateRequest request
+            @RequestPart(value = "request") @Valid DogUpdateRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-        dogService.update(userDetail, request, request.getProfileImage());
+        dogService.update(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();
     }

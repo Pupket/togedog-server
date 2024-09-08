@@ -1,6 +1,7 @@
 package pupket.togedogserver.domain.board.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,10 @@ import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
+import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.mateRepo.CustomMateRepositoryImpl;
+import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.DogException;
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
@@ -41,6 +46,8 @@ public class BoardServiceImpl implements BoardService {
     private final DogRepository dogRepository;
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomMateRepositoryImpl customMateRepositoryImpl;
+    private final MateRepository mateRepository;
 
     @Override
     public void create(CustomUserDetail userDetail, BoardCreateRequest boardCreateRequest) {
@@ -76,13 +83,16 @@ public class BoardServiceImpl implements BoardService {
         String startTime = findBoard.getStartTime().toString();
         String endTime = findBoard.getEndTime().toString();
         String feeType = EnumMapper.enumToKorean(findBoard.getFeeType());
-        String dogType = EnumMapper.enumToKorean(findDog.getBreed());
+        String dogType = EnumMapper.enumToKorean(findDog.getDogType());
+        String breed = EnumMapper.enumToKorean(findDog.getBreed());
         List<String> walkingPlaceTags = findBoard.getWalkingPlaceTag().stream()
                 .map(WalkingPlaceTag::getPlaceName)
                 .collect(Collectors.toList());
 
         // BoardFindResponse 객체 생성
         return BoardFindResponse.builder()
+                .boardId(findBoard.getBoardId())
+                .userId(findBoard.getUser().getUuid())
                 .title(findBoard.getTitle())
                 .pickUpDay(findBoard.getPickUpDay())
                 .fee(fee)
@@ -93,7 +103,10 @@ public class BoardServiceImpl implements BoardService {
                 .walkingPlaceTag(walkingPlaceTags)
                 .feeType(feeType)
                 .name(findDog.getName())
-                .breed(dogType)
+                .dogType(dogType)
+                .breed(breed)
+                .dogGender(findDog.getDogGender()?"수컷":"암컷")
+                .dogProfileImage(findDog.getDogImage())
                 .build();
     }
 
@@ -189,4 +202,12 @@ public class BoardServiceImpl implements BoardService {
         return customBoardRepositoryImpl.BoardList(pageable);
     }
 
+    public Page<BoardFindResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
+        User findUser = getUserById(userDetail.getUuid());
+        Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MATE)
+        );
+
+        return customMateRepositoryImpl.findMyScheduleList(findMate.getMateUuid(), pageable);
+    }
 }

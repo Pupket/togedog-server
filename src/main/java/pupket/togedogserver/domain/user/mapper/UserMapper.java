@@ -40,7 +40,6 @@ public interface UserMapper {
     @Mapping(target = "preferredBreeds", ignore = true)
     @Mapping(target = "preferredTimes", ignore = true)
     @Mapping(target = "preferredWeeks", ignore = true)
-    @Mapping(target = "preferredRegion", ignore = true)
     @Mapping(target = "mateTags", ignore = true)
     @Mapping(target = "match", ignore = true)
     Mate toMate(UpdateMateRequest request, User findUser, @MappingTarget Mate findMate);
@@ -103,5 +102,6 @@ public interface UserMapper {
     @Mapping(target = "mapX", ignore = true)
     @Mapping(target = "mapY", ignore = true)
     @Mapping(target = "phoneNumber", ignore = true)
+    @Mapping(target = "fcmToken", ignore = true)
     User toEntity(String email, String name, String profileImage, RoleType role, String nickname, UserGender userGender, int birthday, int birthyear);
 }

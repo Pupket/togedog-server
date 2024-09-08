@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.repository.BoardRepository;
+import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.match.repository.MatchRepository;
@@ -16,6 +17,8 @@ import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.*;
 import pupket.togedogserver.global.security.CustomUserDetail;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +60,19 @@ public class MatchServiceImpl implements MatchService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
+        List<Match> matches = matchRepository.findByOwner(owner).orElse(null);
+        if (matches != null) {
+            boolean isMatched = matches.stream().anyMatch(
+                    match ->
+                            match.getMate().getMateUuid().equals(mate.getMateUuid())&&
+                                    match.getMatched().equals(MatchStatus.MATCHED)
+                    &&match.getCompleteStatus().equals(CompleteStatus.INCOMPLETE)
+            );
+
+            if (isMatched) {
+                throw new MatchingException(ExceptionCode.ALREADY_MATCHED);
+            }
+        }
         //Owner 와 Mate를 연결시켜줘야함
         Match match = Match.builder()
                 .owner(owner)
