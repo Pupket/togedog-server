@@ -23,9 +23,6 @@ public class RegistMateRequest {
     @Schema(description = "성별 (남성 또는 여성)", example = "여성", required = true)
     private UserGender userGender;
 
-    @Schema(description = "성별 공개 여부 (ACTIVE 또는 INACTIVE)", example = "ACTIVE", required = true)
-    private Visibility genderVisibility;
-
     @Schema(description = "전화번호", example = "12341234", required = true)
     @NotBlank(message = "연락처는 필수 입력 값입니다.")
     @Pattern(regexp = "^[0-9]+$", message = "연락처에는 특수 문자, 공백을 사용할 수 없습니다.")
@@ -41,11 +38,6 @@ public class RegistMateRequest {
 
     @Schema(description = "선호하는 상세 정보 (예: 선호하는 강아지 타입, 산책 시간 등)", required = true)
     private Preferred preferredDetails;
-
-    @Schema(description = "거주 지역", example = "제주", required = true)
-    private Region region;
-
-//    private MultipartFile profileImage;
 
 
 }

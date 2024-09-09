@@ -65,7 +65,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                             () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
                     );
 
-                    preferred.setRegion(String.valueOf(findMate.getRegion()));
+                    preferred.setRegion(String.valueOf(EnumMapper.enumToKorean(findMate.getPreferredRegion())));
 
 
                     return FindMateResponse.builder()
@@ -74,7 +74,6 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                             .nickname(board.getUser().getNickname())
                             .profileImage(board.getUser().getProfileImage())
                             .gender(EnumMapper.enumToKorean(board.getUser().getUserGender())) // gender 변환
-                            .region(EnumMapper.enumToKorean(board.getRegion())) // region 변환
                             .age(LocalDateTime.now().getYear() - board.getUser().getBirthyear())
                             .birth(board.getUser().getBirthyear() + "." + String.valueOf(board.getUser().getBirthday()).substring(0, 2) + "." + String.valueOf(board.getUser().getBirthday()).substring(2, 4))
                             .accommodatableDogsCount(board.getAccommodatableDogsCount())

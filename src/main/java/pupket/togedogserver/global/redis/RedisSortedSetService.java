@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -44,5 +45,15 @@ public class RedisSortedSetService {    //검색어 자동 완성을 구현할 �
     public Set<String> findAllValuesInDogAfterIndexFromSortedSet(Long index) {
         return redisTemplate.opsForZSet().range(keyUsedByDog, index, index + 20);
     }
+
+    // **닉네임 삭제 로직 추가**
+    public void removeFromSortedSetFromMate(String value) {
+        redisTemplate.opsForZSet().remove(keyUsedByMate, value);
+    }
+
+    public void removeFromSortedSetFromDog(String value) {
+        redisTemplate.opsForZSet().remove(keyUsedByDog, value);
+    }
+
 
 }
