@@ -92,7 +92,6 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "owner", ignore = true)
-    @Mapping(target = "genderVisibility", ignore = true)
     @Mapping(target = "mate", ignore = true)
     @Mapping(target = "dog", ignore = true)
     @Mapping(target = "board", ignore = true)

@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +45,7 @@ public class MateController {
             @ApiResponse(responseCode = "200", description = "프로필 등록 성공",
                     content = @Content(schema = @Schema(implementation = ResponseEntity.class))),
     })
-    @PostMapping(consumes = {"multipart/form-data"})
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @Valid @RequestPart(value ="Request" ) RegistMateRequest Request,
@@ -62,7 +63,7 @@ public class MateController {
                     content = @Content(schema = @Schema(implementation = ResponseEntity.class))),
             @ApiResponse(responseCode = "400", description = "프로필 수정 실패")
     })
-    @PatchMapping(consumes = {"multipart/form-data"})
+    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @Valid @RequestPart(value = "updateMateRequest") UpdateMateRequest updateMateRequest,

@@ -67,8 +67,5 @@ public class Mate {
     private Set<MateTag> mateTags;
 
     @Enumerated(EnumType.STRING)
-    private Region region;
-
-    @Enumerated(EnumType.STRING)
     private Region preferredRegion;
 }

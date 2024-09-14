@@ -14,7 +14,6 @@ public class FindMateResponse {
     private int age;
     private String birth;
     PreferredDetailsResponse preferred;
-    private String region;
     private String profileImage;
     private int accommodatableDogsCount;
     private String career;
