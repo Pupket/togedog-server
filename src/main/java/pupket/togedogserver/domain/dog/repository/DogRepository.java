@@ -14,8 +14,6 @@ public interface DogRepository extends JpaRepository<Dog, Long> {
 
     Optional<List<Dog>> findByUser(User findUser);
 
-    Optional<Dog> findByUserAndName(User user, String name);
-
     Collection<Dog> findAllByUser(User user);
 
     Optional<Dog> findByBoards(Board board);

@@ -52,7 +52,7 @@ public class DogServiceImpl implements DogService {
     private final RedisSortedSetService redisSortedSetService;
 
     private final String suffix = "*";
-    private final int maxSize = 10;    //검색어 자동 완성 기능 최대 개수
+    private final int maxSize = 2000;    //검색어 자동 완성 기능 최대 개수
 
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
@@ -83,11 +83,12 @@ public class DogServiceImpl implements DogService {
         if (dogRepository.findAllByUser(findUser).size() + 1 >= 6) {
             throw new DogException(ExceptionCode.AVAILABLE_FOR_REGISTRATION_EXCEEDED);
         }
+//       강아지 이름은 중복일 수 있다는 의견에 의해 주석처리
+//        dogRepository.findByUserAndName(findUser, request.getName()).ifPresent(dog -> {
+//                    throw new DogException(ExceptionCode.DOG_ALREADY_EXISTS);
+//                }
+//        );
 
-        dogRepository.findByUserAndName(findUser, request.getName()).ifPresent(dog -> {
-                    throw new DogException(ExceptionCode.DOG_ALREADY_EXISTS);
-                }
-        );
         Owner findOwner = ownerRepository.findByUser(findUser).orElse(null);
         if (findOwner == null) {
             saveOwner(findUser);
@@ -104,14 +105,12 @@ public class DogServiceImpl implements DogService {
             uploadedDogImage = s3FileUtilImpl.upload(profileImages);
         }
 
-
         createdDog = createdDog.toBuilder()
                 .dogPersonalityTags(tags)
                 .dogImage(uploadedDogImage)
                 .build();
 
         dogRepository.save(createdDog);
-
 
         dogPersonalityTagRepository.saveAll(tags);
 
@@ -152,7 +151,9 @@ public class DogServiceImpl implements DogService {
         }
 
         findDog = findDog.toBuilder()
+                .name(request.getName())
                 .dogType(dogType)
+                .breed(request.getBreed())
                 .name(request.getName())
                 .neutered(request.isNeutered())
                 .weight((long) request.getWeight())
@@ -166,7 +167,7 @@ public class DogServiceImpl implements DogService {
 
         dogPersonalityTagRepository.deleteAllByDog(findDog);
 
-        Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTag(), findDog);
+        Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), findDog);
 
         findDog = findDog.toBuilder()
                 .dogPersonalityTags(tags)
@@ -256,7 +257,6 @@ public class DogServiceImpl implements DogService {
     }
 
     public List<String> autoCompleteKeyword(String keyword) {
-        log.info("key={}", keyword);
         Long index = redisSortedSetService.findFromSortedSetFromDog(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
         if (index == null) {
             log.info("index가 비어있음");
@@ -265,7 +265,6 @@ public class DogServiceImpl implements DogService {
 
         Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInDogAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
 
-        //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
 
         return allValuesAfterIndexFromSortedSet.stream()
                 .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))

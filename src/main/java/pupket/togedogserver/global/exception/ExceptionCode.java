@@ -61,9 +61,10 @@ public enum ExceptionCode {
     PUT_OBJECT_EXCEPTION(CONFLICT, "Put Object Exception", 403),
     IO_EXCEPTION_ON_IMAGE_DELETE(CONFLICT, "IO Exception on Image Delete", 403),
     YOUR_OWN_NICKNAME(CONFLICT,"Parameter is your own nickname" ,403 ),
-    ALREADY_ACCEPTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
+    ALREADY_ACCEPTED(CONFLICT,"Matching Already Accepted, Somebody Accepted" , 403),
     ALREADY_REJECTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
-    ALREADY_MATCHED(CONFLICT, "Already Matched",403);
+    ALREADY_MATCHED(CONFLICT, "Already Matched",403),
+    NOT_YOUR_DOG(CONFLICT, "Not your Dog, Check your Dog Id" , 403);
 
 
     private final HttpStatus httpStatus;

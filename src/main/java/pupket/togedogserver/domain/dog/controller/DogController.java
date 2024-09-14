@@ -1,5 +1,7 @@
 package pupket.togedogserver.domain.dog.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,10 +42,31 @@ public class DogController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogRegistRequest request,
+            @Schema(
+                    description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
+                    type = "string",
+                    nullable = false,
+                    example = " { " +
+                            "\\\"name\\\": \\\"Buddy\\\", " +
+                            "\\\"breed\\\": \\\"아프간 하운드\\\", " +
+                            "\\\"neutered\\\": true, " +
+                            "\\\"dogGender\\\": true, " +
+                            "\\\"weight\\\": 30, " +
+                            "\\\"region\\\": \\\"서울\\\", " +
+                            "\\\"notes\\\": \\\"귀여운 강아지입니다. 슬개골이 약해요\\\", " +
+                            "\\\"tags\\\": [\\\"친근한\\\", \\\"활발한\\\"], " +
+                            "\\\"vaccine\\\": true, " +
+                            "\\\"age\\\": 21 " +
+                            "} "
+            )
+            @RequestPart(value = "request") String requestString,
             @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-            @RequestPart(value = "profileImage",required = false) MultipartFile profileImage
-    ) {
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        DogRegistRequest request = objectMapper.readValue(requestString, DogRegistRequest.class);
+
         dogService.create(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();
@@ -58,9 +81,30 @@ public class DogController {
     @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestPart(value = "request") @Valid DogUpdateRequest request,
+            @Schema(
+                    description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
+                    type = "string",
+                    nullable = false,
+                    example = " { " +
+                            "\\\"name\\\": \\\"똥강아지\\\", " +
+                            "\\\"breed\\\": \\\"시고르브잡종\\\", " +
+                            "\\\"neutered\\\": false, " +
+                            "\\\"dogGender\\\": false, " +
+                            "\\\"weight\\\": 5, " +
+                            "\\\"region\\\": \\\"서울\\\", " +
+                            "\\\"notes\\\": \\\"사악한 강아지에요 믿지 마세요\\\", " +
+                            "\\\"tags\\\": [\\\"얍삽한\\\", \\\"악마임\\\"], " +
+                            "\\\"vaccine\\\": false, " +
+                            "\\\"age\\\": 1 " +
+                            "} "
+            )
+            @RequestPart(value = "request") String requestString,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
-    ) {
+    ) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        DogUpdateRequest request = objectMapper.readValue(requestString, DogUpdateRequest.class);
+
         dogService.update(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();

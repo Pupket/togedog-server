@@ -31,6 +31,7 @@ import pupket.togedogserver.global.mapper.EnumMapper;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,6 +56,10 @@ public class BoardServiceImpl implements BoardService {
 
         Dog findDog = dogRepository.findById(boardCreateRequest.getDog_id()).orElseThrow(() ->
                 new DogException(ExceptionCode.NOT_FOUND_DOG));
+
+        if (!Objects.equals(findDog.getUser().getUuid(), findUser.getUuid())) {
+            throw new DogException(ExceptionCode.NOT_YOUR_DOG);
+        }
 
         Board mapperBoard = boardMapper.toBoard(boardCreateRequest);
         boardRepository.save(mapperBoard);
@@ -84,7 +89,6 @@ public class BoardServiceImpl implements BoardService {
         String endTime = findBoard.getEndTime().toString();
         String feeType = EnumMapper.enumToKorean(findBoard.getFeeType());
         String dogType = EnumMapper.enumToKorean(findDog.getDogType());
-        String breed = EnumMapper.enumToKorean(findDog.getBreed());
         List<String> walkingPlaceTags = findBoard.getWalkingPlaceTag().stream()
                 .map(WalkingPlaceTag::getPlaceName)
                 .collect(Collectors.toList());
@@ -104,7 +108,7 @@ public class BoardServiceImpl implements BoardService {
                 .feeType(feeType)
                 .name(findDog.getName())
                 .dogType(dogType)
-                .breed(breed)
+                .breed(findDog.getBreed())
                 .dogGender(findDog.getDogGender()?"수컷":"암컷")
                 .dogProfileImage(findDog.getDogImage())
                 .build();

@@ -1,14 +1,14 @@
 package pupket.togedogserver.global.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import pupket.togedogserver.global.exception.customException.JwtException;
-import pupket.togedogserver.global.exception.customException.MemberException;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     Logger defaultLogger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -33,20 +33,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
     }
 
-    @ExceptionHandler(JwtException.class)
-    public ResponseEntity<ExceptionResponse> handleJwtException(JwtException ex) {
-        defaultLogger.error(ex.getMessage(), ex);
-        exceptionLogger.error(ex.getMessage(), ex);
-
-        ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
-        return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
-    }
-
-    @ExceptionHandler(MemberException.class)
-    public ResponseEntity<ExceptionResponse> handleMemberException(MemberException ex) {
-        defaultLogger.error("error message={}", ex.getMessage(), ex);
-        exceptionLogger.error("exception message={}",ex.getMessage(), ex);
-        ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
-        return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
-    }
 }

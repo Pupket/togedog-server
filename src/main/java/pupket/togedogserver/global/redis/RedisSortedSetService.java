@@ -28,22 +28,18 @@ public class RedisSortedSetService {    //검색어 자동 완성을 구현할 �
     }
 
     public Long findFromSortedSetFromMate(String value) {
-        //Redis SortedSet에서 Value를 찾아 인덱스를 반환
-        log.info("value={}",value);
         return redisTemplate.opsForZSet().rank(keyUsedByMate,value);
     }
 
     public Long findFromSortedSetFromDog(String value) {
-        //Redis SortedSet에서 Value를 찾아 인덱스를 반환
-        log.info("value={}",value);
         return redisTemplate.opsForZSet().rank(keyUsedByDog,value);
     }
 
     public Set<String> findAllValuesInMateAfterIndexFromSortedSet(Long index) {
-        return redisTemplate.opsForZSet().range(keyUsedByMate, index, index + 20);
+        return redisTemplate.opsForZSet().range(keyUsedByMate, index, index + 2000);
     }
     public Set<String> findAllValuesInDogAfterIndexFromSortedSet(Long index) {
-        return redisTemplate.opsForZSet().range(keyUsedByDog, index, index + 20);
+        return redisTemplate.opsForZSet().range(keyUsedByDog, index, index + 2000);
     }
 
     // **닉네임 삭제 로직 추가**

@@ -52,7 +52,7 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
                             .dogId(dog.getDogId())
                             .name(dog.getName())
                             .dogType(EnumMapper.enumToKorean(dog.getDogType()))
-                            .breed(EnumMapper.enumToKorean(dog.getBreed()))
+                            .breed(dog.getBreed())
                             .dogGender(dog.getDogGender().equals(true))
                             .neutered(dog.getNeutered())
                             .weight(dog.getWeight())

@@ -34,9 +34,7 @@ public class Dog {
     @JoinColumn(name = "users_uuid")
     private User user;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Breed breed;
+    private String breed;
 
     @Column(nullable = false)
     private String name;

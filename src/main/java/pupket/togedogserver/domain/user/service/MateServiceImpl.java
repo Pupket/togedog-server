@@ -52,7 +52,7 @@ public class MateServiceImpl implements MateService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     private final String suffix = "*";
-    private final int maxSize = 10;    //검색어 자동 완성 기능 최대 개수
+    private final int maxSize = 100;    //검색어 자동 완성 기능 최대 개수
     private final RedisSortedSetService redisSortedSetService;
 
 
@@ -301,7 +301,8 @@ public class MateServiceImpl implements MateService {
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
         User findUser = getUserById(userDetail.getUuid());
 
-        return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isPresent();
+        //내 닉네임은 그대로 사용할 수 있게 true로 반환
+        return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isEmpty();
     }
 
     public List<String> autoCompleteKeyword(String keyword) {
