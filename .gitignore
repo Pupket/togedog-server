@@ -103,5 +103,4 @@ gradle-app.setting
 
 *.yaml
 *.gz
-Dockerfile
 src/main/resources/firebase/firebase_service_key.json
