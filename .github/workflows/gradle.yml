@@ -71,7 +71,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           port: 22
-          key: ${{ secrets.PRIVATE_KEY }}
           script: |
             sudo docker ps
             sudo docker rm -f $(docker ps -qa)
