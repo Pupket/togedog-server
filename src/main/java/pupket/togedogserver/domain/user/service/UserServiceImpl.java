@@ -44,7 +44,6 @@ public class UserServiceImpl {
         password = passwordEncoder.encode(password);
         User createdUser = user.toBuilder()
                 .userGender(request.getUserGender())
-                .genderVisibility(request.getGenderVisibility())
                 .nickname(request.getNickname())
                 .password(password)
                 .build();

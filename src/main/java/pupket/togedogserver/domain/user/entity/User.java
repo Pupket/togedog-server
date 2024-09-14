@@ -55,12 +55,6 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'HIDDEN'")
-    @Column(nullable = false)
-    @Builder.Default
-    private Visibility genderVisibility = Visibility.HIDDEN;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoleType role;
 

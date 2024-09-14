@@ -101,7 +101,6 @@ public class MateServiceImpl implements MateService {
                 .nickname(request.getNickname())
                 .profileImage(uploadedProfileImage)
                 .userGender(request.getUserGender())
-                .genderVisibility(request.getGenderVisibility())
                 .phoneNumber(request.getPhoneNumber())
                 .build();
 
@@ -141,7 +140,7 @@ public class MateServiceImpl implements MateService {
                 .breed(findMate.getPreferredBreeds().stream()
                         .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType()))
                         .collect(Collectors.toSet()))
-                .region(String.valueOf(findMate.getRegion()))
+                .region(EnumMapper.enumToKorean(findMate.getPreferredRegion()))
                 .build();
 
         return FindMateResponse.builder()
@@ -150,7 +149,6 @@ public class MateServiceImpl implements MateService {
                 .nickname(findMate.getUser().getNickname())
                 .profileImage(findMate.getUser().getProfileImage())
                 .gender(EnumMapper.enumToKorean(findMate.getUser().getUserGender()))  // Convert gender to Korean
-                .region(EnumMapper.enumToKorean(findMate.getRegion()))  // Convert region to Korean
                 .age(LocalDateTime.now().getYear() - findMate.getUser().getBirthyear())
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .career(findMate.getCareer())
@@ -171,12 +169,19 @@ public class MateServiceImpl implements MateService {
     public void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImage) {
         User findUser = getUserById(userDetail.getUuid());
 
-        if (userRepository.findByNickname(request.getNickname()).isPresent()) {
-            if (!findUser.getNickname().equals(request.getNickname())) {
+        // 기존 닉네임 중복 체크 로직
+        if (!findUser.getNickname().equals(request.getNickname())) {
+            if (userRepository.findByNickname(request.getNickname()).isPresent()) {
                 throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
             }
         }
 
+        // Redis에서 기존 닉네임 정보 삭제
+        List<String> oldNicknames = new ArrayList<>();
+        oldNicknames.add(findUser.getNickname());
+        deleteNicknameFromRedis(oldNicknames);
+
+        // 프로필 이미지 삭제 및 업로드 로직
         if (findUser.getProfileImage() != null) {
             s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
         }
@@ -185,26 +190,31 @@ public class MateServiceImpl implements MateService {
         if (profileImage != null) {
             uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
         }
-            findUser = findUser.toBuilder()
-                    .userGender(request.getUserGender())
-                    .nickname(request.getNickname())
-                    .phoneNumber(request.getPhoneNumber())
-                    .genderVisibility((request.getGenderVisibility()))
-                    .profileImage(uploadedProfileImage)
-                    .build();
+
+        // 유저 정보 업데이트 (닉네임 변경 포함)
+        findUser = findUser.toBuilder()
+                .userGender(request.getUserGender())
+                .nickname(request.getNickname())
+                .phoneNumber(request.getPhoneNumber())
+                .profileImage(uploadedProfileImage)
+                .build();
 
         userRepository.save(findUser);
+
+        // Redis에 새로운 닉네임 정보 저장
+        List<String> newNicknames = new ArrayList<>();
+        newNicknames.add(findUser.getNickname());
+        saveAllSubstring(newNicknames);
 
         Mate findMate = mateRepository.findByUser(findUser)
                 .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
 
         deleteTags(findMate);
 
-        findMate = userMapper.toMate(request, findUser,findMate);
+        findMate = userMapper.toMate(request, findUser, findMate);
 
         Mate savedMate = findMate.toBuilder()
                 .career(request.getCareer())
-                .region(request.getRegion())
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
 
@@ -212,11 +222,22 @@ public class MateServiceImpl implements MateService {
 
         savedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        savedMate = mateRepository.save(savedMate);
+        mateRepository.save(savedMate);
 
         saveMatePreferences(savedMate, request);
-
     }
+
+    private void deleteNicknameFromRedis(List<String> oldNicknames) {
+        for (String name : oldNicknames) {
+            // 기존 닉네임을 Redis에서 삭제
+            redisSortedSetService.removeFromSortedSetFromMate(name + suffix); // 기존 닉네임 전체 삭제
+
+            for (int i = name.length(); i > 0; --i) { // 음절 단위로 잘라서 모든 Substring을 Redis에서 삭제
+                redisSortedSetService.removeFromSortedSetFromMate(name.substring(0, i));
+            }
+        }
+    }
+
 
     private void deleteTags(Mate findMate) {
         mateTagRepository.deleteAllByMate(findMate);
@@ -280,7 +301,7 @@ public class MateServiceImpl implements MateService {
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
         User findUser = getUserById(userDetail.getUuid());
 
-        return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isEmpty();
+        return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isPresent();
     }
 
     public List<String> autoCompleteKeyword(String keyword) {
