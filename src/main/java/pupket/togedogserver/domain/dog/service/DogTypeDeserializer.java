@@ -3,14 +3,14 @@ package pupket.togedogserver.domain.dog.service;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.dog.constant.DogType;
 
 import java.io.IOException;
 
-public class DogTypeDeserializer extends JsonDeserializer<Breed> {
+public class DogTypeDeserializer extends JsonDeserializer<DogType> {
     @Override
-    public Breed deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public DogType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         String name = p.getText();
-        return Breed.nameOf(name);
+        return DogType.nameOf(name);
     }
 }

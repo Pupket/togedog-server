@@ -3,12 +3,12 @@ package pupket.togedogserver.domain.dog.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import pupket.togedogserver.domain.dog.service.DogTypeDeserializer;
+import pupket.togedogserver.domain.dog.service.BreedDeserializer;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.DogException;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-@JsonDeserialize(using = DogTypeDeserializer.class)
+@JsonDeserialize(using = BreedDeserializer.class)
 public enum Breed {
     AFFENPINSCHER("아펜핀셔"),
     AFGHAN_HOUND("아프간 하운드"),
@@ -211,7 +211,8 @@ public enum Breed {
     WIREHAIRED_POINTING_GRIFFON("와이어헤어드 포인팅 그리폰"),
     WIREHAIRED_VIZSLA("와이어헤어드 비즐라"),
     XOLOITZCUINTLI("솔로이츠쿠인틀리"),
-    YORKSHIRE_TERRIER("요크셔 테리어");
+    YORKSHIRE_TERRIER("요크셔 테리어"),
+    ETC("기타");
 
     final private String type;
 

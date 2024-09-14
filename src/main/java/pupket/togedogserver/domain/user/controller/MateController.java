@@ -1,5 +1,7 @@
 package pupket.togedogserver.domain.user.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -48,11 +50,32 @@ public class MateController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart(value ="Request" ) RegistMateRequest Request,
+            @Schema(
+                    description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
+                    type = "string",
+                    example =  "{ " +
+                            "\\\"nickname\\\": \\\"sunro1234\\\", " +
+                            "\\\"userGender\\\": \\\"여성\\\", " +
+                            "\\\"phoneNumber\\\": \\\"12341234\\\", " +
+                            "\\\"accommodatableDogsCount\\\": 12, " +
+                            "\\\"career\\\": \\\"능수능란\\\", " +
+                            "\\\"preferredDetails\\\": { " +
+                            "\\\"weeks\\\": [\\\"월요일\\\", \\\"화요일\\\", \\\"수요일\\\"], " +
+                            "\\\"times\\\": [\\\"아침\\\", \\\"저녁\\\"], " +
+                            "\\\"hashTag\\\": [\\\"귀여운\\\"], " +
+                            "\\\"dogTypes\\\": [\\\"중형견\\\", \\\"대형견\\\"], " +
+                            "\\\"region\\\": \\\"경상\\\" " +
+                            "} " +
+                            "}"
+            )
+            @Valid @RequestPart(value = "request") String requestString,
             @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-            @RequestPart(value = "profileImage",required = false) MultipartFile profileImage) {
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) throws JsonProcessingException {
 
-        mateService.create(userDetail, Request, profileImage);
+        ObjectMapper objectMapper = new ObjectMapper();
+        RegistMateRequest request = objectMapper.readValue(requestString, RegistMateRequest.class);
+
+        mateService.create(userDetail, request, profileImage);
 
         return ResponseEntity.status(200).build();
     }
@@ -66,10 +89,32 @@ public class MateController {
     @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @Valid @RequestPart(value = "updateMateRequest") UpdateMateRequest updateMateRequest,
-            @RequestPart(value = "profileImage",required = false) MultipartFile profileImage
-    ) {
-        mateService.update(userDetail, updateMateRequest,profileImage);
+            @Schema(
+                    description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
+                    type = "string",
+                    example =  "{ " +
+                            "\\\"nickname\\\": \\\"testuser1\\\", " +
+                            "\\\"userGender\\\": \\\"남성\\\", " +
+                            "\\\"phoneNumber\\\": \\\"01012345678\\\", " +
+                            "\\\"accommodatableDogsCount\\\": 5, " +
+                            "\\\"career\\\": \\\"강형욱보다 더 잘함\\\", " +
+                            "\\\"preferredDetails\\\": { " +
+                            "\\\"weeks\\\": [\\\"월요일\\\", \\\"화요일\\\", \\\"금요일\\\"], " +
+                            "\\\"times\\\": [\\\"새벽\\\", \\\"저녁\\\"], " +
+                            "\\\"hashTag\\\": [\\\"사악함\\\"], " +
+                            "\\\"dogTypes\\\": [\\\"소형견\\\", \\\"대형견\\\"], " +
+                            "\\\"region\\\": \\\"전라\\\" " +
+                            "} " +
+                            "}"
+            )
+            @RequestPart(value = "request") String updateMateRequest,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        UpdateMateRequest request = objectMapper.readValue(updateMateRequest, UpdateMateRequest.class);
+
+        mateService.update(userDetail, request, profileImage);
 
         return ResponseEntity.ok().build();
     }

@@ -30,9 +30,6 @@ public class BoardCreateRequest {
     @Schema(description = "도로명 주소", example = "서울특별시 관악구 청룡동 ~로", required = true)
     private String pickupLocation1;
 
-//    @Schema(description = "세부 주소", example = "oo아파트 102동 301호", required = true)
-//    private String pickupLocation2;
-
     @Schema(description = "x좌표", example = "24.1298371", required = true)
     private Double mapX;
 

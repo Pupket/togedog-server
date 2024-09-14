@@ -22,7 +22,7 @@ public class DogUpdateRequest {
     private boolean neutered;
 
     @Schema(description = "강아지 성별 (true: 남, false: 여)", example = "true", required = true)
-    private boolean gender;
+    private boolean dogGender;
 
     @Schema(description = "강아지 체중", example = "30", required = true)
     private int weight;
@@ -34,7 +34,7 @@ public class DogUpdateRequest {
     private String notes;
 
     @Schema(description = "태그", example = "[\"friendly\", \"energetic\"]", required = false)
-    private Set<String> tag;
+    private Set<String> tags;
 
     @Schema(description = "백신접종 유무", example = "true", required = true)
     private boolean vaccine;
