@@ -69,8 +69,8 @@ jobs:
         with:
           host: ${{ secrets.HOST_DEV }} # EC2 퍼블릭 IPv4 DNS
           username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
           port: 22
+          key: ${{ secrets.PRIVATE_KEY }}
           script: |
             sudo docker ps
             sudo docker rm -f $(docker ps -qa)
