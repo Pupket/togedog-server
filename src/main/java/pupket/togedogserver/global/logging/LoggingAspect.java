@@ -7,9 +7,10 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.lang.reflect.Method;
-
 @Aspect
 @Component
 @Slf4j
@@ -21,12 +22,18 @@ public class LoggingAspect {
     @Around("cut()")
     public Object aroundLog(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
-        // 클래스 정보 받아오기
-        log.info("class name = {}", proceedingJoinPoint.getClass().getName());
         // 메서드 정보 받아오기
         Method method = getMethod(proceedingJoinPoint);
-        log.info("======= method name = {} =======", method.getName());
 
+        // 요청 URI 확인
+        String uri = getRequestURI();
+        if ("/health-check".equals(uri)) {
+            return proceedingJoinPoint.proceed(); // /health-check API는 로그 출력하지 않음
+        }
+
+        // 클래스 정보 받아오기
+        log.info("class name = {}", proceedingJoinPoint.getTarget().getClass().getName());
+        log.info("======= method name = {} =======", method.getName());
 
         // 파라미터 받아오기
         Object[] args = proceedingJoinPoint.getArgs();
@@ -43,10 +50,8 @@ public class LoggingAspect {
             }
         }
 
-        // proceed()를 호출하여 실제 메서드 실행
+        // 메서드 실행 및 결과 로깅
         Object returnObj = proceedingJoinPoint.proceed();
-
-        // 메서드의 리턴값 로깅
         if (returnObj == null) {
             log.info("return value = null");
         } else {
@@ -60,5 +65,11 @@ public class LoggingAspect {
     private Method getMethod(ProceedingJoinPoint proceedingJoinPoint) {
         MethodSignature signature = (MethodSignature) proceedingJoinPoint.getSignature();
         return signature.getMethod();
+    }
+
+    private String getRequestURI() {
+        // 현재 스레드의 요청 URI를 가져오는 코드
+        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+                .getRequest().getRequestURI();
     }
 }
