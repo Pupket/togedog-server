@@ -75,8 +75,7 @@ jobs:
           port: 22
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
-            cd /home/ubuntu/togedog-server  # env 파일이 있는 디렉토리로 이동
             sudo docker rm -f pupcket-server  # 특정 컨테이너만 삭제
             sudo docker pull ${{ secrets.DOCKER_REPO}}/pupcket-server:test
-            sudo docker run -d -p 8080:8080 --name pupcket-server --env-file=.env ${{ secrets.DOCKER_REPO}}/pupcket-server:test
+            sudo docker run -d -p 8080:8080 --name pupcket-server ${{ secrets.DOCKER_REPO}}/pupcket-server:test
             sudo docker image prune -f  # 필요 없는 이미지 정리
