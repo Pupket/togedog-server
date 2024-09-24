@@ -54,10 +54,6 @@ public class OwnerController {
 
         Page<BoardFindResponse> boardList = ownerService.findMyBoards(userDetail, pageable);
 
-        boardList.forEach(i->
-                log.info("i.data={}", i.getName()));
-
-
         return ResponseEntity.ok().body(boardList);
     }
 

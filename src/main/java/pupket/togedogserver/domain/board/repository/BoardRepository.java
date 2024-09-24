@@ -20,4 +20,5 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             "WHERE m.matched = 'MATCHED'")
     Optional<List<Board>> findByUser(User findUser);
 
+    Optional<List<Board>> findAllByUserAndBoardId(User findUser, Long id);
 }

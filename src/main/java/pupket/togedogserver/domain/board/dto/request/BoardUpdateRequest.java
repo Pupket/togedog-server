@@ -8,6 +8,7 @@ import pupket.togedogserver.domain.board.constant.FeeType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -27,20 +28,14 @@ public class BoardUpdateRequest {
     @Schema(description = "도로명 주소", example = "서울특별시 관악구 청룡동 ~로", required = false)
     private String pickupLocation1;
 
-//    @Schema(description = "세부 주소", example = "oo아파트 102동 301호", required = false)
-//    private String pickupLocation2;
-
     @Schema(description = "x좌표", example = "24.1298371", required = false)
     private Double mapX;
 
     @Schema(description = "y좌표", example = "24.1298371", required = false)
     private Double mapY;
 
-    @Schema(description = "강아지 성별 (true: 남, false: 여)", example = "true", required = false)
-    private Boolean dogGender;
-
     @Schema(description = "강아지 고유번호", example = "1", required = false)
-    private Long dog_id;
+    private List<Long> dogIds;
 
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = false)
     private LocalDate pickUpDay;

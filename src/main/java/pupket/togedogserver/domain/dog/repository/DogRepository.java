@@ -16,8 +16,6 @@ public interface DogRepository extends JpaRepository<Dog, Long> {
 
     Collection<Dog> findAllByUser(User user);
 
-    Optional<Dog> findByBoards(Board board);
-
     Optional<Dog> findByUserAndDogId(User findUser, Long id);
 
     @Query("select m.breedName from DogBreed m ")

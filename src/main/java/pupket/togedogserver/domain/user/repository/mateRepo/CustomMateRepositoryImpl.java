@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
+import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
@@ -20,7 +21,10 @@ import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -86,50 +90,77 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
     }
 
     public Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable) {
+        // 여러 마리의 개를 처리할 수 있도록 Board와 Dog 테이블을 JOIN
         String query = "SELECT b, d FROM Board b " +
-                "JOIN Dog d ON b.dog = d " +
+                "JOIN b.boardDog bd " +  // BoardDog 테이블도 추가로 JOIN
+                "JOIN bd.dog d " +  // BoardDog과 Dog을 JOIN
                 "WHERE b.deleted = false AND d.deleted = false " +
                 "AND b.match.mate.mateUuid = :mateId";
+
         TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
-        result.setParameter("mateId", mateId); // uuid 파라미터에 값 설정
+        result.setParameter("mateId", mateId); // mateId 파라미터 설정
         result.setFirstResult((int) pageable.getOffset());
         result.setMaxResults(pageable.getPageSize());
 
         List<Object[]> results = result.getResultList();
-        List<BoardFindResponse> boardResponses = results.stream()
-                .map(row -> {
-                    Board board = (Board) row[0];
-                    Dog dog = (Dog) row[1];
+        Map<Long, BoardFindResponse> boardResponseMap = new HashMap<>();
 
-                    return BoardFindResponse.builder()
-                            .boardId(board.getBoardId())
-                            .userId(board.getUser().getUuid())
-                            .title(board.getTitle())
-                            .pickUpDay(board.getPickUpDay())
-                            .fee(EnumMapper.enumToKorean(board.getFee()))
-                            .feeType(EnumMapper.enumToKorean(board.getFeeType()))
-                            .startTime(String.valueOf(board.getStartTime()))
-                            .endTime(String.valueOf(board.getEndTime()))
-                            .pickupLocation1(board.getPickupLocation1())
-                            .walkingPlaceTag(board.getWalkingPlaceTag().stream()
-                                    .map(WalkingPlaceTag::getPlaceName)
-                                    .collect(Collectors.toList()))
-                            .name(dog.getName())
-                            .age(dog.getAge())
-                            .breed(EnumMapper.enumToKorean(dog.getBreed()))
-                            .dogType(EnumMapper.enumToKorean(dog.getDogType()))
-                            .dogGender(dog.getDogGender()?"수컷":"암컷")
-                            .dogProfileImage(dog.getDogImage())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        // 각 Board에 여러 마리의 Dog 정보를 추가
+        results.forEach(row -> {
+            Board board = (Board) row[0];
+            Dog dog = (Dog) row[1];
 
-        String countQuery = "SELECT COUNT(b) FROM Board b JOIN Dog d ON b.dog = d WHERE b.deleted = false AND d.deleted = false AND b.user.uuid = :uuid";
+            // 이미 Board가 추가되었는지 확인하고 없다면 새로 추가
+            boardResponseMap.computeIfAbsent(board.getBoardId(), boardId -> {
+                String fee = EnumMapper.enumToKorean(board.getFee());
+                String feeType = EnumMapper.enumToKorean(board.getFeeType());
+                String startTime = String.valueOf(board.getStartTime());
+                String endTime = String.valueOf(board.getEndTime());
+                List<String> walkingPlaceTags = board.getWalkingPlaceTag().stream()
+                        .map(WalkingPlaceTag::getPlaceName)
+                        .collect(Collectors.toList());
+
+                return BoardFindResponse.builder()
+                        .boardId(board.getBoardId())
+                        .userId(board.getUser().getUuid())
+                        .title(board.getTitle())
+                        .pickUpDay(board.getPickUpDay())
+                        .fee(fee)
+                        .feeType(feeType)
+                        .startTime(startTime)
+                        .endTime(endTime)
+                        .pickupLocation1(board.getPickupLocation1())
+                        .walkingPlaceTag(walkingPlaceTags)
+                        .dogs(new ArrayList<>())  // Dog 정보를 담을 리스트 초기화
+                        .build();
+            });
+
+            // Dog 정보를 DogResponse로 변환하여 추가
+            BoardFindResponse response = boardResponseMap.get(board.getBoardId());
+            response.getDogs().add(BoardDogResponse.builder()
+                    .name(dog.getName())
+                    .age(dog.getAge())
+                    .breed(EnumMapper.enumToKorean(dog.getBreed()))
+                    .dogType(EnumMapper.enumToKorean(dog.getDogType()))
+                    .dogGender(dog.getDogGender() ? "수컷" : "암컷")
+                    .dogProfileImage(dog.getDogImage())
+                    .build());
+        });
+
+        List<BoardFindResponse> boardResponses = new ArrayList<>(boardResponseMap.values());
+
+        // 카운트 쿼리
+        String countQuery = "SELECT COUNT(b) FROM Board b " +
+                "JOIN b.boardDog bd " +
+                "JOIN bd.dog d " +
+                "WHERE b.deleted = false AND d.deleted = false AND b.match.mate.mateUuid = :mateId";
+
         Long count = em.createQuery(countQuery, Long.class)
-                .setParameter("uuid", mateId)
+                .setParameter("mateId", mateId)
                 .getSingleResult();
 
         return new PageImpl<>(boardResponses, pageable, count);
     }
+
 }
 
