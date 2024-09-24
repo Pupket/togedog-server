@@ -61,8 +61,8 @@ jobs:
       - name: Docker build & push to dev
         if: contains(github.ref, 'develop')
         run: |
-          docker build --cache-from=type=local,src=/tmp/.build-cache -f Dockerfile -t ${{ secrets.DOCKER_REPO}}/pupcket-server:test .
-          docker push ${{ secrets.DOCKER_REPO}}/pupcket-server:test
+          docker build --cache-from=type=local,src=/tmp/.build-cache -f Dockerfile -t ${{ secrets.DOCKER_REPO}}/pupcket-server:dev .
+          docker push ${{ secrets.DOCKER_REPO}}/pupcket-server:dev
 
       # 개발 환경에 배포
       - name: Deploy to dev
@@ -76,6 +76,6 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
             sudo docker rm -f pupcket-server  # 특정 컨테이너만 삭제
-            sudo docker pull ${{ secrets.DOCKER_REPO}}/pupcket-server:test
-            sudo docker run -d -p 8080:8080 --name pupcket-server ${{ secrets.DOCKER_REPO}}/pupcket-server:test
+            sudo docker pull ${{ secrets.DOCKER_REPO}}/pupcket-server:dev
+            sudo docker run -d -p 8080:8080 --name pupcket-server ${{ secrets.DOCKER_REPO}}/pupcket-server:dev
             sudo docker image prune -f  # 필요 없는 이미지 정리

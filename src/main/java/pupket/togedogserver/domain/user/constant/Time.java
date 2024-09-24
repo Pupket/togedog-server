@@ -10,7 +10,7 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @JsonDeserialize(using = TimeDeserializer.class)
 public enum Time {
-    MORNING("아침"), LUNCH("점심"), AFTERNOON("오후"), EVENING("저녁"), DAWN("새벽");
+    MORNING("아침"), LUNCH("오전"), AFTERNOON("오후"), EVENING("저녁"), DAWN("새벽");
 
     private final String time;
 

@@ -86,6 +86,7 @@ public class DogController {
                     type = "string",
                     nullable = false,
                     example = " { " +
+                            "\\\"id\\\": \\\"1\\\", " +
                             "\\\"name\\\": \\\"똥강아지\\\", " +
                             "\\\"breed\\\": \\\"시고르브잡종\\\", " +
                             "\\\"neutered\\\": false, " +

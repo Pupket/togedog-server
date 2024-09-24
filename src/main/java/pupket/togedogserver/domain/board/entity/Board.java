@@ -51,14 +51,8 @@ public class Board {
 
     @Column(nullable = false)
     private LocalDate pickUpDay;
-    /**
-     * 도로명 주소
-     */
+
     private String pickupLocation1;
-//    /**
-//     * 세부 주소
-//     */
-//    private String pickupLocation2;
 
     private Double mapX;
 
@@ -87,9 +81,8 @@ public class Board {
     @JoinColumn(name = "users_uuid")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dog_id")
-    private Dog dog;
+    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<BoardDog> boardDog;
 
     @OneToMany(mappedBy = "board")
     private List<ChatRoom> chatRoom;

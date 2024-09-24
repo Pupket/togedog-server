@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +31,7 @@ import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.service.MateServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -61,7 +63,7 @@ public class MateController {
                             "\\\"career\\\": \\\"능수능란\\\", " +
                             "\\\"preferredDetails\\\": { " +
                             "\\\"weeks\\\": [\\\"월요일\\\", \\\"화요일\\\", \\\"수요일\\\"], " +
-                            "\\\"times\\\": [\\\"아침\\\", \\\"저녁\\\"], " +
+                            "\\\"times\\\": [\\\"오전\\\", \\\"저녁\\\"], " +
                             "\\\"hashTag\\\": [\\\"귀여운\\\"], " +
                             "\\\"dogTypes\\\": [\\\"중형견\\\", \\\"대형견\\\"], " +
                             "\\\"region\\\": \\\"경상\\\" " +
@@ -171,7 +173,7 @@ public class MateController {
     })
     @Parameter(name = "nickname", description = "닉네임", example = "surno123", required = true, schema = @Schema(type = "string"))
     @GetMapping("/{nickname}")
-    public ResponseEntity<Boolean> checkNickName(
+    public ResponseEntity<HashMap<String,Object>> checkNickName(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @PathVariable("nickname")
             @NotBlank(message = "닉네임은 필수 입력 값입니다.")
@@ -181,7 +183,11 @@ public class MateController {
     ) {
         boolean flag = mateService.checkNickname(userDetail, nickname);
 
-        return ResponseEntity.ok().body(flag);
+        HashMap<String,Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("flag" , String.valueOf(flag));
+
+        return ResponseEntity.ok().body(response);
     }
 
     //TODO:: performance 보고 @Async적용 여부 결정

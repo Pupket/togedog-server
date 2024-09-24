@@ -64,7 +64,8 @@ public enum ExceptionCode {
     ALREADY_ACCEPTED(CONFLICT,"Matching Already Accepted, Somebody Accepted" , 403),
     ALREADY_REJECTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
     ALREADY_MATCHED(CONFLICT, "Already Matched",403),
-    NOT_YOUR_DOG(CONFLICT, "Not your Dog, Check your Dog Id" , 403);
+    NOT_YOUR_DOG(CONFLICT, "Not your Dog, Check your Dog Id" , 403)
+    , ACCEPT_SHOULD_TRY_RECIEVER(CONFLICT,"Board Writer Can't Accept" , 403);
 
 
     private final HttpStatus httpStatus;

@@ -11,6 +11,7 @@ import pupket.togedogserver.domain.board.constant.FeeType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -36,11 +37,8 @@ public class BoardCreateRequest {
     @Schema(description = "y좌표", example = "24.1298371", required = true)
     private Double mapY;
 
-    @Schema(description = "강아지 성별 (true: 남, false: 여)", example = "true", required = true)
-    private Boolean dogGender;
-
     @Schema(description = "강아지 고유번호", example = "1", required = true)
-    private Long dog_id;
+    private List<Long> dogIds;
 
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = true)
     private LocalDate pickUpDay;

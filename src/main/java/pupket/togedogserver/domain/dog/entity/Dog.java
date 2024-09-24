@@ -6,6 +6,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.dog.constant.Breed;
 import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Region;
@@ -76,6 +77,6 @@ public class Dog {
     private Set<DogPersonalityTag> dogPersonalityTags;
 
     @OneToMany(mappedBy = "dog")
-    private List<Board> boards;
+    private List<BoardDog> boardDogs;
 
 }

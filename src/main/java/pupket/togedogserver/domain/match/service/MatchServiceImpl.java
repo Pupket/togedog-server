@@ -96,6 +96,9 @@ public class MatchServiceImpl implements MatchService {
         Match findMatch = matchRepository.findById(findBoard.getMatch().getMatchId()).orElseThrow(
                 () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
         );
+        if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
+            throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
+        }
         if(findBoard.getMatched().equals(MatchStatus.MATCHED) && findMatch.getMatched().equals(MatchStatus.MATCHED) ){
             throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
         }
