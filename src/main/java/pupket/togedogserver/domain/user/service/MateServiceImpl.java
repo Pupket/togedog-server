@@ -143,6 +143,12 @@ public class MateServiceImpl implements MateService {
                 .region(EnumMapper.enumToKorean(findMate.getPreferredRegion()))
                 .build();
 
+        // birthday를 4자리로 맞추기 (3자리면 앞에 0 추가)
+        String birthday = String.valueOf(findMate.getUser().getBirthday());
+        if (birthday.length() == 3) {
+            birthday = "0" + birthday; // 앞에 0을 붙여 4자리로 만듦
+        }
+
         return FindMateResponse.builder()
                 .uuid(findMate.getUser().getUuid())
                 .mateId(findMate.getMateUuid())
@@ -153,7 +159,7 @@ public class MateServiceImpl implements MateService {
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .career(findMate.getCareer())
                 .preferred(preferredDetails)
-                .birth(findMate.getUser().getBirthyear()+"."+String.valueOf(findMate.getUser().getBirthday()).substring(0,2)+"."+String.valueOf(findMate.getUser().getBirthday()).substring(2,4))
+                .birth(findMate.getUser().getBirthyear()+"."+birthday.substring(0,2)+"."+birthday.substring(2,4))
                 .build();
     }
 

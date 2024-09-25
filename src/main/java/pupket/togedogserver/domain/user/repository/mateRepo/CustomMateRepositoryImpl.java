@@ -49,39 +49,44 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
         // 엔티티를 DTO로 변환
         List<FindMateResponse> MateResponse = mateList.stream()
-                .map(board -> {
+                .map(mate -> {
                     PreferredDetailsResponse preferred = PreferredDetailsResponse.builder()
-                            .week(board.getPreferredWeeks().stream()
+                            .week(mate.getPreferredWeeks().stream()
                                     .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
                                     .collect(Collectors.toSet()))
-                            .time(board.getPreferredTimes().stream()
+                            .time(mate.getPreferredTimes().stream()
                                     .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
                                     .collect(Collectors.toSet()))
-                            .hashTag(board.getMateTags().stream()
+                            .hashTag(mate.getMateTags().stream()
                                     .map(MateTag::getTagName)
                                     .collect(Collectors.toSet()))
-                            .breed(board.getPreferredBreeds().stream()
+                            .breed(mate.getPreferredBreeds().stream()
                                     .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType())) // preferredBreed 변환
                                     .collect(Collectors.toSet()))
                             .build();
 
-                    Mate findMate = mateRepository.findById(board.getMateUuid()).orElseThrow(
+                    Mate findMate = mateRepository.findById(mate.getMateUuid()).orElseThrow(
                             () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
                     );
 
                     preferred.setRegion(String.valueOf(EnumMapper.enumToKorean(findMate.getPreferredRegion())));
 
+                    // birthday를 4자리로 맞추기 (3자리면 앞에 0 추가)
+                    String birthday = String.valueOf(mate.getUser().getBirthday());
+                    if (birthday.length() == 3) {
+                        birthday = "0" + birthday; // 앞에 0을 붙여 4자리로 만듦
+                    }
 
                     return FindMateResponse.builder()
-                            .uuid(board.getUser().getUuid())
-                            .mateId(board.getUser().getMate().get(0).getMateUuid())
-                            .nickname(board.getUser().getNickname())
-                            .profileImage(board.getUser().getProfileImage())
-                            .gender(EnumMapper.enumToKorean(board.getUser().getUserGender())) // gender 변환
-                            .age(LocalDateTime.now().getYear() - board.getUser().getBirthyear())
-                            .birth(board.getUser().getBirthyear() + "." + String.valueOf(board.getUser().getBirthday()).substring(0, 2) + "." + String.valueOf(board.getUser().getBirthday()).substring(2, 4))
-                            .accommodatableDogsCount(board.getAccommodatableDogsCount())
-                            .career(board.getCareer())
+                            .uuid(mate.getUser().getUuid())
+                            .mateId(mate.getUser().getMate().get(0).getMateUuid())
+                            .nickname(mate.getUser().getNickname())
+                            .profileImage(mate.getUser().getProfileImage())
+                            .gender(EnumMapper.enumToKorean(mate.getUser().getUserGender())) // gender 변환
+                            .age(LocalDateTime.now().getYear() - mate.getUser().getBirthyear())
+                            .birth(mate.getUser().getBirthyear() + "." + birthday.substring(0, 2) + "." + birthday.substring(2, 4))
+                            .accommodatableDogsCount(mate.getAccommodatableDogsCount())
+                            .career(mate.getCareer())
                             .preferred(preferred)
                             .build();
                 }).collect(Collectors.toList());
