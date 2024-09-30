@@ -33,7 +33,9 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -100,10 +102,7 @@ public class DogServiceImpl implements DogService {
 
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), createdDog);
 
-        String uploadedDogImage = null;
-        if (profileImages != null) {
-            uploadedDogImage = s3FileUtilImpl.upload(profileImages);
-        }
+        String uploadedDogImage = getUploadedDogImage(profileImages);
 
         createdDog = createdDog.toBuilder()
                 .dogPersonalityTags(tags)
@@ -114,6 +113,14 @@ public class DogServiceImpl implements DogService {
 
         dogPersonalityTagRepository.saveAll(tags);
 
+    }
+
+    private String getUploadedDogImage(MultipartFile profileImages) {
+        String uploadedDogImage = null;
+        if (profileImages != null) {
+            uploadedDogImage = s3FileUtilImpl.upload(profileImages);
+        }
+        return uploadedDogImage;
     }
 
     private void saveOwner(User findUser) {
@@ -134,21 +141,16 @@ public class DogServiceImpl implements DogService {
     public void update(CustomUserDetail user, DogUpdateRequest request, MultipartFile profileImage) {
         getUserById(user.getUuid());
 
-        Dog findDog = dogRepository.findById(request.getId()).orElseThrow(() ->
-                new DogException(ExceptionCode.NOT_FOUND_DOG)
-        );
+        Dog findDog = findDogById(dogRepository.findById(request.getId()));
 
-        DogType dogType = getBreed(request);
+        DogType dogType = determineDogTypeBasedOnWeight(request);
 
         if (findDog.getDogImage() != null) {
 
             s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
         }
 
-        String uploadedDogImage = null;
-        if (profileImage != null) {
-            uploadedDogImage = s3FileUtilImpl.upload(profileImage);
-        }
+        String uploadedDogImage = getUploadedDogImage(profileImage);
 
         findDog = findDog.toBuilder()
                 .name(request.getName())
@@ -163,22 +165,19 @@ public class DogServiceImpl implements DogService {
                 .dogImage(uploadedDogImage)
                 .build();
 
-        findDog = dogRepository.save(findDog);
-
         dogPersonalityTagRepository.deleteAllByDog(findDog);
 
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), findDog);
 
-        findDog = findDog.toBuilder()
+        findDog.toBuilder()
                 .dogPersonalityTags(tags)
                 .build();
-
         dogRepository.save(findDog);
 
         dogPersonalityTagRepository.saveAll(tags);
     }
 
-    private static DogType getBreed(DogUpdateRequest request) {
+    private static DogType determineDogTypeBasedOnWeight(DogUpdateRequest request) {
         int weight = request.getWeight();
         DogType dogType = null;
         if (weight >= 40) {
@@ -197,9 +196,7 @@ public class DogServiceImpl implements DogService {
     public void delete(CustomUserDetail user, Long id) {
         User findUser = getUserById(user.getUuid());
 
-        Dog findDog = dogRepository.findByUserAndDogId(findUser, id).orElseThrow(
-                () -> new DogException(ExceptionCode.NOT_FOUND_DOG)
-        );
+        Dog findDog = findDogById(dogRepository.findByUserAndDogId(findUser, id));
 
         if (findDog.getDogImage() != null) {
             s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
@@ -213,14 +210,18 @@ public class DogServiceImpl implements DogService {
     public DogResponse find(CustomUserDetail user, Long id) {
         getUserById(user.getUuid());
 
-        Dog findDog = dogRepository.findById(id).orElseThrow(() ->
-                new DogException(ExceptionCode.NOT_FOUND_DOG)
-        );
+        Dog findDog = findDogById(dogRepository.findById(id));
 
         DogResponse dogResponse = dogMapper.toResponse(findDog);
         dogMapper.afterMapping(dogResponse, findDog);
 
         return dogResponse;
+    }
+
+    private Dog findDogById(Optional<Dog> dogRepository) {
+        return dogRepository.orElseThrow(() ->
+                new DogException(ExceptionCode.NOT_FOUND_DOG)
+        );
     }
 
     @Override
@@ -231,15 +232,13 @@ public class DogServiceImpl implements DogService {
                 new DogException(ExceptionCode.NOT_FOUND_DOG)
         );
 
-        List<DogResponse> dogResponseList = new ArrayList<>();
-        dogList.forEach(
-                dog -> {
-                    DogResponse dogresponse = dogMapper.toResponse(dog);
-                    dogMapper.afterMapping(dogresponse, dog);
-                    dogResponseList.add(dogresponse);
-                });
-
-        return dogResponseList;
+        return dogList.stream()
+                .map(dog -> {
+                    DogResponse dogResponse = dogMapper.toResponse(dog);
+                    dogMapper.afterMapping(dogResponse, dog);
+                    return dogResponse;
+                })
+                .collect(Collectors.toList());
 
     }
 
@@ -271,8 +270,6 @@ public class DogServiceImpl implements DogService {
                 .map(this::removeEnd)
                 .limit(maxSize)
                 .toList();
-
-
     }
 
     private String removeEnd(String str) {

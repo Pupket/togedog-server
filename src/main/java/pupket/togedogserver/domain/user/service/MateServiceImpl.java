@@ -52,7 +52,6 @@ public class MateServiceImpl implements MateService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     private final String suffix = "*";
-    private final int maxSize = 100;    //검색어 자동 완성 기능 최대 개수
     private final RedisSortedSetService redisSortedSetService;
 
 
@@ -81,22 +80,42 @@ public class MateServiceImpl implements MateService {
     public void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage) {
         User findUser = getUserById(userDetail.getUuid());
 
-        mateRepository.findByUser(findUser).ifPresent(mate -> {
-            throw new MateException(ExceptionCode.MATE_ALREADY_EXIST);
-        });
+        validateUserAndNickname(request, findUser); //Mate중복 여부 및 닉네임 중복 검사
 
-        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
-            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
-        });
+        String uploadedProfileImage = uploadProfileImage(profileImage); //이미지 유효성 검사 및 업로드
 
+        findUser = updateUser(request, findUser, uploadedProfileImage); //유저 이미지 및 기타 정보 업데이트
 
-        String uploadedProfileImage = null;
-        if(profileImage != null) {
-            uploadedProfileImage=s3FileUtilImpl.upload(profileImage);
+        Mate createdMate = userMapper.toMate(request); //Mate 생성
 
-        }
+        createdMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), createdMate); //customMapper로 preferred엔티티 맵핑
 
+        Mate savedMate = TwoWayMappingUserAndMate(createdMate, findUser); //양방향 맵핑(유저, 메이트)
 
+        saveMatePreferences(savedMate, request); //각 태그 영속성 저장
+    }
+
+    private Mate TwoWayMappingUserAndMate(Mate createdMate, User findUser) {
+        Mate updatedMate = connectWithUser(createdMate, findUser);
+
+        connectWithMate(findUser, updatedMate);
+        return updatedMate;
+    }
+
+    private static Mate connectWithUser(Mate createdMate, User findUser) {
+        //mate와 user 양방향 맵핑
+        return createdMate.toBuilder() //mate와 user 양방향 맵핑
+                .user(findUser)
+                .build();
+    }
+
+    private void connectWithMate(User findUser, Mate updatedMate) {
+        findUser = findUser.toBuilder()
+                .mate(updatedMate)
+                .build();
+    }
+
+    private User updateUser(RegistMateRequest request, User findUser, String uploadedProfileImage) {
         findUser = findUser.toBuilder()
                 .nickname(request.getNickname())
                 .profileImage(uploadedProfileImage)
@@ -105,18 +124,26 @@ public class MateServiceImpl implements MateService {
                 .build();
 
         findUser = userRepository.save(findUser);
+        return findUser;
+    }
 
-        Mate createdMate = userMapper.toMate(request);
-        createdMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), createdMate);
+    private String uploadProfileImage(MultipartFile profileImage) {
+        String uploadedProfileImage = null;
+        if(profileImage != null) {
+            uploadedProfileImage=s3FileUtilImpl.upload(profileImage);
 
+        }
+        return uploadedProfileImage;
+    }
 
-        Mate updatedMate = createdMate.toBuilder()
-                .user(findUser)
-                .build();
+    private void validateUserAndNickname(RegistMateRequest request, User findUser) {
+        mateRepository.findByUser(findUser).ifPresent(mate -> {
+            throw new MateException(ExceptionCode.MATE_ALREADY_EXIST);
+        });
 
-        Mate savedMate = mateRepository.save(updatedMate);
-
-        saveMatePreferences(savedMate, request);
+        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
+            throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
+        });
     }
 
     @Override
@@ -127,27 +154,9 @@ public class MateServiceImpl implements MateService {
             return null;
         }
 
-        PreferredDetailsResponse preferredDetails = PreferredDetailsResponse.builder()
-                .week(findMate.getPreferredWeeks().stream()
-                        .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek()))
-                        .collect(Collectors.toSet()))
-                .time(findMate.getPreferredTimes().stream()
-                        .map(time -> EnumMapper.enumToKorean(time.getPreferredTime()))
-                        .collect(Collectors.toSet()))
-                .hashTag(findMate.getMateTags().stream()
-                        .map(MateTag::getTagName)
-                        .collect(Collectors.toSet()))
-                .breed(findMate.getPreferredBreeds().stream()
-                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType()))
-                        .collect(Collectors.toSet()))
-                .region(EnumMapper.enumToKorean(findMate.getPreferredRegion()))
-                .build();
+        PreferredDetailsResponse preferredDetails = getPreferredDetailsResponse(findMate); //Mate 태그 객체 생성
 
-        // birthday를 4자리로 맞추기 (3자리면 앞에 0 추가)
-        String birthday = String.valueOf(findMate.getUser().getBirthday());
-        if (birthday.length() == 3) {
-            birthday = "0" + birthday; // 앞에 0을 붙여 4자리로 만듦
-        }
+        String birthday = digitCustomize(findMate); //생일 두자리수로 맞추기
 
         return FindMateResponse.builder()
                 .uuid(findMate.getUser().getUuid())
@@ -163,6 +172,32 @@ public class MateServiceImpl implements MateService {
                 .build();
     }
 
+    private static PreferredDetailsResponse getPreferredDetailsResponse(Mate findMate) {
+        return PreferredDetailsResponse.builder()
+                .week(findMate.getPreferredWeeks().stream()
+                        .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek()))
+                        .collect(Collectors.toSet()))
+                .time(findMate.getPreferredTimes().stream()
+                        .map(time -> EnumMapper.enumToKorean(time.getPreferredTime()))
+                        .collect(Collectors.toSet()))
+                .hashTag(findMate.getMateTags().stream()
+                        .map(MateTag::getTagName)
+                        .collect(Collectors.toSet()))
+                .breed(findMate.getPreferredBreeds().stream()
+                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType()))
+                        .collect(Collectors.toSet()))
+                .region(EnumMapper.enumToKorean(findMate.getPreferredRegion()))
+                .build();
+    }
+
+    private static String digitCustomize(Mate findMate) {
+        // birthday를 4자리로 맞추기 (3자리면 앞에 0 추가)
+        String birthday = String.valueOf(findMate.getUser().getBirthday());
+        if (birthday.length() == 3) {
+            birthday = "0" + birthday; // 앞에 0을 붙여 4자리로 만듦
+        }
+        return birthday;
+    }
 
     @Override
     public Page<FindMateResponse> findRandom(Pageable pageable) {
@@ -175,46 +210,24 @@ public class MateServiceImpl implements MateService {
     public void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImage) {
         User findUser = getUserById(userDetail.getUuid());
 
-        // 기존 닉네임 중복 체크 로직
-        if (!findUser.getNickname().equals(request.getNickname())) {
-            if (userRepository.findByNickname(request.getNickname()).isPresent()) {
-                throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
-            }
-        }
+        log.info("nicknmae쿼리");
+        validateNickname(request, findUser); //nickname 중복 검사
 
-        // Redis에서 기존 닉네임 정보 삭제
-        List<String> oldNicknames = new ArrayList<>();
-        oldNicknames.add(findUser.getNickname());
-        deleteNicknameFromRedis(oldNicknames);
+        log.info("redis 업데이트 쿼리");
+        deleteOldNicknameFromRedis(findUser); //Redis에 유저 닉네임 최신화
 
-        // 프로필 이미지 삭제 및 업로드 로직
-        if (findUser.getProfileImage() != null) {
-            s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
-        }
+        log.info("profileImage 처리");
+        String uploadedProfileImage = updateProfileImage(profileImage, findUser); //profileImage 최신화
 
-        String uploadedProfileImage = null;
-        if (profileImage != null) {
-            uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
-        }
+        log.info("유저 정보 업데이트 쿼리");
+        findUser = updateUserByRequest(request, findUser, uploadedProfileImage);// 유저 정보 업데이트 (닉네임 변경 포함)
 
-        // 유저 정보 업데이트 (닉네임 변경 포함)
-        findUser = findUser.toBuilder()
-                .userGender(request.getUserGender())
-                .nickname(request.getNickname())
-                .phoneNumber(request.getPhoneNumber())
-                .profileImage(uploadedProfileImage)
-                .build();
+        saveNewNicknameInRedis(findUser); // Redis에 새로운 닉네임 정보 저장
 
-        userRepository.save(findUser);
+        log.info("mate 호출 쿼리");
+        Mate findMate = getMate(findUser);
 
-        // Redis에 새로운 닉네임 정보 저장
-        List<String> newNicknames = new ArrayList<>();
-        newNicknames.add(findUser.getNickname());
-        saveAllSubstring(newNicknames);
-
-        Mate findMate = mateRepository.findByUser(findUser)
-                .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
-
+        log.info("tag들 삭제 쿼리");
         deleteTags(findMate);
 
         findMate = userMapper.toMate(request, findUser, findMate);
@@ -224,13 +237,59 @@ public class MateServiceImpl implements MateService {
                 .accommodatableDogsCount(request.getAccommodatableDogsCount())
                 .build();
 
-        savedMate = mateRepository.save(savedMate);
-
         savedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
         mateRepository.save(savedMate);
 
         saveMatePreferences(savedMate, request);
+    }
+
+    private Mate getMate(User findUser) {
+        Mate findMate = mateRepository.findByUser(findUser)
+                .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
+        return findMate;
+    }
+
+    private void saveNewNicknameInRedis(User findUser) {
+        List<String> newNicknames = new ArrayList<>();
+        newNicknames.add(findUser.getNickname());
+        saveAllSubstring(newNicknames);
+    }
+
+    private User updateUserByRequest(UpdateMateRequest request, User findUser, String uploadedProfileImage) {
+        findUser = findUser.toBuilder()
+                .userGender(request.getUserGender())
+                .nickname(request.getNickname())
+                .phoneNumber(request.getPhoneNumber())
+                .profileImage(uploadedProfileImage)
+                .build();
+
+        return userRepository.save(findUser);
+    }
+
+    private String updateProfileImage(MultipartFile profileImage, User findUser) {
+        // 프로필 이미지 삭제 및 업로드 로직
+        if (findUser.getProfileImage() != null) {
+            s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
+        }
+
+        return uploadProfileImage(profileImage);
+    }
+
+    private void validateNickname(UpdateMateRequest request, User findUser) {
+        // 기존 닉네임 중복 체크 로직
+        if (!findUser.getNickname().equals(request.getNickname())) {
+            if (userRepository.findByNickname(request.getNickname()).isPresent()) {
+                throw new MemberException(ExceptionCode.NICKNAME_ALREADY_EXISTS);
+            }
+        }
+    }
+
+    private void deleteOldNicknameFromRedis(User findUser) {
+        // Redis에서 기존 닉네임 정보 삭제
+        List<String> oldNicknames = new ArrayList<>();
+        oldNicknames.add(findUser.getNickname());
+        deleteNicknameFromRedis(oldNicknames);
     }
 
     private void deleteNicknameFromRedis(List<String> oldNicknames) {
@@ -244,7 +303,6 @@ public class MateServiceImpl implements MateService {
         }
     }
 
-
     private void deleteTags(Mate findMate) {
         mateTagRepository.deleteAllByMate(findMate);
         matePreferredBreedRepository.deleteAllByMate(findMate);
@@ -257,9 +315,7 @@ public class MateServiceImpl implements MateService {
 
         User findUser = getUserById(userDetail.getUuid());
 
-        Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
-                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
-        );
+        Mate findMate = getMate(findUser);
 
         List<MateTag> findMateTag = mateTagRepository.findAllByMate(findMate).orElseThrow(
                 () -> new MateTagException(ExceptionCode.NOT_FOUND_MATE_TAG)
@@ -290,18 +346,16 @@ public class MateServiceImpl implements MateService {
         matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
         mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        mateRepository.save(updatedMate);
     }
 
     private void saveMatePreferences(Mate savedMate, UpdateMateRequest request) {
         Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
-
+        log.info("모든 태그 저장 쿼리");
         matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
         matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
         matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
         mateTagRepository.saveAll(updatedMate.getMateTags());
 
-        mateRepository.save(updatedMate);
     }
 
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
@@ -313,8 +367,8 @@ public class MateServiceImpl implements MateService {
 
     public List<String> autoCompleteKeyword(String keyword) {
         return autocorrect(keyword);
-
     }
+
     public List<String> autocorrect(String keyword) { //검색어 자동 완성 기능 관련 로직
         Long index = redisSortedSetService.findFromSortedSetFromMate(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
         if (index == null) {
@@ -325,6 +379,8 @@ public class MateServiceImpl implements MateService {
         Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInMateAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
 
         //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
+        //검색어 자동 완성 기능 최대 개수
+        int maxSize = 100;
 
         return allValuesAfterIndexFromSortedSet.stream()
                 .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))

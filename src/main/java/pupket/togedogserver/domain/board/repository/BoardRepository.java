@@ -17,7 +17,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             "JOIN b.user u " +
             "JOIN u.owner o " +
             "JOIN matching m ON m.owner.ownerUuid = o.ownerUuid " +
-            "WHERE m.matched = 'MATCHED'")
+            "WHERE m.matched = 'MATCHED' AND u = :findUser")
     Optional<List<Board>> findByUser(User findUser);
 
     Optional<List<Board>> findAllByUserAndBoardId(User findUser, Long id);

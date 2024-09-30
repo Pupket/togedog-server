@@ -30,6 +30,7 @@ public interface UserMapper {
     @Mapping(target = "mateTags", ignore = true)
     @Mapping(target = "deleted" , ignore = true)
     @Mapping(target = "match", ignore = true)
+    @Mapping(target = "preferredRegion", ignore = true)
     Mate toMate(RegistMateRequest request);
 
     // RegistMateRequest -> Mate 매핑
@@ -68,13 +69,12 @@ public interface UserMapper {
                 .build();
     }
 
-    @Mapping(target = "userGender", ignore = true) // userGender는 매핑 이후에 처리
+    @Mapping(target = "userGender", ignore = true)
     @Mapping(target = "platform",ignore = true)
     FindUserResponse of(User user);
 
     @AfterMapping
     default void afterMapping(@MappingTarget FindUserResponse response, User user) {
-        // userGender를 한글로 변환하여 설정
         if (user.getUserGender() != null) {
             response.setUserGender(EnumMapper.enumToKorean(user.getUserGender()));
         }

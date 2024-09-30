@@ -2,7 +2,6 @@ package pupket.togedogserver.domain.dog.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.entity.User;
 

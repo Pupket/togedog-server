@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.service.BoardServiceImpl;
+import pupket.togedogserver.domain.match.service.MatchServiceImpl;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -43,6 +44,7 @@ public class MateController {
 
     private final MateServiceImpl mateService;
     private final BoardServiceImpl boardServiceImpl;
+    private final MatchServiceImpl matchServiceImpl;
 
     @Operation(summary = "산책 메이트 프로필 등록", description = "산책 메이트 프로필 정보를 등록합니다")
     @ApiResponses(value = {
@@ -222,7 +224,6 @@ public class MateController {
             @Parameter(description = "첫 요청 여부")
             @RequestParam(name = "first", defaultValue = "false") boolean first
     ) {
-        // 첫 요청인 경우 사이즈를 10으로 설정
         if (first) {
             size = 10;
         }
@@ -232,5 +233,23 @@ public class MateController {
 
         return ResponseEntity.ok().body(boardList);
     }
+
+    @Operation(summary = "산책 완료", description = "산책 완료")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "산책 완료 성공",
+                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
+            @ApiResponse(responseCode = "400", description = "산책 완료 실패")
+    })
+    @GetMapping("/complete")
+    public ResponseEntity<Page<FindMateResponse>> walkingComplete(
+            @Parameter(name = "boardId", description = "게시판 Id")
+            Long boardId,
+            @AuthenticationPrincipal CustomUserDetail userDetail
+    ) {
+        matchServiceImpl.completeWalking(boardId,userDetail);
+
+        return ResponseEntity.ok().build();
+    }
+
 
 }

@@ -29,15 +29,18 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     private static final List<String> EXCLUDE_URLS = List.of(
-            "/health-check","/swagger-ui", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon"
+            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon"
     );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        log.info("request.URI = {}", request.getRequestURI());
 
         String requestURI = request.getRequestURI();
+        if (!requestURI.startsWith("/health")) {
+            log.info("request.URI = {}", requestURI);
+        }
+
 
         // Bypass JWT authentication for Swagger and /login paths
         if (isExcludedPath(requestURI)) {
@@ -95,7 +98,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         response.setCharacterEncoding("UTF-8");
 
         String jsonResponse = String.format(
-                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"}",
+                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"} ",
                 e.getExceptionCode().getHttpStatus().name(),
                 e.getExceptionCode().getCode(),
                 e.getExceptionCode().getMessage()

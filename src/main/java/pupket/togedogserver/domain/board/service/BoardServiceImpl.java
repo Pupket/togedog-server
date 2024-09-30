@@ -8,8 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.board.dto.request.BoardCreateRequest;
 import pupket.togedogserver.domain.board.dto.request.BoardUpdateRequest;
-import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
+import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
@@ -58,42 +59,30 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public void create(CustomUserDetail userDetail, BoardCreateRequest boardCreateRequest) {
-        User findUser = getUserById(userDetail.getUuid());
+        User findUser = getUserById(userDetail.getUuid()); //유저 엔티티 반환
 
-        List<Dog> dogList = new ArrayList<>();
+        List<Dog> dogList = validateEachDog(boardCreateRequest.getDogIds(), findUser); //각 강아지 유효성 검사
 
-        boardCreateRequest.getDogIds().forEach(
-                dogId -> {
-                    Dog findDog = dogRepository.findById(dogId).orElseThrow(() ->
-                            new DogException(ExceptionCode.NOT_FOUND_DOG));
+        Board mapperBoard = boardMapper.toBoard(boardCreateRequest); // Board 엔티티 생성
 
-                    if (!Objects.equals(findDog.getUser().getUuid(), findUser.getUuid())) {
-                        throw new DogException(ExceptionCode.NOT_YOUR_DOG);
-                    }
-                    dogList.add(findDog);
-                }
-        );
-
-
-        Board mapperBoard = boardMapper.toBoard(boardCreateRequest);
         boardRepository.save(mapperBoard);
-        List<BoardDog> boardDogList = new ArrayList<>();
 
-        dogList.forEach(
-                dog-> {
-                    BoardDog boardDog = BoardDog.builder()
-                            .board(mapperBoard)
-                            .dog(dog)
-                            .build();
-                    boardDogList.add(boardDog);
-                    boardDogRepository.save(boardDog);
-                }
-        );
-        Board savedDogBoard = mapperBoard.toBuilder().boardDog(boardDogList).build();
+        List<BoardDog> boardDogList = mapDogsToBoard(dogList, mapperBoard); //BoardDog 엔티티 생성
 
-        Board newMapperBoard = saveTags(boardCreateRequest, savedDogBoard, findUser);
+        Board savedBoard = saveTags(boardCreateRequest, mapperBoard, findUser); // 게시판에 태그 저장
 
-        boardRepository.save(newMapperBoard);
+        boardRepository.save(savedBoard.toBuilder().boardDog(boardDogList).build()); // 각 엔티티 연결 및 저장
+    }
+
+    private List<Dog> validateEachDog(List<Long> dogIds, User findUser) {
+        return dogIds.stream().map(dogId -> {
+            Dog findDog = dogRepository.findById(dogId).orElseThrow(() ->
+                    new DogException(ExceptionCode.NOT_FOUND_DOG));
+            if (!Objects.equals(findDog.getUser().getUuid(), findUser.getUuid())) {
+                throw new DogException(ExceptionCode.NOT_YOUR_DOG);
+            }
+            return findDog;
+        }).collect(Collectors.toList());
     }
 
     public BoardFindResponse find(CustomUserDetail userDetail, Long boardId) {
@@ -105,17 +94,20 @@ public class BoardServiceImpl implements BoardService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
-        // 해당 보드에 속한 도그 목록 찾기
-        List<Dog> findDogs = new ArrayList<>();
-                findBoard.getBoardDog().forEach(
-                        boardDog -> {
-                            findDogs.add(boardDog.getDog());
-                        }
-                );
+        // 보드에 속한 도그가 존재하는지 확인하고, 없으면 예외 처리
+        boolean hasDogs = findBoard.getBoardDog().stream()
+                .map(BoardDog::getDog)
+                .findAny()
+                .isPresent();
 
-        if (findDogs.isEmpty()) {
+        if (!hasDogs) {
             throw new DogException(ExceptionCode.NOT_FOUND_DOG);
         }
+
+        // 해당 보드에 속한 도그 목록 찾기
+        List<Dog> findDogs = findBoard.getBoardDog().stream()
+                .map(BoardDog::getDog)
+                .collect(Collectors.toList());
 
         // Board의 기본 정보 처리
         String fee = findBoard.getFee().toString();
@@ -127,16 +119,7 @@ public class BoardServiceImpl implements BoardService {
                 .collect(Collectors.toList());
 
         // 여러 마리의 개 정보를 DogResponse로 변환
-        List<BoardDogResponse> boardDogRespons = findDogs.stream()
-                .map(dog -> BoardDogResponse.builder()
-                        .name(dog.getName())
-                        .age(dog.getAge())
-                        .breed(dog.getBreed())
-                        .dogType(EnumMapper.enumToKorean(dog.getDogType()))
-                        .dogGender(dog.getDogGender() ? "수컷" : "암컷")
-                        .dogProfileImage(dog.getDogImage())
-                        .build())
-                .collect(Collectors.toList());
+        List<BoardDogResponse> boardDogRespons = getBoardDogResponses(findDogs);
 
         // BoardFindResponse 객체 생성
         return BoardFindResponse.builder()
@@ -154,47 +137,55 @@ public class BoardServiceImpl implements BoardService {
                 .build();
     }
 
+    private static List<BoardDogResponse> getBoardDogResponses(List<Dog> findDogs) {
+        return findDogs.stream()
+                .map(dog -> BoardDogResponse.builder()
+                        .name(dog.getName())
+                        .age(dog.getAge())
+                        .breed(dog.getBreed())
+                        .dogType(EnumMapper.enumToKorean(dog.getDogType()))
+                        .dogGender(dog.getDogGender() ? "수컷" : "암컷")
+                        .dogProfileImage(dog.getDogImage())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void update(CustomUserDetail userDetail, BoardUpdateRequest boardUpdateRequest) {
+        //유저 찾기
         User findUser = getUserById(userDetail.getUuid());
+
+        //게시판 찾기
         Board findBoard = boardRepository.findByUserAndBoardId(findUser, boardUpdateRequest.getId()).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
-        List<Dog> dogList = new ArrayList<>();
+        //각 강아지 유효성 검사
+        List<Dog> dogList = validateEachDog(boardUpdateRequest.getDogIds(), findUser);
 
-        boardUpdateRequest.getDogIds().forEach(
-                dogId -> {
-                    Dog findDog = dogRepository.findById(dogId).orElseThrow(() ->
-                            new DogException(ExceptionCode.NOT_FOUND_DOG));
-
-                    if (!Objects.equals(findDog.getUser().getUuid(), findUser.getUuid())) {
-                        throw new DogException(ExceptionCode.NOT_YOUR_DOG);
-                    }
-                    dogList.add(findDog);
-                }
-        );
-
+        //이전 저장 태그 모두 삭제
         boardDogRepository.deleteAllByBoard(findBoard);
 
-        List<BoardDog> boardDogList = new ArrayList<>();
+        //게시판에 각 강아지엔티티 연결
+        List<BoardDog> boardDogList = mapDogsToBoard(dogList, findBoard);
 
-        dogList.forEach(
-                dog-> {
-                    BoardDog boardDog = BoardDog.builder()
-                            .board(findBoard)
-                            .dog(dog)
-                            .build();
-                    boardDogList.add(boardDog);
-                    boardDogRepository.save(boardDog);
-                }
-        );
-
+        //산책지역태그 찾기
         List<WalkingPlaceTag> existingTags = walkingPlaceTagRepository.findAllByBoard(findBoard).orElseThrow(
                 () -> new WalkingPlaceTagException(ExceptionCode.NOT_FOUND_WALKING_PLACE_TAG)
         );
+
+        //기존의 태그 모두 삭제
         walkingPlaceTagRepository.deleteAll(existingTags);
 
+        Board newBoard = updateBoard(boardUpdateRequest, findBoard, boardDogList);
+
+        saveTags(boardUpdateRequest, newBoard);
+
+        boardRepository.save(newBoard);
+
+    }
+
+    private static Board updateBoard(BoardUpdateRequest boardUpdateRequest, Board findBoard, List<BoardDog> boardDogList) {
         Board newBoard = findBoard.toBuilder()
                 .title(boardUpdateRequest.getTitle())
                 .mapX(boardUpdateRequest.getMapX())
@@ -208,11 +199,15 @@ public class BoardServiceImpl implements BoardService {
                 .fee(boardUpdateRequest.getFee())
                 .phoneNumber(boardUpdateRequest.getPhoneNumber())
                 .build();
+        return newBoard;
+    }
 
-        Board savedBoard = boardRepository.save(newBoard);
-
-        saveTags(boardUpdateRequest, savedBoard);
-
+    private List<BoardDog> mapDogsToBoard(List<Dog> dogList, Board board) {
+        List<BoardDog> boardDogList = dogList.stream()
+                .map(dog -> BoardDog.builder().board(board).dog(dog).build())
+                .collect(Collectors.toList());
+        boardDogRepository.saveAll(boardDogList);
+        return boardDogList;
     }
 
     private void saveTags(BoardUpdateRequest request, Board savedBoard) {

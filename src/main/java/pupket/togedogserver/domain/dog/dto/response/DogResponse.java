@@ -20,6 +20,7 @@ public class DogResponse {
     private String dogImage;
     private Set<String> dogPersonalityTags;
     private boolean vaccine;
+    private String region;
     private int age;
 
 

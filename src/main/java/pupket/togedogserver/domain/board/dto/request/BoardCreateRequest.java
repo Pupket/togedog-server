@@ -37,16 +37,16 @@ public class BoardCreateRequest {
     @Schema(description = "y좌표", example = "24.1298371", required = true)
     private Double mapY;
 
-    @Schema(description = "강아지 고유번호", example = "1", required = true)
+    @Schema(description = "강아지 고유번호", example = "[1]", required = true)
     private List<Long> dogIds;
 
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = true)
     private LocalDate pickUpDay;
 
-    @Schema(description = "시작 시간", example = "12:11:00", required = true, format="time")
+    @Schema(description = "시작 시간", example = "12:11:00", required = true, type = "string", format = "time")
     private LocalTime startTime;
 
-    @Schema(description = "종료 시간", example = "12:11:00", required = true, format="time")
+    @Schema(description = "종료 시간", example = "12:11:00", required = true, type = "string", format = "time")
     private LocalTime endTime;
 
     @Schema(description = "요금 종류(시급,건별)", example = "건별", required = true)

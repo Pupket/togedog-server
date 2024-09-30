@@ -70,14 +70,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                         throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
                     }
                     // SocialAccessToken 엔티티 업데이트 또는 생성 로직 수정
-                    socialAccessTokenRepository.findByUser(existingUser).ifPresentOrElse(
-                            existingToken -> {
-                                existingToken.updateSocialAccessToken(socialAccessToken);
-                                socialAccessTokenRepository.save(existingToken);
-                            },
-                            () -> socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, existingUser)
-                            )
-                    );
+                    validateAndupdateSocialAccessToken(existingUser, socialAccessToken);
                     return existingUser;
 
                 }).orElseGet(() -> {
@@ -97,6 +90,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 user,
                 Collections.singleton(new SimpleGrantedAuthority(RoleType.of(registrationId).name())),
                 memberAttribute);
+    }
+
+    private void validateAndupdateSocialAccessToken(User existingUser, String socialAccessToken) {
+        socialAccessTokenRepository.findByUser(existingUser).ifPresentOrElse(
+                existingToken -> {
+                    existingToken.updateSocialAccessToken(socialAccessToken);
+                    socialAccessTokenRepository.save(existingToken);
+                },
+                () -> socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, existingUser)
+                )
+        );
     }
 
 }

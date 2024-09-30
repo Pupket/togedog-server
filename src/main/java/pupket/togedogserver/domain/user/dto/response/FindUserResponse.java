@@ -11,8 +11,8 @@ public class FindUserResponse {
     private String birthday;
     private String birthyear;
     private String profileImage;
-    private String genderVisibility;
     private String address1;
     private String address2;
     private String platform;
+    private String phoneNumber;
 }
