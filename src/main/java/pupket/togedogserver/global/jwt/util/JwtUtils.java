@@ -13,8 +13,6 @@ import pupket.togedogserver.global.security.util.CookieUtils;
 public class JwtUtils {
 
     private final JwtService jwtService;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final CookieUtils cookieUtils;
 
     public void handleExpiredRefreshToken(String refreshToken) {
 

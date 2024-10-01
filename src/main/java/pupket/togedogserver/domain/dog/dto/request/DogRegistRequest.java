@@ -2,7 +2,6 @@ package pupket.togedogserver.domain.dog.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import pupket.togedogserver.domain.dog.constant.Breed;
 import pupket.togedogserver.domain.user.constant.Region;
 
 import java.util.Set;

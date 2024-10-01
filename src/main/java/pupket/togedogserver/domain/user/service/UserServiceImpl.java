@@ -4,15 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
-import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
+import pupket.togedogserver.domain.user.dto.response.*;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
 import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.mateRepo.CustomMateRepositoryImpl;
+import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
 import pupket.togedogserver.global.auth.service.OAuth2RevokeService;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -36,19 +39,29 @@ public class UserServiceImpl {
     private final OAuth2RevokeService oAuth2RevokeService;
     private final FcmService fcmService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomMateRepositoryImpl customMateRepositoryImpl;
+    private final CustomDogRepositoryImpl customDogRepositoryImpl;
 
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
 
-        String password = PasswordUtil.generateRandomPassword();
-        password = passwordEncoder.encode(password);
-        User createdUser = user.toBuilder()
-                .userGender(request.getUserGender())
-                .nickname(request.getNickname())
-                .password(password)
-                .build();
+        User createdUser = createUserByRequest(request, user);
 
         userRepository.save(createdUser);
+    }
+
+    private User createUserByRequest(RegistMateRequest request, User user) {
+        return user.toBuilder()
+                .userGender(request.getUserGender())
+                .nickname(request.getNickname())
+                .password(createPassword())
+                .build();
+    }
+
+    private String createPassword() {
+        String password = PasswordUtil.generateRandomPassword();
+        password = passwordEncoder.encode(password);
+        return password;
     }
 
     public void logout(String refreshToken, CustomUserDetail userDetail) {
@@ -73,7 +86,6 @@ public class UserServiceImpl {
 
     public FindUserResponse getMemberDetails(Long uuid) {
         User user = getUserById(uuid);
-
 
         return userMapper.of(user);
     }
@@ -101,10 +113,21 @@ public class UserServiceImpl {
     }
 
     public String getRefreshToken(Long uuid) {
-        User findUser = getUserById(uuid);
         RefreshToken refreshToken = refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
         return refreshToken.getRefreshToken();
+    }
+
+    public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
+        User findUser = getUserById(userDetail.getUuid());
+
+        MateActiveResponse mateActions = customMateRepositoryImpl.findMateActions(findUser.getMate().getMateUuid(), findUser);
+        DogActiveResponse dogActions = customDogRepositoryImpl.findDogActions(findUser.getUuid());
+
+        return FindMateAndDogResponse.builder()
+                .mateActiveResponse(mateActions)
+                .dogActiveResponse(dogActions)
+                .build();
     }
 }

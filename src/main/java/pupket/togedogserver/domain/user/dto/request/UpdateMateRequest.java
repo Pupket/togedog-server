@@ -6,9 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.constant.Visibility;
 
 @Data
 @Schema(description = "산책 메이트 프로필 수정 요청")

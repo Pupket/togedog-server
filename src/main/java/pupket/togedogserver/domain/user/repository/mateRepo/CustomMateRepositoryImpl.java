@@ -3,32 +3,40 @@ package pupket.togedogserver.domain.user.repository.mateRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.internal.constraintvalidators.hv.time.DurationMaxValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
+import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
+import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
+import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.entity.mate.MateTag;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Repository
+@Slf4j
 public class CustomMateRepositoryImpl implements CustomMateRepository {
 
     private final EntityManager em;
@@ -36,34 +44,14 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
     @Override
     public Page<FindMateResponse> MateList(Pageable pageable) {
-        String query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
-        TypedQuery<Mate> result = em.createQuery(query, Mate.class);
+        List<Mate> mateList = getMates(pageable); //query로 mate결과값 가져오기
 
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
-        List<Mate> mateList = result.getResultList();
-
-        // JPQL로 전체 개수 쿼리 작성
-        String countJpql = "SELECT COUNT(b) FROM Mate b WHERE b.deleted = false";
-        Long count = em.createQuery(countJpql, Long.class).getSingleResult();
+        Long count = getCount(); //Count쿼리로 결과수 가져오기
 
         // 엔티티를 DTO로 변환
         List<FindMateResponse> MateResponse = mateList.stream()
                 .map(mate -> {
-                    PreferredDetailsResponse preferred = PreferredDetailsResponse.builder()
-                            .week(mate.getPreferredWeeks().stream()
-                                    .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
-                                    .collect(Collectors.toSet()))
-                            .time(mate.getPreferredTimes().stream()
-                                    .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
-                                    .collect(Collectors.toSet()))
-                            .hashTag(mate.getMateTags().stream()
-                                    .map(MateTag::getTagName)
-                                    .collect(Collectors.toSet()))
-                            .breed(mate.getPreferredBreeds().stream()
-                                    .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType())) // preferredBreed 변환
-                                    .collect(Collectors.toSet()))
-                            .build();
+                    PreferredDetailsResponse preferred = getPreferredDetailsResponse(mate);
 
                     Mate findMate = mateRepository.findById(mate.getMateUuid()).orElseThrow(
                             () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
@@ -79,7 +67,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
                     return FindMateResponse.builder()
                             .uuid(mate.getUser().getUuid())
-                            .mateId(mate.getUser().getMate().get(0).getMateUuid())
+                            .mateId(mate.getUser().getMate().getMateUuid())
                             .nickname(mate.getUser().getNickname())
                             .profileImage(mate.getUser().getProfileImage())
                             .gender(EnumMapper.enumToKorean(mate.getUser().getUserGender())) // gender 변환
@@ -92,6 +80,40 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                 }).collect(Collectors.toList());
 
         return new PageImpl<>(MateResponse, pageable, count);
+    }
+
+    private static PreferredDetailsResponse getPreferredDetailsResponse(Mate mate) {
+        return PreferredDetailsResponse.builder()
+                .week(mate.getPreferredWeeks().stream()
+                        .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
+                        .collect(Collectors.toSet()))
+                .time(mate.getPreferredTimes().stream()
+                        .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
+                        .collect(Collectors.toSet()))
+                .hashTag(mate.getMateTags().stream()
+                        .map(MateTag::getTagName)
+                        .collect(Collectors.toSet()))
+                .breed(mate.getPreferredBreeds().stream()
+                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType())) // preferredBreed 변환
+                        .collect(Collectors.toSet()))
+                .build();
+    }
+
+    private Long getCount() {
+        // JPQL로 전체 개수 쿼리 작성
+        String countJpql = "SELECT COUNT(b) FROM Mate b WHERE b.deleted = false";
+        Long count = em.createQuery(countJpql, Long.class).getSingleResult();
+        return count;
+    }
+
+    private List<Mate> getMates(Pageable pageable) {
+        String query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
+        TypedQuery<Mate> result = em.createQuery(query, Mate.class);
+
+        result.setFirstResult((int) pageable.getOffset());
+        result.setMaxResults(pageable.getPageSize());
+        List<Mate> mateList = result.getResultList();
+        return mateList;
     }
 
     public Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable) {
@@ -167,5 +189,35 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         return new PageImpl<>(boardResponses, pageable, count);
     }
 
+    public MateActiveResponse findMateActions(Long mateUuid, User findUser) {
+        String query = "select b from " +
+                "Board b join matching m " +
+                "on m.completeStatus = 'COMPLETE' " +
+                "and b.boardId = m.board.boardId " +
+                "where m.mate.mateUuid= :mateUuid";
+        TypedQuery<Board> result = em.createQuery(query, Board.class);
+
+        result.setParameter("mateUuid", mateUuid);
+        List<Board> results = result.getResultList();
+
+        MateActiveResponse mateActiveResponse = MateActiveResponse.builder()
+                .mateName(findUser.getName())
+                .walkCount(findUser.getMate().getMatchCount())
+                .build();
+        AtomicLong durationSum = new AtomicLong(0L);
+
+        results.forEach(
+                i -> {
+                    LocalTime startTime = i.getStartTime();
+                    LocalTime endTime = i.getEndTime();
+
+                    long duration = Duration.between(startTime, endTime).toHours();
+                    durationSum.addAndGet(duration);
+                }
+        );
+        mateActiveResponse.setWalkTime(durationSum.get());
+
+        return mateActiveResponse;
+    }
 }
 

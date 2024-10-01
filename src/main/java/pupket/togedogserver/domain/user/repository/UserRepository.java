@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+    @Query("select u from users u where u.accountStatus='ACTIVE' and u.email=:email")
     Optional<User> findByEmail(String email);
 
     @Query("select u from users u join u.mate m where u.nickname = :nickname and m.deleted = false")

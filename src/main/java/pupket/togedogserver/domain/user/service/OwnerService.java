@@ -46,8 +46,21 @@ public class OwnerService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
+        List<FindMatchedScheduleResponse> matchedBoardResponses = getFindMatchedScheduleResponses(findBoards);
 
-        List<FindMatchedScheduleResponse> matchedBoardResponses = findBoards.stream()
+        // 매핑된 결과를 페이징하여 반환합니다.
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
+
+        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
+    }
+
+    private static List<FindMatchedScheduleResponse> getFindMatchedScheduleResponses(List<Board> findBoards) {
+        // 요일
+        // 시간
+        // 가격
+        // Mate 사진 URL
+        return findBoards.stream()
                 .filter(board -> board.getMatched().equals(MatchStatus.MATCHED))
                 .map(board -> {
                     Mate mate = board.getMatch().getMate();
@@ -65,11 +78,5 @@ public class OwnerService {
                             .build();
                 })
                 .toList();
-
-        // 매핑된 결과를 페이징하여 반환합니다.
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
-
-        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
     }
 }
