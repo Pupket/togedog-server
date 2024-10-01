@@ -93,12 +93,19 @@ public class MateServiceImpl implements MateService {
         Mate savedMate = TwoWayMappingUserAndMate(createdMate, findUser); //양방향 맵핑(유저, 메이트)
 
         saveMatePreferences(savedMate, request); //각 태그 영속성 저장
+
+        mateRepository.save(savedMate);
     }
 
     private Mate TwoWayMappingUserAndMate(Mate createdMate, User findUser) {
         Mate updatedMate = connectWithUser(createdMate, findUser);
 
-        connectWithMate(findUser, updatedMate);
+        mateRepository.save(updatedMate);
+
+        User connectedUser = connectWithMate(findUser, updatedMate);
+
+        userRepository.save(connectedUser);
+
         return updatedMate;
     }
 
@@ -109,8 +116,8 @@ public class MateServiceImpl implements MateService {
                 .build();
     }
 
-    private void connectWithMate(User findUser, Mate updatedMate) {
-        findUser = findUser.toBuilder()
+    private User connectWithMate(User findUser, Mate updatedMate) {
+        return findUser.toBuilder()
                 .mate(updatedMate)
                 .build();
     }
@@ -245,9 +252,8 @@ public class MateServiceImpl implements MateService {
     }
 
     private Mate getMate(User findUser) {
-        Mate findMate = mateRepository.findByUser(findUser)
+        return mateRepository.findByUser(findUser)
                 .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
-        return findMate;
     }
 
     private void saveNewNicknameInRedis(User findUser) {

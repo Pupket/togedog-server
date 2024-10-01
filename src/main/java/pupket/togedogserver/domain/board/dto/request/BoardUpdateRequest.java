@@ -35,7 +35,7 @@ public class BoardUpdateRequest {
     @Schema(description = "y좌표", example = "24.1298371", required = false)
     private Double mapY;
 
-    @Schema(description = "강아지 고유번호", example = "1", required = false)
+    @Schema(description = "강아지 고유번호", example = "[1]", required = false)
     private List<Long> dogIds;
 
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = false)

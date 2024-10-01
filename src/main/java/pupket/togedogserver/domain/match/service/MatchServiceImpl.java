@@ -182,7 +182,7 @@ public class MatchServiceImpl implements MatchService {
         Mate updatedMate = findMate.toBuilder()
                 .matchCount(findMate.getMatchCount() + 1)
                 .build();
-        Owner owner = findUser.getOwner();
+        Owner owner = findBoard.getUser().getOwner();
         Owner updatedOwner = owner.toBuilder()
                 .matchCount(owner.getMatchCount() + 1)
                 .build();
