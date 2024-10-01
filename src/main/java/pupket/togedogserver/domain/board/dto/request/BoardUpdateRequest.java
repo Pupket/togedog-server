@@ -1,5 +1,6 @@
 package pupket.togedogserver.domain.board.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -40,10 +41,10 @@ public class BoardUpdateRequest {
     @Schema(description = "픽업 날짜", example = "2024-12-20", required = false)
     private LocalDate pickUpDay;
 
-    @Schema(description = "시작 시간", example = "12:20:00", required = false)
+    @Schema(description = "시작 시간", example = "12:20:00", required = false, type = "string", format = "time")
     private LocalTime startTime;
 
-    @Schema(description = "종료 시간", example = "20:00:00", required = false)
+    @Schema(description = "종료 시간", example = "20:00:00", required = false, type = "string", format = "time")
     private LocalTime endTime;
 
     @Schema(description = "요금 종류(시급,건별)", example = "시급", required = false)

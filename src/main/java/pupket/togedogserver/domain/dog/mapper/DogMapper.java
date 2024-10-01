@@ -62,6 +62,7 @@ public interface DogMapper {
 
         response.setDogType(EnumMapper.enumToKorean(dog.getDogType()));
         response.setBreed(EnumMapper.enumToKorean(dog.getBreed()));
+        response.setRegion(EnumMapper.enumToKorean(dog.getRegion()));
 
         if (dog.getDogPersonalityTags() != null) {
             response.setDogPersonalityTags(dog.getDogPersonalityTags().stream()
