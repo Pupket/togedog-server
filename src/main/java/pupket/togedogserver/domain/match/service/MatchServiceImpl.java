@@ -182,7 +182,9 @@ public class MatchServiceImpl implements MatchService {
         Mate updatedMate = findMate.toBuilder()
                 .matchCount(findMate.getMatchCount() + 1)
                 .build();
+
         Owner owner = findBoard.getUser().getOwner();
+
         Owner updatedOwner = owner.toBuilder()
                 .matchCount(owner.getMatchCount() + 1)
                 .build();
@@ -193,6 +195,10 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private static Match updateMatchToComplete(Match findMatch) {
+        if (findMatch.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
+            throw new MatchingException(ExceptionCode.ALREADY_COMPLETED);
+        }
+
         return findMatch.toBuilder()
                 .completeStatus(CompleteStatus.COMPLETE)
                 .build();

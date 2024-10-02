@@ -7,6 +7,6 @@ import lombok.Data;
 @Builder
 public class DogActiveResponse {
     private String name;
-    private Long walkTime;
+    private String walkTime;
     private Long walkCount;
 }

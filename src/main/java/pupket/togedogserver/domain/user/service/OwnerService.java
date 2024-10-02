@@ -74,7 +74,8 @@ public class OwnerService {
                             .mateNickname(mate.getUser().getNickname())
                             .matePhotoUrl(mate.getUser().getProfileImage()) // Mate 사진 URL
                             .mateId(mate.getMateUuid())
-                            .matchStatus(board.getMatched())
+                            .matchStatus(board.getMatch().getMatched().getStatus())
+                            .completeStatus(board.getMatch().getCompleteStatus().getStatus())
                             .build();
                 })
                 .toList();

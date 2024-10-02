@@ -15,9 +15,11 @@ import pupket.togedogserver.domain.user.dto.response.DogActiveResponse;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,7 +33,7 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
     @Override
     public Page<DogResponse> dogList(Pageable pageable) {
         //쿼리로 반려견 엔티티리스트 검색
-        List<Dog> results = getDogList(pageable);
+        List<Dog> results = getDogList( pageable);
 
         //쿼리로 쿼리 결과 갯수 반환
         Long count = getCount();
@@ -73,7 +75,7 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
         return em.createQuery(countJpql, Long.class).getSingleResult();
     }
 
-    private List<Dog> getDogList(Pageable pageable) {
+    private List<Dog> getDogList( Pageable pageable) {
         String query = "SELECT d FROM Dog d" +
                 " WHERE d.deleted = false " +
                 "order by rand()";
@@ -89,56 +91,100 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
     public DogActiveResponse findDogActions(Long Uuid) {
 
         List<Board> resultList = getBoardList(Uuid);
+        if(resultList.isEmpty()) {
+            return null;
+        }
 
         //산책 시간 결과 반환
-        AtomicLong durationSum = getDurationSum(resultList);
+        String durationSum = getDurationSum(resultList);
+
+        int randomBoardNumber = new Random().nextInt(resultList.size());
+        int randomDogNumber = new Random().nextInt(resultList.get(randomBoardNumber).getBoardDog().size());
+
         //연관 반려견중 대표로 한 마리 출력
-        String dogName = resultList.get(0).getBoardDog().get(0).getDog().getName();
+        String dogName = resultList.get(randomBoardNumber).getBoardDog().get(randomDogNumber).getDog().getName();
 
         Long count = getCount(Uuid);
 
         return DogActiveResponse.builder()
                 .name(dogName)
-                .walkTime(durationSum.get())
+                .walkTime(durationSum)
                 .walkCount(count)
                 .build();
     }
 
-    private static AtomicLong getDurationSum(List<Board> resultList) {
-        AtomicLong durationSum = new AtomicLong(0L);
+    private static String getDurationSum(List<Board> resultList) {
+        AtomicLong totalHours = new AtomicLong(0L);
+        AtomicLong totalMinutes = new AtomicLong(0L);
+
+        log.info("resultList,size={}",resultList.size());
+
         resultList.forEach(
                 i -> {
                     LocalTime startTime = i.getStartTime();
                     LocalTime endTime = i.getEndTime();
 
-                    long duration = Duration.between(startTime, endTime).toHours();
-                    durationSum.addAndGet(duration);
+                    log.info("startTime={}", startTime);
+                    log.info("endTime={}", endTime);
+
+                    // 시작 시간과 종료 시간 사이의 차이를 분 단위로 계산
+                    Duration duration = Duration.between(startTime, endTime);
+                    long durationMinutes = duration.toHours();
+                    log.info("durationSecond = {}", durationMinutes);
+                    long minutes = duration.toMinutes()%60;
+
+                    // 시간과 분을 각각 누적
+                    totalHours.addAndGet(durationMinutes);
+                    totalMinutes.addAndGet(minutes);
                 }
         );
-        return durationSum;
+
+// 30분 이상이면 분을 30분으로 설정하고, 그렇지 않으면 빈 문자열
+        String resultHour = totalHours.get() + "시간";
+        String resultMinute = totalMinutes.get() >= 30 ? "30분" : "";
+
+        return resultHour + " " + resultMinute;
+
     }
 
     private Long getCount(Long Uuid) {
         String countQuery = "select count(b) from Board b " +
                 " join BoardDog bd" +
-                "        on b.boardId = bd.boardDogId" +
+                "        on b.boardId = bd.board.boardId" +
                 "    join Dog d" +
                 "        on bd.dog.dogId = d.dogId " +
-                "Where b.user.uuid = :Uuid";
+                " Where b.user.uuid = :Uuid" +
+                "   and b.createdAt between :startOfMonth and :endOfMonth";
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
+        LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).with(LocalTime.MAX);
+
         return em.createQuery(countQuery, Long.class)
                 .setParameter("Uuid", Uuid)
+                .setParameter("startOfMonth", startOfMonth)
+                .setParameter("endOfMonth", endOfMonth)
                 .getSingleResult();
     }
 
     private List<Board> getBoardList(Long Uuid) {
-        String query = "select distinct(b) from Board b " +
+        String query = "select b from Board b " +
                 " join BoardDog bd" +
-                "        on b.boardId = bd.boardDogId" +
+                "        on b.boardId = bd.board.boardId" +
                 "    join Dog d" +
                 "        on bd.dog.dogId = d.dogId " +
-                "Where b.user.uuid = :Uuid";
+                " Where b.user.uuid = :Uuid" +
+                "   and b.createdAt between :startOfMonth and :endOfMonth";
 
         TypedQuery<Board> result = em.createQuery(query, Board.class);
+        // 이번 달의 시작과 끝 날짜 계산
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
+        LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).with(LocalTime.MAX);
+
+        result.setParameter("Uuid", Uuid);
+        result.setParameter("startOfMonth", startOfMonth);
+        result.setParameter("endOfMonth", endOfMonth);
         result.setParameter("Uuid", Uuid);
 
         return result.getResultList();

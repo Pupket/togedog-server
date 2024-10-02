@@ -66,7 +66,8 @@ public enum ExceptionCode {
     ALREADY_MATCHED(CONFLICT, "Already Matched",403),
     NOT_YOUR_DOG(CONFLICT, "Not your Dog, Check your Dog Id" , 403)
     , ACCEPT_SHOULD_TRY_RECIEVER(CONFLICT,"Board Writer Can't Accept" , 403)
-    , NOT_FOUND_BOARDDOG(CONFLICT,"Can't find BoardDog",403 );
+    , NOT_FOUND_BOARDDOG(CONFLICT,"Can't find BoardDog",403 )
+    , ALREADY_COMPLETED(CONFLICT,"Matching Already Completed" , 403 );
 
 
     private final HttpStatus httpStatus;

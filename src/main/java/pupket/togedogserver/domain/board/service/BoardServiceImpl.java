@@ -268,6 +268,7 @@ public class BoardServiceImpl implements BoardService {
 
     public Page<BoardFindResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
         User findUser = getUserById(userDetail.getUuid());
+
         Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MATE)
         );

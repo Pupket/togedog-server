@@ -252,6 +252,7 @@ public class DogServiceImpl implements DogService {
     }
 
     public Page<DogResponse> findRandom(Pageable pageable) {
+
         return customDogRepository.dogList(pageable);
     }
 
@@ -263,7 +264,6 @@ public class DogServiceImpl implements DogService {
         }
 
         Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInDogAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
-
 
         return allValuesAfterIndexFromSortedSet.stream()
                 .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
