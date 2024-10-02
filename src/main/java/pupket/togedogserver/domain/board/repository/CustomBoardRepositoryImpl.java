@@ -93,6 +93,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
     }
 
     private static BoardFindResponse createBoardFindResponse(List<Dog> dogs, Board board) {
+
         // 개별 Dog 정보를 DogResponse로 매핑
         List<BoardDogResponse> boardDogRespons = dogs.stream()
                 .map(dog -> BoardDogResponse.builder()
@@ -120,6 +121,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                         .map(WalkingPlaceTag::getPlaceName)
                         .collect(Collectors.toList()))
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
+                .completeStatus(board.getMatch().getCompleteStatus().getStatus())
                 .build();
     }
 

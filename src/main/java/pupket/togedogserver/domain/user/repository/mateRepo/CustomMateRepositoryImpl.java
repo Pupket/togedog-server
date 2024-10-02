@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.internal.constraintvalidators.hv.time.DurationMaxValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -130,6 +129,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         result.setMaxResults(pageable.getPageSize());
 
         List<Object[]> results = result.getResultList();
+
         Map<Long, BoardFindResponse> boardResponseMap = new HashMap<>();
 
         // 각 Board에 여러 마리의 Dog 정보를 추가
@@ -159,6 +159,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                         .pickupLocation1(board.getPickupLocation1())
                         .walkingPlaceTag(walkingPlaceTags)
                         .dogs(new ArrayList<>())  // Dog 정보를 담을 리스트 초기화
+                        .completeStatus(board.getMatch().getCompleteStatus().getStatus())
                         .build();
             });
 
@@ -180,7 +181,10 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         String countQuery = "SELECT COUNT(b) FROM Board b " +
                 "JOIN b.boardDog bd " +
                 "JOIN bd.dog d " +
-                "WHERE b.deleted = false AND d.deleted = false AND b.match.mate.mateUuid = :mateId";
+                "WHERE b.deleted = false AND d.deleted = false " +
+                "AND b.match.mate.mateUuid = :mateId" +
+                "   and b.createdAt between :startOfMonth and :endOfMonth";
+
 
         Long count = em.createQuery(countQuery, Long.class)
                 .setParameter("mateId", mateId)
@@ -194,28 +198,53 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                 "Board b join matching m " +
                 "on m.completeStatus = 'COMPLETE' " +
                 "and b.boardId = m.board.boardId " +
-                "where m.mate.mateUuid= :mateUuid";
+                "where m.mate.mateUuid= :mateUuid " +
+                " and b.createdAt between :startOfMonth and :endOfMonth";
+
         TypedQuery<Board> result = em.createQuery(query, Board.class);
+        // 이번 달의 시작과 끝 날짜 계산
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
+        LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).with(LocalTime.MAX);
 
         result.setParameter("mateUuid", mateUuid);
+        result.setParameter("startOfMonth", startOfMonth);
+        result.setParameter("endOfMonth", endOfMonth);
+
         List<Board> results = result.getResultList();
 
         MateActiveResponse mateActiveResponse = MateActiveResponse.builder()
                 .mateName(findUser.getName())
                 .walkCount(findUser.getMate().getMatchCount())
                 .build();
-        AtomicLong durationSum = new AtomicLong(0L);
 
+        AtomicLong totalHours = new AtomicLong(0L);
+        AtomicLong totalMinutes = new AtomicLong(0L);
+
+        log.info("{}", results.size());
         results.forEach(
                 i -> {
                     LocalTime startTime = i.getStartTime();
                     LocalTime endTime = i.getEndTime();
 
-                    long duration = Duration.between(startTime, endTime).toHours();
-                    durationSum.addAndGet(duration);
+                    // 시작 시간과 종료 시간 사이의 차이를 계산
+                    Duration duration = Duration.between(startTime, endTime);
+                    long durationMinutes = duration.toHours();
+                    log.info("hours={}", durationMinutes);
+                    long minutes = duration.toMinutes()%60;
+                    log.info("minute= {}", minutes);
+
+                    totalHours.addAndGet(durationMinutes);
+                    totalMinutes.addAndGet(minutes);
                 }
         );
-        mateActiveResponse.setWalkTime(durationSum.get());
+
+        String resultHour = totalHours.get() + "시간";
+        String resultMinute = totalMinutes.get() >= 30 ? "30분" : "";
+
+        // mateActiveResponse에 시간과 분을 설정
+        mateActiveResponse.setWalkTime(resultHour + " " + resultMinute);
+
 
         return mateActiveResponse;
     }

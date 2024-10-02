@@ -26,4 +26,6 @@ public class BoardFindResponse {
     private String feeType;
 
     private List<BoardDogResponse> dogs;
+
+    private String completeStatus;
 }
