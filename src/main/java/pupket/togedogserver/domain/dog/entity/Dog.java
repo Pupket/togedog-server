@@ -5,8 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.dog.constant.Breed;
+import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
@@ -34,9 +33,7 @@ public class Dog {
     @JoinColumn(name = "users_uuid")
     private User user;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Breed breed;
+    private String breed;
 
     @Column(nullable = false)
     private String name;
@@ -78,6 +75,6 @@ public class Dog {
     private Set<DogPersonalityTag> dogPersonalityTags;
 
     @OneToMany(mappedBy = "dog")
-    private List<Board> boards;
+    private List<BoardDog> boardDogs;
 
 }

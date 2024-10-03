@@ -46,7 +46,21 @@ public class OwnerService {
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
-        List<FindMatchedScheduleResponse> matchedBoardResponses = findBoards.stream()
+        List<FindMatchedScheduleResponse> matchedBoardResponses = getFindMatchedScheduleResponses(findBoards);
+
+        // 매핑된 결과를 페이징하여 반환합니다.
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
+
+        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
+    }
+
+    private static List<FindMatchedScheduleResponse> getFindMatchedScheduleResponses(List<Board> findBoards) {
+        // 요일
+        // 시간
+        // 가격
+        // Mate 사진 URL
+        return findBoards.stream()
                 .filter(board -> board.getMatched().equals(MatchStatus.MATCHED))
                 .map(board -> {
                     Mate mate = board.getMatch().getMate();
@@ -56,18 +70,14 @@ public class OwnerService {
                             .startTime(board.getStartTime().toString()) // 시간
                             .endTime(board.getEndTime().toString())
                             .fee(board.getFee().toString()) // 가격
+                            .feeType(board.getFeeType().toString())
                             .mateNickname(mate.getUser().getNickname())
                             .matePhotoUrl(mate.getUser().getProfileImage()) // Mate 사진 URL
                             .mateId(mate.getMateUuid())
-                            .matchStatus(board.getMatched())
+                            .matchStatus(board.getMatch().getMatched().getStatus())
+                            .completeStatus(board.getMatch().getCompleteStatus().getStatus())
                             .build();
                 })
                 .toList();
-
-        // 매핑된 결과를 페이징하여 반환합니다.
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
-
-        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
     }
 }

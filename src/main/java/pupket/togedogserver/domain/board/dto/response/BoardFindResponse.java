@@ -25,8 +25,7 @@ public class BoardFindResponse {
     private List<String> walkingPlaceTag;
     private String feeType;
 
-    private String name;
-    private int age;
-    private String breed;
-    private String dogType;
+    private List<BoardDogResponse> dogs;
+
+    private String completeStatus;
 }

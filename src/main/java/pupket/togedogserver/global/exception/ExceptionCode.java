@@ -10,7 +10,7 @@ import static org.springframework.http.HttpStatus.*;
 @AllArgsConstructor
 public enum ExceptionCode {
     // 500
-    NOT_HANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, "Unhandled exception occurred.", 900),
+    NOT_HANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, "Unhandled exception occurred.", 500),
     REDIS_CONNECTION_FAILURE(INTERNAL_SERVER_ERROR, "Failed to connect to Redis.", 500),
     EMAIL_SEND_FAILURE(INTERNAL_SERVER_ERROR, "Failed to send email.", 500),
     UNEXPECTED_ERROR(INTERNAL_SERVER_ERROR, "An unexpected error occurred.", 500),
@@ -61,8 +61,13 @@ public enum ExceptionCode {
     PUT_OBJECT_EXCEPTION(CONFLICT, "Put Object Exception", 403),
     IO_EXCEPTION_ON_IMAGE_DELETE(CONFLICT, "IO Exception on Image Delete", 403),
     YOUR_OWN_NICKNAME(CONFLICT,"Parameter is your own nickname" ,403 ),
-    ALREADY_ACCEPTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
-    ALREADY_REJECTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403);
+    ALREADY_ACCEPTED(CONFLICT,"Matching Already Accepted, Somebody Accepted" , 403),
+    ALREADY_REJECTED(CONFLICT,"MATCHING ALREADY ACCEPTED" , 403),
+    ALREADY_MATCHED(CONFLICT, "Already Matched",403),
+    NOT_YOUR_DOG(CONFLICT, "Not your Dog, Check your Dog Id" , 403)
+    , ACCEPT_SHOULD_TRY_RECIEVER(CONFLICT,"Board Writer Can't Accept" , 403)
+    , NOT_FOUND_BOARDDOG(CONFLICT,"Can't find BoardDog",403 )
+    , ALREADY_COMPLETED(CONFLICT,"Matching Already Completed" , 403 );
 
 
     private final HttpStatus httpStatus;

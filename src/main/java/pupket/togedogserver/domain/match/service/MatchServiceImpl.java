@@ -1,9 +1,13 @@
 package pupket.togedogserver.domain.match.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.board.repository.BoardDogRepository;
 import pupket.togedogserver.domain.board.repository.BoardRepository;
+import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.match.repository.MatchRepository;
@@ -17,8 +21,12 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.*;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
@@ -30,33 +38,31 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public void match(CustomUserDetail userDetail, String nickname, Long boardId) {
 
-        //Owner
-        User findUserByUserDetail = userRepository.findByEmail(userDetail.getUsername()).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
+        User findUserByUserDetail = getUser(userRepository.findByEmail(userDetail.getUsername()));
 
-        if (findUserByUserDetail.getNickname().equals(nickname)) {
-            throw new MemberException(ExceptionCode.YOUR_OWN_NICKNAME);
+        validateNickname(nickname, findUserByUserDetail);
+
+        Owner owner = getOwner(findUserByUserDetail);
+
+        User findUserByNickname = getUser(userRepository.findByNickname(nickname));
+
+        Mate mate = getMate(findUserByNickname);
+
+        Board findBoardById = getBoard(boardRepository.findByBoardId(boardId));
+
+        List<Match> matches = matchRepository.findByOwner(owner).orElse(null);
+        if (matches != null) {
+            boolean isMatched = matches.stream().anyMatch(
+                    match ->
+                            match.getMate().getMateUuid().equals(mate.getMateUuid()) &&
+                                    match.getMatched().equals(MatchStatus.MATCHED)
+                                    && match.getCompleteStatus().equals(CompleteStatus.INCOMPLETE)
+            );
+
+            if (isMatched) {
+                throw new MatchingException(ExceptionCode.ALREADY_MATCHED);
+            }
         }
-
-        Owner owner = ownerRepository.findByUser(findUserByUserDetail).orElseThrow(
-                () -> new OwnerException(ExceptionCode.NOT_FOUND_OWNER)
-        );
-
-        //Mate
-        User findUserByNickname = userRepository.findByNickname(nickname).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-
-        Mate mate = mateRepository.findByUser(findUserByNickname).orElseThrow(
-                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
-        );
-
-        //Board
-        Board findBoardById = boardRepository.findByBoardId(boardId).orElseThrow(
-                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
-        );
-
         //Owner 와 Mate를 연결시켜줘야함
         Match match = Match.builder()
                 .owner(owner)
@@ -68,22 +74,56 @@ public class MatchServiceImpl implements MatchService {
 
     }
 
-    public void matchSuccess(CustomUserDetail userDetail, Long boardId) {
-        User findUser = userRepository.findByUuid(userDetail.getUuid()).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-
-        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
+    private Board getBoard(Optional<Board> boardRepository) {
+        //Board
+        Board findBoardById = boardRepository.orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
+        return findBoardById;
+    }
 
-        Match findMatch = matchRepository.findById(findBoard.getMatch().getMatchId()).orElseThrow(
-                () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
+    private Mate getMate(User findUserByNickname) {
+        Mate mate = mateRepository.findByUser(findUserByNickname).orElseThrow(
+                () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
         );
-        if(findBoard.getMatched().equals(MatchStatus.MATCHED) && findMatch.getMatched().equals(MatchStatus.MATCHED) ){
-            throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
+        return mate;
+    }
+
+    private User getUser(Optional<User> userRepository) {
+        //Owner
+        User findUserByUserDetail = userRepository.orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+        return findUserByUserDetail;
+    }
+
+    private Owner getOwner(User findUserByUserDetail) {
+        Owner owner = ownerRepository.findByUser(findUserByUserDetail).orElseThrow(
+                () -> new OwnerException(ExceptionCode.NOT_FOUND_OWNER)
+        );
+        return owner;
+    }
+
+    private static void validateNickname(String nickname, User findUserByUserDetail) {
+        if (findUserByUserDetail.getNickname().equals(nickname)) {
+            throw new MemberException(ExceptionCode.YOUR_OWN_NICKNAME);
         }
-        else{
+    }
+
+    public void matchSuccess(CustomUserDetail userDetail, Long boardId) {
+        //유저 ,게시판 찾기
+        User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
+
+        //게시판에서 가져올 수 있는 것 -> boardDog
+        Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
+
+        Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
+        if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
+            throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
+        }
+        if (findBoard.getMatched().equals(MatchStatus.MATCHED) && findMatch.getMatched().equals(MatchStatus.MATCHED)) {
+            throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
+        } else {
             Match updatedMatch = findMatch.toBuilder()
                     .matched(MatchStatus.MATCHED)
                     .build();
@@ -99,29 +139,68 @@ public class MatchServiceImpl implements MatchService {
 
     }
 
-    public void matchFail(CustomUserDetail userDetail, Long boardId) {
-        User findUser = userRepository.findByUuid(userDetail.getUuid()).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-
-        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
-                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
-        );
-
-        Match match = matchRepository.findByBoardAndMate(findBoard, findUser.getMate().get(0)).orElseThrow(
+    private Match getMatch(Optional<Match> matchRepository) {
+        Match findMatch = matchRepository.orElseThrow(
                 () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
         );
+        return findMatch;
+    }
+
+    public void matchFail(CustomUserDetail userDetail, Long boardId) {
+        User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
+
+        Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
+
+        Match match = getMatch(matchRepository.findByBoardAndMate(findBoard, findUser.getMate()));
 
         Match updatedMatch = match.toBuilder()
                 .matched(MatchStatus.UNMATCHED)
                 .build();
-        matchRepository.save(updatedMatch);
 
+        matchRepository.save(updatedMatch);
 
         Board board = findBoard.toBuilder()
                 .matched(MatchStatus.UNMATCHED)
                 .build();
 
         boardRepository.save(board);
+    }
+
+    public void completeWalking(Long boardId, CustomUserDetail userDetail) {
+        User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
+
+        Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+
+        Board findBoard = getBoard(boardRepository.findById(boardId));
+
+        Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
+
+        Match completedMatch = updateMatchToComplete(findMatch);
+
+        Mate updatedMate = findMate.toBuilder()
+                .matchCount(findMate.getMatchCount() + 1)
+                .build();
+
+        Owner owner = findBoard.getUser().getOwner();
+
+        Owner updatedOwner = owner.toBuilder()
+                .matchCount(owner.getMatchCount() + 1)
+                .build();
+
+        mateRepository.save(updatedMate);
+        ownerRepository.save(updatedOwner);
+        matchRepository.save(completedMatch);
+    }
+
+    private static Match updateMatchToComplete(Match findMatch) {
+        if (findMatch.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
+            throw new MatchingException(ExceptionCode.ALREADY_COMPLETED);
+        }
+
+        return findMatch.toBuilder()
+                .completeStatus(CompleteStatus.COMPLETE)
+                .build();
     }
 }

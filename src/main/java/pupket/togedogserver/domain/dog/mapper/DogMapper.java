@@ -26,9 +26,9 @@ public interface DogMapper {
     @Mapping(target = "dogImage", ignore = true)
     @Mapping(target = "dogType", expression = "java(mapWeightToBreed(dogRegistRequest.getWeight()))")
     @Mapping(target = "name", source = "dogRegistRequest.name")
+    @Mapping(target = "boardDogs" , ignore = true)
     Dog toDog(DogRegistRequest dogRegistRequest, User user);
 
-    // weight에 따른 breed 매핑
     default DogType mapWeightToBreed(int weight) {
         if (weight <= 7) {
             return DogType.SMALL;
@@ -62,6 +62,7 @@ public interface DogMapper {
 
         response.setDogType(EnumMapper.enumToKorean(dog.getDogType()));
         response.setBreed(EnumMapper.enumToKorean(dog.getBreed()));
+        response.setRegion(EnumMapper.enumToKorean(dog.getRegion()));
 
         if (dog.getDogPersonalityTags() != null) {
             response.setDogPersonalityTags(dog.getDogPersonalityTags().stream()

@@ -29,7 +29,7 @@ public class BoardController {
 
     @Operation(summary = "산책 게시판 글 등록", description = "산책 게시판 글을 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 등록 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 등록 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 등록 실패")
     })
@@ -45,7 +45,7 @@ public class BoardController {
 
     @Operation(summary = "산책 게시판 글 조회", description = "산책 게시판 글을 조회합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 조회 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 조회 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 조회 실패")
     })
@@ -61,7 +61,7 @@ public class BoardController {
 
     @Operation(summary = "산책 게시판 글 랜덤 반환", description = "산책 게시판 글을 랜덤으로 반환합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 랜덤 반환 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 랜덤 반환 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 랜덤 반환 실패")
     })
@@ -81,7 +81,7 @@ public class BoardController {
 
     @Operation(summary = "산책 게시판 수정", description = "산책 게시판 글을 수정합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 수정 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 수정 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 수정 실패")
     })
@@ -97,7 +97,7 @@ public class BoardController {
 
     @Operation(summary = "산책 게시판 삭제", description = "산책 게시판 글을 삭제합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "게시글 삭제 성공",
+            @ApiResponse(responseCode = "200", description = "게시글 삭제 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
             @ApiResponse(responseCode = "400", description = "게시글 삭제 실패")
     })

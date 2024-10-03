@@ -8,7 +8,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.dto.ChattingDto;
 import pupket.togedogserver.domain.chat.dto.KafkaChattingDto;
-import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.notification.dto.NotificationRequest;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;

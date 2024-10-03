@@ -12,7 +12,6 @@ import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.constant.Visibility;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 import java.util.Collection;
@@ -55,12 +54,6 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'HIDDEN'")
-    @Column(nullable = false)
-    @Builder.Default
-    private Visibility genderVisibility = Visibility.HIDDEN;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoleType role;
 
@@ -82,9 +75,8 @@ public class User {
     @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
-    //Mate는 하나만 등록가능하므로 OneToOne으로 변경하고 테스트하기
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Mate> mate;
+    @OneToOne(fetch = FetchType.LAZY)
+    private Mate mate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Dog> dog;

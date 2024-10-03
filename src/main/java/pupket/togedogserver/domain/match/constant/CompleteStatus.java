@@ -1,14 +1,14 @@
 package pupket.togedogserver.domain.match.constant;
 
+import lombok.Getter;
+
+@Getter
 public enum CompleteStatus {
-    COMPLETE("활성화"), INCOMPLETE("비활성화");
+    COMPLETE("산책 완료"), INCOMPLETE("산책 전");
 
     private String status;
 
     CompleteStatus(String status) {
         this.status = status;
-    }
-    public String getStatus() {
-        return status;
     }
 }

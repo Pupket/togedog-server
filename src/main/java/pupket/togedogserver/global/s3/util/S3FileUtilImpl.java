@@ -17,10 +17,10 @@ import pupket.togedogserver.global.exception.customException.S3Exception;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -93,7 +93,6 @@ public class S3FileUtilImpl implements S3FileUtil {
         if (!allowedExtentionList.contains(extention)) {
             throw new S3Exception(ExceptionCode.INVALID_FILE_EXTENTION);
         }
-
     }
 
     @Override
@@ -109,9 +108,9 @@ public class S3FileUtilImpl implements S3FileUtil {
     private String getKeyFromImageAddress(String imageAddress) {
         try {
             URL url = new URL(imageAddress);
-            String decodingKey = URLDecoder.decode(url.getPath(), "UTF-8");
+            String decodingKey = URLDecoder.decode(url.getPath(), StandardCharsets.UTF_8);
             return decodingKey.substring(1);
-        } catch (MalformedURLException | UnsupportedEncodingException e) {
+        } catch (MalformedURLException e) {
             throw new S3Exception(ExceptionCode.IO_EXCEPTION_ON_IMAGE_DELETE);
         }
     }

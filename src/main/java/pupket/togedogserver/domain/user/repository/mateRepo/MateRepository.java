@@ -8,6 +8,4 @@ import java.util.Optional;
 
 public interface MateRepository extends JpaRepository<Mate, Long> {
     Optional<Mate> findByUser(User User);
-
-    Mate findByUser_Mate_MateUuid(Long mateUuid);
 }

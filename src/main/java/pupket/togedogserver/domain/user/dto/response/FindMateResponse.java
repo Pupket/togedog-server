@@ -7,14 +7,14 @@ import lombok.Data;
 @Data
 public class FindMateResponse {
 
+    private long uuid;
+    private long mateId;
     private String nickname;
     private String gender;
     private int age;
     private String birth;
     PreferredDetailsResponse preferred;
-    private String region;
     private String profileImage;
     private int accommodatableDogsCount;
     private String career;
-    private String preferredRegion;
 }

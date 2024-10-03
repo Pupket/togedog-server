@@ -30,6 +30,7 @@ public interface UserMapper {
     @Mapping(target = "mateTags", ignore = true)
     @Mapping(target = "deleted" , ignore = true)
     @Mapping(target = "match", ignore = true)
+    @Mapping(target = "preferredRegion", ignore = true)
     Mate toMate(RegistMateRequest request);
 
     // RegistMateRequest -> Mate 매핑
@@ -64,17 +65,16 @@ public interface UserMapper {
                 .mateTags(details.getHashTag().stream()
                         .map(style -> MateTag.builder().mate(mate).tagName(style).build())
                         .collect(Collectors.toSet()))
-                .preferredRegion(mate.getPreferredRegion())
+                .preferredRegion(details.getRegion())
                 .build();
     }
 
-    @Mapping(target = "userGender", ignore = true) // userGender는 매핑 이후에 처리
+    @Mapping(target = "userGender", ignore = true)
     @Mapping(target = "platform",ignore = true)
     FindUserResponse of(User user);
 
     @AfterMapping
     default void afterMapping(@MappingTarget FindUserResponse response, User user) {
-        // userGender를 한글로 변환하여 설정
         if (user.getUserGender() != null) {
             response.setUserGender(EnumMapper.enumToKorean(user.getUserGender()));
         }
@@ -92,7 +92,6 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "owner", ignore = true)
-    @Mapping(target = "genderVisibility", ignore = true)
     @Mapping(target = "mate", ignore = true)
     @Mapping(target = "dog", ignore = true)
     @Mapping(target = "board", ignore = true)
@@ -102,5 +101,6 @@ public interface UserMapper {
     @Mapping(target = "mapX", ignore = true)
     @Mapping(target = "mapY", ignore = true)
     @Mapping(target = "phoneNumber", ignore = true)
+    @Mapping(target = "fcmToken", ignore = true)
     User toEntity(String email, String name, String profileImage, RoleType role, String nickname, UserGender userGender, int birthday, int birthyear);
 }

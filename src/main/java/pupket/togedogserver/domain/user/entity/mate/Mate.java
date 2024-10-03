@@ -29,8 +29,7 @@ public class Mate {
     @GeneratedValue(strategy = IDENTITY)
     private Long mateUuid;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "users_uuid")
+    @OneToOne(fetch = FetchType.LAZY)
     private User user;
 
     @Column(nullable = false)
@@ -65,9 +64,6 @@ public class Mate {
 
     @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY)
     private Set<MateTag> mateTags;
-
-    @Enumerated(EnumType.STRING)
-    private Region region;
 
     @Enumerated(EnumType.STRING)
     private Region preferredRegion;

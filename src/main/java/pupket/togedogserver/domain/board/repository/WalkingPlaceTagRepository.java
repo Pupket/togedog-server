@@ -8,7 +8,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface WalkingPlaceTagRepository extends JpaRepository<WalkingPlaceTag, Long> {
-    Optional<WalkingPlaceTag> findByBoard(Board findBoard);
-
     Optional<List<WalkingPlaceTag>> findAllByBoard(Board findBoard);
 }
