@@ -1,45 +1,34 @@
 package pupket.togedogserver.domain.chat.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.user.entity.Owner;
+import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Getter
-@ToString
+@NoArgsConstructor
 public class ChatRoom {
+
+    @Builder(builderMethodName = "chatRoomUser")
+    public ChatRoom(Long user1, Long user2) {
+        this.user1 = user1;
+        this.user2 = user2;
+    }
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long roomId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "onwer_uuid")
-    private Owner owner;
+    private Long user1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mate_uuid")
-    private Mate mate;
+    private Long user2;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "board_id")
-    private Board board;
-
-    @OneToMany(mappedBy = "chatRoom")
-    private List<Chatting> chatting;
-
-    public ChatRoom createChatRoom(Owner owner, Mate mate, Board board) {
-        ChatRoom chatRoom = new ChatRoom();
-        this.owner = owner;
-        this.mate = mate;
-        this.board = board;
-        return chatRoom;
-    }
 }

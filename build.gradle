@@ -76,6 +76,9 @@ dependencies {
     //socketio
     implementation 'com.corundumstudio.socketio:netty-socketio:2.0.3'
 
+    // kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+
     //fcm
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
