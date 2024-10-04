@@ -95,7 +95,6 @@ public interface UserMapper {
     @Mapping(target = "mate", ignore = true)
     @Mapping(target = "dog", ignore = true)
     @Mapping(target = "board", ignore = true)
-    @Mapping(target = "chatting", ignore = true)
     @Mapping(target = "address1", ignore = true)
     @Mapping(target = "address2", ignore = true)
     @Mapping(target = "mapX", ignore = true)

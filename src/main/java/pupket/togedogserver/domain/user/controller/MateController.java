@@ -74,7 +74,7 @@ public class MateController {
             )
             @Valid @RequestPart(value = "request") String requestString,
             @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) throws JsonProcessingException {
+            @RequestPart(value = "profileImage") MultipartFile profileImage) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         RegistMateRequest request = objectMapper.readValue(requestString, RegistMateRequest.class);
@@ -112,7 +112,7 @@ public class MateController {
                             "}"
             )
             @RequestPart(value = "request") String updateMateRequest,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+            @RequestPart(value = "profileImage") MultipartFile profileImage
     ) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();

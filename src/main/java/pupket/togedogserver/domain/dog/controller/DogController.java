@@ -60,7 +60,7 @@ public class DogController {
             )
             @RequestPart(value = "request") String requestString,
             @Schema(description = "프로필 이미지 파일", type = "string", format = "binary", nullable = true)
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+            @RequestPart(value = "profileImage") MultipartFile profileImage
     ) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -83,7 +83,6 @@ public class DogController {
             @Schema(
                     description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
                     type = "string",
-                    nullable = false,
                     example = " { " +
                             "\\\"id\\\": \\\"1\\\", " +
                             "\\\"name\\\": \\\"똥강아지\\\", " +
@@ -99,7 +98,7 @@ public class DogController {
                             "} "
             )
             @RequestPart(value = "request") String requestString,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+            @RequestPart(value = "profileImage") MultipartFile profileImage
     ) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
