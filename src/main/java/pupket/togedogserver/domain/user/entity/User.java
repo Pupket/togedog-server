@@ -7,7 +7,6 @@ import org.hibernate.annotations.SQLDelete;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.chat.entity.Chatting;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.constant.RoleType;
@@ -83,9 +82,6 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Board> board;
-
-    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Chatting> chatting;
 
     private String fcmToken;
 
