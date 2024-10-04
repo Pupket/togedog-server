@@ -31,4 +31,7 @@ public class ChatRoom {
 
     private Long user2;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_uuid")
+    private Owner owner;
 }
