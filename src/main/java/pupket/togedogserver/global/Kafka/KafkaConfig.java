@@ -30,7 +30,8 @@ public class KafkaConfig {
     @Bean
     public ProducerFactory<Long, KafkaChattingDto> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "walktogedog.life:4040");
+        // 도메인 서버와 올바른 포트(9092)를 사용
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "www.walktogedog.life:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return new DefaultKafkaProducerFactory<>(configProps);
@@ -39,7 +40,8 @@ public class KafkaConfig {
     @Bean
     public ConsumerFactory<Long, KafkaChattingDto> consumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "walktogedog.life:4040");
+        // 도메인 서버와 올바른 포트(9092)를 사용
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "www.walktogedog.life:9092");
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "chatting");
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
