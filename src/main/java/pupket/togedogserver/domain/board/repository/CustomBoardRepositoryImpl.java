@@ -13,6 +13,7 @@ import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.util.List;
@@ -121,7 +122,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                         .map(WalkingPlaceTag::getPlaceName)
                         .collect(Collectors.toList()))
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
-                .completeStatus(board.getMatch().getCompleteStatus().getStatus())
+                .completeStatus(board.getMatch().getCompleteStatus().getStatus()==null? CompleteStatus.INCOMPLETE.getStatus() :board.getMatch().getCompleteStatus().getStatus())
                 .build();
     }
 
