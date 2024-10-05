@@ -122,6 +122,10 @@ public class UserServiceImpl {
     public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
         User findUser = getUserById(userDetail.getUuid());
 
+        if(findUser.getMate()==null){
+            throw new MemberException(ExceptionCode.MATE_NOT_REGIST);
+        }
+
         MateActiveResponse mateActions = customMateRepositoryImpl.findMateActions(findUser.getMate().getMateUuid(), findUser);
         DogActiveResponse dogActions = customDogRepositoryImpl.findDogActions(findUser.getUuid());
 

@@ -123,8 +123,8 @@ public class OAuthAttributes {
         map.put("socialAccessToken", socialAccessToken);
         map.put("gender", gender);
         map.put("nickname", nickname);
-        map.put("birthday", Integer.valueOf(birthday));
-        map.put("birthyear", Integer.valueOf(birthyear));
+        map.put("birthday", birthday==null?0:Integer.parseInt(birthday));
+        map.put("birthyear", birthyear==null?0:Integer.parseInt(birthyear));
 
         return map;
     }

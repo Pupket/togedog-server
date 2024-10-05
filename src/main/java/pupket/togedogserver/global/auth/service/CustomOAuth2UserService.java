@@ -61,8 +61,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String profileImage = memberAttribute.get("picture") != null ? (String) memberAttribute.get("picture") : null;
         String nickname = memberAttribute.get("nickname") != null ? (String) memberAttribute.get("nickname") : null;
         UserGender gender = memberAttribute.get("gender") != null ? UserGender.valueOf(((String) memberAttribute.get("gender")).toUpperCase()) : null;
-        int birthday = memberAttribute.get("birthday") != null ? (int) memberAttribute.get("birthday") : null;
-        int birthyear = memberAttribute.get("birthyear") != null ? (int) memberAttribute.get("birthyear") : null;
+        int birthday = memberAttribute.get("birthday") != null ? (int) memberAttribute.get("birthday") : 0;
+        int birthyear = memberAttribute.get("birthyear") != null ? (int) memberAttribute.get("birthyear") : 0;
 
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> {

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
+import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -58,7 +59,7 @@ public class MateServiceImpl implements MateService {
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
         List<String> allUserNickname = userRepository.findAllNickname();
-        log.info("size={}",allUserNickname.size());
+        log.info("size={}", allUserNickname.size());
         saveAllSubstring(allUserNickname); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
 
     }
@@ -66,7 +67,7 @@ public class MateServiceImpl implements MateService {
     private void saveAllSubstring(List<String> userNickName) { //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
         // long start1 = System.currentTimeMillis(); //뒤에서 성능 비교를 위해 시간을 재는 용도
         for (String name : userNickName) {
-            redisSortedSetService.addToSortedSetFromMate(name+suffix);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
+            redisSortedSetService.addToSortedSetFromMate(name + suffix);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
 
             for (int i = name.length(); i > 0; --i) { //음절 단위로 잘라서 모든 Substring 구하기
                 redisSortedSetService.addToSortedSetFromMate(name.substring(0, i)); //곧바로 redis에 저장
@@ -123,12 +124,29 @@ public class MateServiceImpl implements MateService {
     }
 
     private User updateUser(RegistMateRequest request, User findUser, String uploadedProfileImage) {
-        findUser = findUser.toBuilder()
-                .nickname(request.getNickname())
-                .profileImage(uploadedProfileImage)
-                .userGender(request.getUserGender())
-                .phoneNumber(request.getPhoneNumber())
-                .build();
+
+        if (findUser.getRole().equals(RoleType.MEMBER_GOOGLE) && !request.getBirthday().isEmpty()) {
+            String[] splitBirthArr = request.getBirthday().split("\\.");
+            int birthyear = Integer.parseInt(splitBirthArr[0]);
+            int birthday = Integer.parseInt(splitBirthArr[1] + splitBirthArr[2]);
+
+            findUser = findUser.toBuilder()
+                    .nickname(request.getNickname())
+                    .profileImage(uploadedProfileImage)
+                    .userGender(request.getUserGender())
+                    .phoneNumber(request.getPhoneNumber())
+                    .birthyear(birthyear)
+                    .birthday(birthday)
+                    .build();
+        } else {
+            findUser = findUser.toBuilder()
+                    .nickname(request.getNickname())
+                    .profileImage(uploadedProfileImage)
+                    .userGender(request.getUserGender())
+                    .phoneNumber(request.getPhoneNumber())
+                    .build();
+        }
+
 
         findUser = userRepository.save(findUser);
         return findUser;
@@ -136,8 +154,8 @@ public class MateServiceImpl implements MateService {
 
     private String uploadProfileImage(MultipartFile profileImage) {
         String uploadedProfileImage = null;
-        if(profileImage != null) {
-            uploadedProfileImage=s3FileUtilImpl.upload(profileImage);
+        if (profileImage != null) {
+            uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
 
         }
         return uploadedProfileImage;
@@ -157,7 +175,7 @@ public class MateServiceImpl implements MateService {
     public FindMateResponse find(CustomUserDetail userDetail) {
         User finduser = getUserById(userDetail.getUuid());
         Mate findMate = mateRepository.findByUser(finduser).orElse(null);
-        if (findMate==null) {
+        if (findMate == null) {
             return null;
         }
 
@@ -175,7 +193,7 @@ public class MateServiceImpl implements MateService {
                 .accommodatableDogsCount(findMate.getAccommodatableDogsCount())
                 .career(findMate.getCareer())
                 .preferred(preferredDetails)
-                .birth(findMate.getUser().getBirthyear()+"."+birthday.substring(0,2)+"."+birthday.substring(2,4))
+                .birth(findMate.getUser().getBirthyear() + "." + birthday.substring(0, 2) + "." + birthday.substring(2, 4))
                 .build();
     }
 
@@ -263,14 +281,31 @@ public class MateServiceImpl implements MateService {
     }
 
     private User updateUserByRequest(UpdateMateRequest request, User findUser, String uploadedProfileImage) {
-        findUser = findUser.toBuilder()
-                .userGender(request.getUserGender())
-                .nickname(request.getNickname())
-                .phoneNumber(request.getPhoneNumber())
-                .profileImage(uploadedProfileImage)
-                .build();
+        if (findUser.getRole().equals(RoleType.MEMBER_GOOGLE) && !request.getBirthday().isEmpty()) {
+            String[] splitBirthArr = request.getBirthday().split("\\.");
+            int birthyear = Integer.parseInt(splitBirthArr[0]);
+            int birthday = Integer.parseInt(splitBirthArr[1] + splitBirthArr[2]);
 
-        return userRepository.save(findUser);
+            findUser = findUser.toBuilder()
+                    .nickname(request.getNickname())
+                    .profileImage(uploadedProfileImage)
+                    .userGender(request.getUserGender())
+                    .phoneNumber(request.getPhoneNumber())
+                    .birthyear(birthyear)
+                    .birthday(birthday)
+                    .build();
+        } else {
+            findUser = findUser.toBuilder()
+                    .nickname(request.getNickname())
+                    .profileImage(uploadedProfileImage)
+                    .userGender(request.getUserGender())
+                    .phoneNumber(request.getPhoneNumber())
+                    .build();
+        }
+
+
+        findUser = userRepository.save(findUser);
+        return findUser;
     }
 
     private String updateProfileImage(MultipartFile profileImage, User findUser) {

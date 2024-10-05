@@ -37,5 +37,6 @@ public class RegistMateRequest {
     @Schema(description = "선호하는 상세 정보 (예: 선호하는 강아지 타입, 산책 시간 등)", required = true)
     private Preferred preferredDetails;
 
-
+    @Schema(description = "생년월일")
+    private String birthday;
 }
