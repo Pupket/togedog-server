@@ -7,9 +7,8 @@ import java.sql.Timestamp;
 
 @Data
 public class KafkaChattingDto {
-    private Long sender;
-    private Long receiver;
+    private Long userId;
     private String content;
-    private MultipartFile image;
+    private String image;
     private Timestamp lastTime;
 }

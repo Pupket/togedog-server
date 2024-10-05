@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pupket.togedogserver.domain.notification.dto.NotificationRequest;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
@@ -48,13 +48,13 @@ public class NotificationController {
     @Operation(summary = "푸시 알림 전송", description = "수신자에게 푸시 알림 전송")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "알림 전송 성공",
-                    content = @Content(schema = @Schema(implementation = NotificationRequest.class))),
+                    content = @Content(schema = @Schema(implementation = NotificationRequestDto.class))),
             @ApiResponse(responseCode = "400", description = "알림 전송 실패")
     })
     @PostMapping("/send")
     public void sendNotification(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            @RequestBody NotificationRequest notification
+            @RequestBody NotificationRequestDto notification
     ) throws ExecutionException, InterruptedException {
         notificationService.sendNotification(
                 userDetail.getUuid(),
