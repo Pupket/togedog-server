@@ -27,7 +27,7 @@ public class ChatController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/create")
+    @PostMapping("/create")
     public ResponseEntity<Long> createChatRoom(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             Long receiver
