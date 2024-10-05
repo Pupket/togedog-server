@@ -122,7 +122,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                         .map(WalkingPlaceTag::getPlaceName)
                         .collect(Collectors.toList()))
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
-                .completeStatus(board.getMatch().getCompleteStatus().getStatus()==null? CompleteStatus.INCOMPLETE.getStatus() :board.getMatch().getCompleteStatus().getStatus())
+                .completeStatus(board.getMatch()==null? CompleteStatus.INCOMPLETE.getStatus() :board.getMatch().getCompleteStatus().getStatus())
                 .build();
     }
 
