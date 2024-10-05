@@ -7,9 +7,11 @@ import com.google.firebase.messaging.WebpushNotification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pupket.togedogserver.domain.notification.dto.NotificationRequest;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -31,10 +33,12 @@ public class FcmService {
         return userRepository.findByUuid(uuid).get().getFcmToken();
     }
 
-    public void sendNotification(NotificationRequest notification) throws InterruptedException, ExecutionException {
+    public void sendNotification(NotificationRequestDto notification, String roomId) throws InterruptedException, ExecutionException {
         String title = notification.getTitle();
         String message = notification.getMessage();
         String image = notification.getImage();
+        Map<String, String> data = new HashMap<>();
+        data.put("roomId", roomId);
         Message firebaseMessage = Message.builder()
                 .setToken(userRepository.findByUuid(notification.getReceiver()).get().getFcmToken())
                 .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")
@@ -44,6 +48,7 @@ public class FcmService {
                                         message,
                                         image
                                 ))
+                        .putAllData(data)
                         .build())
                 .build();
 

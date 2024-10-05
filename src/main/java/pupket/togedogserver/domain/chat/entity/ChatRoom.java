@@ -17,6 +17,19 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 public class ChatRoom {
 
+    @Builder
+    public ChatRoom(Long roomId, Long user1, Long user2, Owner owner, Mate mate, Board board, String content, Timestamp lastTime, String nickname) {
+        this.roomId = roomId;
+        this.user1 = user1;
+        this.user2 = user2;
+        this.owner = owner;
+        this.mate = mate;
+        this.board = board;
+        this.content = content;
+        this.lastTime = lastTime;
+        this.nickname = nickname;
+    }
+
     @Builder(builderMethodName = "chatRoomUser")
     public ChatRoom(Long user1, Long user2) {
         this.user1 = user1;
@@ -42,4 +55,10 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private Board board;
+
+    private String content;
+
+    private Timestamp lastTime;
+
+    private String nickname;
 }

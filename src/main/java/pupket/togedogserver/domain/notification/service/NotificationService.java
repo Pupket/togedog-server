@@ -1,9 +1,9 @@
 package pupket.togedogserver.domain.notification.service;
 
-import pupket.togedogserver.domain.notification.dto.NotificationRequest;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 
 import java.util.concurrent.ExecutionException;
 
 public interface NotificationService {
-    public void sendNotification(Long sender, NotificationRequest notification) throws ExecutionException, InterruptedException;
+    public void sendNotification(Long sender, NotificationRequestDto notification) throws ExecutionException, InterruptedException;
 }

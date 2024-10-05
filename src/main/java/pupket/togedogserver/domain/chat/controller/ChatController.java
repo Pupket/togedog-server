@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.service.ChatService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
@@ -27,7 +28,7 @@ public class ChatController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/create")
+    @PostMapping("/create")
     public ResponseEntity<Long> createChatRoom(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             Long receiver
@@ -43,40 +44,10 @@ public class ChatController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/chatroom-list")
-    public ResponseEntity<List<Long>> getChatRoomList(
+    public ResponseEntity<List<ChatRoomResponseDto>> getChatRoomList(
             @AuthenticationPrincipal CustomUserDetail userDetail
     ) {
         return ResponseEntity.ok(chatService.getChatRoomList(userDetail.getUuid()));
-    }
-
-    @Hidden
-    @Operation(summary = "owner의 채팅방 목록을 반환합니다.",
-            description = "owner 모드에 해당하는 채팅방 목록을 반환합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "채팅방 목록 가져오기 성공"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping("/owner-list")
-    public ResponseEntity<List<Long>> getOwnerChatRoomList(
-            @AuthenticationPrincipal CustomUserDetail userDetail
-    ) {
-        return ResponseEntity.ok(chatService.getUser1ChatRoomList(userDetail.getUuid()));
-    }
-
-    @Hidden
-    @Operation(summary = "mate의 채팅방 목록을 반환합니다.",
-            description = "mate 모드에 해당하는 채팅방 목록을 반환합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "채팅방 목록 가져오기 성공"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping("/mate-list")
-    public ResponseEntity<List<Long>> getMateChatRoomList(
-            @AuthenticationPrincipal CustomUserDetail userDetail
-    ) {
-        return ResponseEntity.ok(chatService.getUser2ChatRoomList(userDetail.getUuid()));
     }
 
 }

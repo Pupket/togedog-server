@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NotificationRequest {
+public class NotificationRequestDto {
     Long receiver;
     String title;
     String message;

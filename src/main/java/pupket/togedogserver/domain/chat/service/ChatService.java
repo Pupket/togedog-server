@@ -2,6 +2,7 @@ package pupket.togedogserver.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.user.repository.UserRepository;
@@ -13,8 +14,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatService {
 
-    private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     public Long createChatRoom(Long sender, Long receiver) {
         ChatRoom chatRoom = ChatRoom.chatRoomUser()
@@ -25,25 +26,21 @@ public class ChatService {
         return chatRoom.getRoomId();
     }
 
-    public List<Long> getChatRoomList(Long uuid) {
-        List<Long> ownerChatRoomList = getUser1ChatRoomList(uuid);
-        List<Long> mateChatRoomList = getUser2ChatRoomList(uuid);
-        List<Long> chatRoomList = new ArrayList<>(ownerChatRoomList);
-        chatRoomList.addAll(mateChatRoomList);
+    public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUser1(uuid);
+        chatRooms.addAll(chatRoomRepository.findByUser2(uuid));
+
+        List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
+        for (ChatRoom room : chatRooms) {
+            ChatRoomResponseDto chatroom = new ChatRoomResponseDto();
+            chatroom.setRoomId(room.getRoomId());
+            chatroom.setContent(room.getContent());
+            chatroom.setLastTime(room.getLastTime());
+            chatroom.setNickname(room.getNickname());
+            chatRoomList.add(chatroom);
+        }
+
         return chatRoomList;
     }
 
-    public List<Long> getUser1ChatRoomList(Long uuid) {
-        return chatRoomRepository.findByUser1(uuid)
-                .stream()
-                .map(ChatRoom::getRoomId)
-                .toList();
-    }
-
-    public List<Long> getUser2ChatRoomList(Long uuid) {
-        return chatRoomRepository.findByUser2(uuid)
-                .stream()
-                .map(ChatRoom::getRoomId)
-                .toList();
-    }
 }
