@@ -113,4 +113,19 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @Operation(description = "회원 IP정보 출력", summary = "회원 정보 redis에 저장하여 중복 로그인 방지")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "소셜 회원 탈퇴 성공",
+                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
+            @ApiResponse(responseCode = "400", description = "해당 소셜 회원이 존재하지 않습니다.")
+    })
+    @GetMapping("/social/duplicate-account-check")
+    public ResponseEntity<Void> duplicateAccountCheck(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
+        }
+        log.info("Client IP Address: {}", ipAddress);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }
