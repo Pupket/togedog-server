@@ -21,6 +21,8 @@ import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.auth.handler.OAuth2LoginSuccessHandler;
 import pupket.togedogserver.global.auth.service.CustomOAuth2UserService;
 import pupket.togedogserver.global.jwt.service.JwtService;
+import pupket.togedogserver.global.redis.RedisLoginService;
+import pupket.togedogserver.global.security.filter.IpValidationFilter;
 import pupket.togedogserver.global.security.filter.JwtAuthenticationProcessingFilter;
 import pupket.togedogserver.global.security.service.LoginService;
 
@@ -37,7 +39,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, UserRepository userRepository) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, UserRepository userRepository, RedisLoginService redisLoginService) throws Exception {
         http
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -50,7 +52,9 @@ public class SecurityConfig {
                 )
                 .oauth2Login(login -> login.userInfoEndpoint(config -> config.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler))
-                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService,userRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService, userRepository), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new IpValidationFilter(redisLoginService, userRepository), JwtAuthenticationProcessingFilter.class); // 새로운 필터 추가
+
 
         return http.build();
     }
@@ -59,7 +63,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT","PATCH", "DELETE"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token"));
         configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
