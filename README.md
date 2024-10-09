@@ -115,14 +115,13 @@ Socket.io 통신으로 1:1 채팅 기능 구현
 
 ### Tech Stack
 
-[![stackticon](https://firebasestorage.googleapis.com/v0/b/stackticon-81399.appspot.com/o/images%2F1727975381526?alt=media&token=6a964d6a-90a2-4ea3-a7da-550fddf1ef06)](https://github.com/msdio/stackticon)
-
+[![stackticon](https://firebasestorage.googleapis.com/v0/b/stackticon-81399.appspot.com/o/images%2F1728484480789?alt=media&token=8debae39-e551-4a55-9b2c-ea6e92d0bd1e)](https://github.com/msdio/stackticon)
 
 
 ### System Architecture
 
 <div style="text-align: center;">
-<img width="1435" alt="image" src="https://github.com/user-attachments/assets/53723d8e-c197-4ba4-bfb3-7dcab686245a">
+<img width="624" alt="image" src="https://github.com/user-attachments/assets/1c17c76d-f450-4112-8021-53a28a8c3829">
 </div>
 
 <br>
@@ -140,6 +139,10 @@ Socket.io 통신으로 1:1 채팅 기능 구현
 ## 🤼‍♂️Author
 
 Team Leader : 🐯**Taerym**
+
+Designer : 🐨 **Lyn**
+
+Designer : 🦊 **JiWon**
 
 Backend : 🐶 **Sunro**
 

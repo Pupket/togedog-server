@@ -90,7 +90,7 @@ public class BoardServiceImpl implements BoardService {
         User findUser = getUserById(userDetail.getUuid());
 
         // 보드 찾기
-        Board findBoard = boardRepository.findByUserAndBoardId(findUser, boardId).orElseThrow(
+        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
