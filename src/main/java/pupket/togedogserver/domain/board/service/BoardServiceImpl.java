@@ -20,6 +20,7 @@ import pupket.togedogserver.domain.board.repository.CustomBoardRepositoryImpl;
 import pupket.togedogserver.domain.board.repository.WalkingPlaceTagRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
@@ -34,7 +35,6 @@ import pupket.togedogserver.global.exception.customException.WalkingPlaceTagExce
 import pupket.togedogserver.global.mapper.EnumMapper;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -87,7 +87,7 @@ public class BoardServiceImpl implements BoardService {
 
     public BoardFindResponse find(CustomUserDetail userDetail, Long boardId) {
         // 유저 찾기
-        User findUser = getUserById(userDetail.getUuid());
+        getUserById(userDetail.getUuid());
 
         // 보드 찾기
         Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
@@ -134,6 +134,7 @@ public class BoardServiceImpl implements BoardService {
                 .walkingPlaceTag(walkingPlaceTags)
                 .feeType(feeType)
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
+                .completeStatus(findBoard.getMatch()==null? CompleteStatus.INCOMPLETE.getStatus() : findBoard.getMatch().getCompleteStatus().getStatus())
                 .build();
     }
 

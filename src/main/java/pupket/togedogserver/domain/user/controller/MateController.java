@@ -192,7 +192,6 @@ public class MateController {
         return ResponseEntity.ok().body(response);
     }
 
-    //TODO:: performance 보고 @Async적용 여부 결정
     @Operation(summary = "산책 메이트 닉네임 자동 완성", description = "산책 메이트 닉네임 자동 완성")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "검색 성공",
@@ -202,8 +201,13 @@ public class MateController {
     @GetMapping("/keyword/{keyword}")
     public ResponseEntity<List<String>> autoCompleteKeyword(
             @PathVariable("keyword") String keyword
-    ) {
+    )
+    {
+        long startTime = System.currentTimeMillis();
         List<String> result = mateService.autoCompleteKeyword(keyword);
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("duringTime ={}",resultTime);
 
         return ResponseEntity.ok().body(result);
     }
