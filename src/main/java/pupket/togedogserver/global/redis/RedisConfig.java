@@ -7,7 +7,12 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
+
+import java.util.List;
 
 @Configuration
 public class RedisConfig {
@@ -33,6 +38,15 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
+        return redisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, List<ChattingResponseDto>> redisChattingTemplate() {
+        RedisTemplate<String, List<ChattingResponseDto>> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class));
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         return redisTemplate;
     }
 }

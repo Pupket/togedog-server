@@ -12,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
+import pupket.togedogserver.domain.chat.service.ChatService;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Component
@@ -21,14 +23,16 @@ import java.util.List;
 public class SocketIOHandler {
 
     private final SocketIOServer server;
+    private final ChatService chatService;
     private final SocketIOService socketIOService;
 
     @OnConnect
     private ConnectListener onConnected() {
         return client -> {
             String room = client.getHandshakeData().getSingleUrlParam("room");
+            Timestamp lastTime = Timestamp.valueOf(client.getHandshakeData().getSingleUrlParam("lastTime"));
             client.joinRoom(room);
-            List<ChattingResponseDto> chats = socketIOService.fetchBacklogChats(room);
+            List<ChattingResponseDto> chats = chatService.getUndeliveredChats(Long.valueOf(room), lastTime);
             for (ChattingResponseDto chat : chats) {
                 client.sendEvent("chatMessage", chat);
             }

@@ -3,49 +3,29 @@ package pupket.togedogserver.global.socketio.service;
 import com.corundumstudio.socketio.SocketIOClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
-import pupket.togedogserver.domain.chat.dto.KafkaChattingDto;
-import pupket.togedogserver.domain.chat.entity.ChatRoom;
-import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SocketIOService {
 
-    private final ChatRoomRepository chatRoomRepository;
     private final FcmService fcmService;
     private final S3FileUtilImpl s3FileUtil;
-    private final KafkaTemplate kafkaTemplate;
-
-    Long kafkaKeyForUserId;
-    private final List<KafkaChattingDto> undeliveredChats = new ArrayList<>();
-
-    // Kafka에서 메시지를 수신하여 리스트에 추가
-    @KafkaListener(topics = "undelivered-chats", groupId = "chatting")
-    public void listen(ConsumerRecord<Long, KafkaChattingDto> chatting) {
-        if (kafkaKeyForUserId.equals(chatting.key())) {
-            synchronized (undeliveredChats) {
-                undeliveredChats.add(chatting.value());
-            }
-        }
-    }
+    private final RedisTemplate<String, List<ChattingResponseDto>> redisTemplate;
 
     public void sendChatting(SocketIOClient senderClient, ChattingRequestDto chattingRequestDto) throws ExecutionException, InterruptedException {
         String room = senderClient.getHandshakeData().getSingleUrlParam("room");
-        boolean messageDelivered = false;
 
         String imageUrl = s3FileUtil.upload(chattingRequestDto.getImage());
         ChattingResponseDto chattingResponseDto = new ChattingResponseDto();
@@ -56,30 +36,15 @@ public class SocketIOService {
 
         for (SocketIOClient client : senderClient.getNamespace().getRoomOperations(room).getClients()) {
             if (!client.getSessionId().equals(senderClient.getSessionId())) {
-                // 클라이언트가 연결되어 있으면 메시지 전송
                 if (client.isChannelOpen()) {
                     client.sendEvent("read_message", chattingResponseDto);
-                    messageDelivered = true; // 클라이언트가 채팅을 수신함
+                } else {
                     sendChatToFcm(chattingResponseDto, room);
                 }
             }
         }
 
-        // 채팅 미전송시 kafka 서버에 임시 저장
-        if (!messageDelivered) {
-            sendChatToKafka(chattingResponseDto);
-        }
-
-        saveRecentChat(chattingResponseDto, room);
-    }
-
-    private void sendChatToKafka(ChattingResponseDto chat) {
-        KafkaChattingDto kafkaChattingDto = new KafkaChattingDto();
-        kafkaChattingDto.setUserId(chat.getUserId());
-        kafkaChattingDto.setContent(chat.getContent());
-        kafkaChattingDto.setImage(chat.getImage());
-        kafkaChattingDto.setLastTime(chat.getLastTime());
-        kafkaTemplate.send("undelivered-chats", chat.getUserId(), chat);
+        // todo:: redis에 채팅 저장
     }
 
     private void sendChatToFcm(ChattingResponseDto chat, String roomId) throws ExecutionException, InterruptedException {
@@ -91,34 +56,8 @@ public class SocketIOService {
         fcmService.sendNotification(notification, roomId);
     }
 
-    private void saveRecentChat(ChattingResponseDto chat, String room) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(Long.valueOf(room)).get().builder()
-                .roomId(Long.valueOf(room))
-                .lastTime(chat.getLastTime())
-                .user1(chat.getUserId())
-                .content(chat.getContent())
-                .content(chat.getImage())
-                .build();
-        chatRoomRepository.save(chatRoom);
-    }
-
-    public List<ChattingResponseDto> fetchBacklogChats(String room) {
-        return getBacklogChats(Long.valueOf(room));
-    }
-
-    private List<ChattingResponseDto> getBacklogChats(Long room) {
-        List<ChattingResponseDto> chats = new ArrayList<>();
-
-        for (KafkaChattingDto dto : undeliveredChats) {
-            ChattingResponseDto chatting = new ChattingResponseDto();
-            chatting.setLastTime(dto.getLastTime());
-            chatting.setUserId(dto.getUserId());
-            chatting.setContent(dto.getContent());
-            chatting.setImage(dto.getImage());
-            chats.add(chatting);
-        }
-
-        return chats;
+    private void sendChatToRedis(String room, List<ChattingResponseDto> chats) {
+        redisTemplate.opsForValue().set("room: " + room, chats, 3, TimeUnit.DAYS);
     }
 
 }
