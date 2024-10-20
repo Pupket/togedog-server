@@ -1,16 +1,18 @@
 package pupket.togedogserver.domain.chat.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.sql.Timestamp;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ChattingRequestDto {
-    Timestamp lastTime;
+    String lastTime;
     Long userId;
     String content;
-    MultipartFile image;
+    String image;
 }
+

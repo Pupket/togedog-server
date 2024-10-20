@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
@@ -46,9 +45,6 @@ public class Mate {
     @Column(nullable = false)
     @Builder.Default
     private boolean deleted = Boolean.FALSE;
-
-    @OneToMany(mappedBy = "mate")
-    private List<ChatRoom> chatRoom;
 
     @OneToMany(mappedBy = "mate")
     private List<Match> match;

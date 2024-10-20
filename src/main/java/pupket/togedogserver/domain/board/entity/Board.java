@@ -6,7 +6,6 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import pupket.togedogserver.domain.board.constant.FeeType;
-import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.entity.User;
@@ -82,9 +81,6 @@ public class Board {
 
     @OneToMany(mappedBy = "board", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<BoardDog> boardDog;
-
-    @OneToMany(mappedBy = "board")
-    private List<ChatRoom> chatRoom;
 
     @OneToMany(mappedBy = "board")
     private Set<WalkingPlaceTag> walkingPlaceTag;

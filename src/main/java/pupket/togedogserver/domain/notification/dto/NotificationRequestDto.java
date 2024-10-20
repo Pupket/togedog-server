@@ -1,10 +1,10 @@
 package pupket.togedogserver.domain.notification.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
+@Builder(toBuilder = true)
 public class NotificationRequestDto {
     Long receiver;
     String title;

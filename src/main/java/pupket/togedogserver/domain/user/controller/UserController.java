@@ -58,9 +58,7 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @AuthenticationPrincipal CustomUserDetail userDetail
-
     ) {
-
         String refreshToken = userServiceImpl.getRefreshToken(userDetail.getUuid());
 
         userServiceImpl.logout(refreshToken, userDetail);

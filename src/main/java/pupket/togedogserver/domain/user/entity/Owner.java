@@ -3,7 +3,6 @@ package pupket.togedogserver.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
-import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.match.entity.Match;
 
 import java.util.List;
@@ -29,9 +28,6 @@ public class Owner {
     @ColumnDefault("0")
     @Builder.Default
     private Long matchCount = 0L;
-
-    @OneToMany(mappedBy = "owner")
-    private List<ChatRoom> chatRoom;
 
     @OneToMany(mappedBy = "owner")
     private List<Match> match;

@@ -11,7 +11,7 @@ import static org.springframework.http.HttpStatus.*;
 public enum ExceptionCode {
     // 500
     NOT_HANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, "Unhandled exception occurred.", 500),
-    REDIS_CONNECTION_FAILURE(INTERNAL_SERVER_ERROR, "Failed to connect to Redis.", 500),
+    REDIS_CONNECTION_FAILURE(INTERNAL_SERVER_ERROR, "Failed to connect to Redis or Failed to save Record", 500),
     EMAIL_SEND_FAILURE(INTERNAL_SERVER_ERROR, "Failed to send email.", 500),
     UNEXPECTED_ERROR(INTERNAL_SERVER_ERROR, "An unexpected error occurred.", 500),
 
@@ -69,7 +69,8 @@ public enum ExceptionCode {
     , NOT_FOUND_BOARDDOG(CONFLICT,"Can't find BoardDog",403 )
     , ALREADY_COMPLETED(CONFLICT,"Matching Already Completed" , 403 )
     , MATE_NOT_REGIST(CONFLICT,"Mate Not Register" ,403 )
-    , DUPLICATE_LOGIN(CONFLICT,"Duplicate Login" , 403 );
+    , DUPLICATE_LOGIN(CONFLICT,"Duplicate Login" , 403 ),
+    INVALID_TIME_FORMAT(CONFLICT,"Invalid Time Format" , 403 );
 
 
     private final HttpStatus httpStatus;
