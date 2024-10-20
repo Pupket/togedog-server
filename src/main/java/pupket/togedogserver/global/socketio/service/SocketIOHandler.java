@@ -3,10 +3,10 @@ package pupket.togedogserver.global.socketio.service;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
-import com.corundumstudio.socketio.annotation.OnEvent;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,14 +26,23 @@ public class SocketIOHandler {
     private final ChatService chatService;
     private final SocketIOService socketIOService;
 
+    @PostConstruct
+    public void init() {
+        server.addConnectListener(onConnected());
+        server.addDisconnectListener(onDisconnected());
+        server.addEventListener("chat_received", ChattingRequestDto.class, onChatReceived());
+    }
     @OnConnect
     private ConnectListener onConnected() {
         return client -> {
+                log.info("Connected to server");
             String room = client.getHandshakeData().getSingleUrlParam("room");
             Timestamp lastTime = Timestamp.valueOf(client.getHandshakeData().getSingleUrlParam("lastTime"));
             client.joinRoom(room);
             List<ChattingResponseDto> chats = chatService.getUndeliveredChats(Long.valueOf(room), lastTime);
+            log.info("{}", chats.size());
             for (ChattingResponseDto chat : chats) {
+                log.info("채팅내용={}", chat.toString());
                 client.sendEvent("chatMessage", chat);
             }
         };
@@ -47,11 +56,11 @@ public class SocketIOHandler {
         };
     }
 
-    @OnEvent(value = "chat_received")
     private DataListener<ChattingRequestDto> onChatReceived() {
+        log.info("onChatReceived");
         return (senderClient, data, ackSender) -> {
+            log.info("message from={}" , data);
             socketIOService.sendChatting(senderClient, data);
-            log.info("message from" + data);
         };
     }
 

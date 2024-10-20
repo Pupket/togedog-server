@@ -29,7 +29,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     private static final List<String> EXCLUDE_URLS = List.of(
-            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon"
+            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/socket.io/"
     );
 
     @Override
@@ -40,7 +40,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         if (!requestURI.startsWith("/health")) {
             log.info("request.URI = {}", requestURI);
         }
-
 
         // Bypass JWT authentication for Swagger and /login paths
         if (isExcludedPath(requestURI)) {
@@ -70,7 +69,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 handleJwtException(response, new MemberException(ExceptionCode.NOT_FOUND_MEMBER));
             }
         }
-
         filterChain.doFilter(request, response);
     }
 

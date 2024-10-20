@@ -4,12 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.service.ChatService;
+import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final S3FileUtilImpl s3FileUtilImpl;
 
     @CrossOrigin
     @Operation(summary = "채팅방 생성", description = "새로운 채팅방을 생성하고 채팅방 번호를 반환합니다.")
@@ -59,7 +63,7 @@ public class ChatController {
     @PostMapping("/backup")
     public void backupChats(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            List<ChattingRequestDto> chats
+            @RequestBody List<ChattingRequestDto> chats
     ) {
         chatService.backupChats(userDetail.getUuid(), chats);
     }
@@ -74,5 +78,20 @@ public class ChatController {
     public void leaveRoom(Long roomId) {
         chatService.leaveRoom(roomId);
     }
+
+    @Operation(summary = "이미지 업로드 및 url 반환",
+            description = "이미지 url을 반환합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "성공"),
+            @ApiResponse(responseCode = "404", description = "실패")
+    })
+    @PostMapping(value = "/get-imageUrl", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> getImageUrl(
+            @RequestPart("image") MultipartFile image) {
+        String uploadedImage = s3FileUtilImpl.upload(image);
+        System.out.println(uploadedImage);
+        return ResponseEntity.ok(uploadedImage);
+    }
+
 
 }

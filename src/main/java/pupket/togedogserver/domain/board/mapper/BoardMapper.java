@@ -22,7 +22,6 @@ public interface BoardMapper {
     @Mapping(target = "editedAt", ignore = true)
     @Mapping(target = "matched", ignore = true)
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "chatRoom", ignore = true)
     @Mapping(target = "startTime", source = "startTime", dateFormat = "HH:mm:ss")
     @Mapping(target = "endTime", source = "endTime", dateFormat = "HH:mm:ss")
     @Mapping(target = "pickUpDay", source = "pickUpDay", dateFormat = "yyyy-MM-dd")

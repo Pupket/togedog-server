@@ -8,7 +8,6 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
 
 import java.time.Duration;
-import java.util.Objects;
 
 @Service
 @Slf4j

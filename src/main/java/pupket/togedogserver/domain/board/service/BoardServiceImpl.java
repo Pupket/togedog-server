@@ -34,7 +34,6 @@ import pupket.togedogserver.global.exception.customException.WalkingPlaceTagExce
 import pupket.togedogserver.global.mapper.EnumMapper;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;

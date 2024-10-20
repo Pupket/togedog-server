@@ -41,7 +41,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private final UserRepository userRepository;
     private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final UserMapper userMapper;
-    private final RedisLoginService redisLoginService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -84,8 +83,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     if (existingUser.accountStatus.toString().equals("DELETED")) {
                         throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
                     }
-                    // SocialAccessToken 엔티티 업데이트 또는 생성 로직 수정
-                    redisLoginService.storeUserIPAddressInRedis(existingUser, finalRemoteAddr);
                     return existingUser;
 
                 }).orElseGet(() -> {
@@ -98,7 +95,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                             .build();
                     userRepository.save(newUser);
                     socialAccessTokenRepository.save(SocialAccessToken.of(socialAccessToken, newUser)); // 새로운 Member에 대한 SocialAccessToken 저장
-                    redisLoginService.storeUserIPAddressInRedis(mappedUser,finalRemoteAddr);
                     return newUser;
                 });
 

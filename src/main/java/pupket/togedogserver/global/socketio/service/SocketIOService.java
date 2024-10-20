@@ -1,6 +1,7 @@
 package pupket.togedogserver.global.socketio.service;
 
 import com.corundumstudio.socketio.SocketIOClient;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -9,8 +10,12 @@ import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
-import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.ChatException;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -21,18 +26,19 @@ import java.util.concurrent.TimeUnit;
 public class SocketIOService {
 
     private final FcmService fcmService;
-    private final S3FileUtilImpl s3FileUtil;
     private final RedisTemplate<String, List<ChattingResponseDto>> redisTemplate;
 
+    @Transactional
     public void sendChatting(SocketIOClient senderClient, ChattingRequestDto chattingRequestDto) throws ExecutionException, InterruptedException {
         String room = senderClient.getHandshakeData().getSingleUrlParam("room");
+        String chattingRequestDtoImage = chattingRequestDto.getImage();
 
-        String imageUrl = s3FileUtil.upload(chattingRequestDto.getImage());
-        ChattingResponseDto chattingResponseDto = new ChattingResponseDto();
-        chattingResponseDto.setLastTime(chattingRequestDto.getLastTime());
-        chattingResponseDto.setUserId(chattingRequestDto.getUserId());
-        chattingResponseDto.setContent(chattingRequestDto.getContent());
-        chattingResponseDto.setImage(imageUrl);
+        ChattingResponseDto chattingResponseDto =  ChattingResponseDto.builder()
+                .lastTime(getParsedLastTime(chattingRequestDto.getLastTime()))
+                .userId(chattingRequestDto.getUserId())
+                .content(chattingRequestDto.getContent())
+                .image(chattingRequestDtoImage)
+                .build();
 
         for (SocketIOClient client : senderClient.getNamespace().getRoomOperations(room).getClients()) {
             if (!client.getSessionId().equals(senderClient.getSessionId())) {
@@ -43,21 +49,41 @@ public class SocketIOService {
                 }
             }
         }
+        // Redis에 채팅 저장
+        saveChatToRedis(room, chattingResponseDto);
 
-        // todo:: redis에 채팅 저장
+    }
+    private Timestamp getParsedLastTime(String lastTime) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try{
+            return new Timestamp(dateFormat.parse(lastTime).getTime());
+        }catch (Exception e){
+            return new Timestamp(System.currentTimeMillis());
+        }
     }
 
     private void sendChatToFcm(ChattingResponseDto chat, String roomId) throws ExecutionException, InterruptedException {
-        NotificationRequestDto notification = new NotificationRequestDto();
-        notification.setReceiver(chat.getUserId());
-        notification.setTitle(String.valueOf(chat.getUserId()));
-        notification.setMessage(chat.getContent());
-        notification.setImage(chat.getImage());
+        NotificationRequestDto notification = NotificationRequestDto.builder()
+                .receiver(chat.getUserId())
+                .title(String.valueOf(chat.getUserId()))
+                .message(chat.getContent())
+                .build();
+
         fcmService.sendNotification(notification, roomId);
     }
 
-    private void sendChatToRedis(String room, List<ChattingResponseDto> chats) {
-        redisTemplate.opsForValue().set("room: " + room, chats, 3, TimeUnit.DAYS);
+    private void saveChatToRedis(String room, ChattingResponseDto chat) {
+        String key = "chatRoomId:" + room;
+        List<ChattingResponseDto> chatList = redisTemplate.opsForValue().get(key);
+        if (chatList == null) {
+            chatList = new ArrayList<>();
+        }
+        chatList.add(chat);
+        try{
+            redisTemplate.opsForValue().set(key, chatList, 3, TimeUnit.DAYS); // 3일간 저장
+        }catch (Exception e){
+            throw new ChatException(ExceptionCode.REDIS_CONNECTION_FAILURE);
+        }
     }
 
 }

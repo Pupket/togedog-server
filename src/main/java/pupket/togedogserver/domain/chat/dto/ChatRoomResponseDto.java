@@ -1,15 +1,12 @@
 package pupket.togedogserver.domain.chat.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.sql.Timestamp;
 
-@Getter
-@Setter
+@Data
 public class ChatRoomResponseDto {
     Long roomId;
-    String content;
+    String sender;
     Timestamp lastTime;
-    String nickname;
 }

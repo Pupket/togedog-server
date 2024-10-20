@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 
 import java.util.List;
@@ -41,12 +42,23 @@ public class RedisConfig {
         return redisTemplate;
     }
 
+    // ChattingResponseDto용 RedisTemplate
     @Bean
     public RedisTemplate<String, List<ChattingResponseDto>> redisChattingTemplate() {
         RedisTemplate<String, List<ChattingResponseDto>> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class));
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());  // Value를 JSON 형태로 직렬화
+        return redisTemplate;
+    }
+
+    // ChattingRequestDto용 RedisTemplate
+    @Bean
+    public RedisTemplate<String, List<ChattingRequestDto>> redisChattingRequestTemplate() {
+        RedisTemplate<String, List<ChattingRequestDto>> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());  // Value를 JSON 형태로 직렬화
         return redisTemplate;
     }
 }
