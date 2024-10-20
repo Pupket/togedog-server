@@ -41,7 +41,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
             log.info("request.URI = {}", requestURI);
         }
 
-        // Bypass JWT authentication for Swagger and /login paths
+
         if (isExcludedPath(requestURI)) {
             filterChain.doFilter(request, response);
             return;

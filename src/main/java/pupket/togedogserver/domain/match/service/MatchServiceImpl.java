@@ -52,9 +52,8 @@ public class MatchServiceImpl implements MatchService {
         if (matches != null) {
             boolean isMatched = matches.stream().anyMatch(
                     match ->
-                            match.getMate().getMateUuid().equals(mate.getMateUuid()) &&
-                                    match.getMatched().equals(MatchStatus.MATCHED)
-                                    && match.getCompleteStatus().equals(CompleteStatus.INCOMPLETE)
+                            match.getMatched().equals(MatchStatus.MATCHED)
+                                    || match.getCompleteStatus().equals(CompleteStatus.INCOMPLETE)
             );
 
             if (isMatched) {
@@ -74,17 +73,15 @@ public class MatchServiceImpl implements MatchService {
 
     private Board getBoard(Optional<Board> boardRepository) {
         //Board
-        Board findBoardById = boardRepository.orElseThrow(
+        return boardRepository.orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
-        return findBoardById;
     }
 
     private Mate getMate(User findUserByNickname) {
-        Mate mate = mateRepository.findByUser(findUserByNickname).orElseThrow(
+        return mateRepository.findByUser(findUserByNickname).orElseThrow(
                 () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
         );
-        return mate;
     }
 
     private User getUser(Optional<User> userRepository) {
@@ -119,7 +116,7 @@ public class MatchServiceImpl implements MatchService {
         if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
             throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
         }
-        if (findBoard.getMatched().equals(MatchStatus.MATCHED) && findMatch.getMatched().equals(MatchStatus.MATCHED)) {
+        if (findBoard.getMatched().equals(MatchStatus.MATCHED) || findMatch.getMatched().equals(MatchStatus.MATCHED)) {
             throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
         } else {
             Match updatedMatch = findMatch.toBuilder()
@@ -134,7 +131,6 @@ public class MatchServiceImpl implements MatchService {
 
             boardRepository.save(board);
         }
-
     }
 
     private Match getMatch(Optional<Match> matchRepository) {

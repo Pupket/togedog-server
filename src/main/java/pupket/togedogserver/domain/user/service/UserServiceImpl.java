@@ -78,7 +78,7 @@ public class UserServiceImpl {
 
     private User getUserById(Long uuid) {
         refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
+                () -> new MemberException(ExceptionCode.INVALID_TOKEN)
         );
         return userRepository.findByUuid(uuid).
                 orElseThrow(
