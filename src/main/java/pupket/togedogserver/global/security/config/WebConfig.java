@@ -13,7 +13,7 @@ import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    private OctetStreamReadMsgConverter octetStreamReadMsgConverter;
+    private final OctetStreamReadMsgConverter octetStreamReadMsgConverter;
 
     @Autowired
     public WebConfig(OctetStreamReadMsgConverter octetStreamReadMsgConverter) {
@@ -30,8 +30,5 @@ public class WebConfig implements WebMvcConfigurer {
         }
     }
 
-    @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
-        configurer.addPathPrefix("api", c -> c.isAnnotationPresent(RestController.class));
-    }
+
 }
