@@ -28,6 +28,7 @@ public class SocketIOHandler {
 
     @PostConstruct
     public void init() {
+        log.info("start Websocket");
         server.addConnectListener(onConnected());
         server.addDisconnectListener(onDisconnected());
         server.addEventListener("chat_received", ChattingRequestDto.class, onChatReceived());
@@ -52,6 +53,7 @@ public class SocketIOHandler {
     private DisconnectListener onDisconnected() {
         return client -> {
             String room = client.getHandshakeData().getSingleUrlParam("room");
+            log.info("Disconnected from server");
             client.leaveRoom(room);
         };
     }
