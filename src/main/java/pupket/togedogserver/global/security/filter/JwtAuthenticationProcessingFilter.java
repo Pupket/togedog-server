@@ -29,7 +29,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     private static final List<String> EXCLUDE_URLS = List.of(
-            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/socket.io/"
+            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/ws","/websocket_test.html"
     );
 
     @Override
@@ -41,8 +41,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
             log.info("request.URI = {}", requestURI);
         }
 
-
         if (isExcludedPath(requestURI)) {
+            log.info("it's excluded path = {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
