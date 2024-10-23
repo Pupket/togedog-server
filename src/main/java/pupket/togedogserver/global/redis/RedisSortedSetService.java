@@ -14,9 +14,9 @@ public class RedisSortedSetService {    //검색어 자동 완성을 구현할 �
         this.redisTemplate = redisTemplate;
     }
     private final RedisTemplate<String, String> redisTemplate;
-    private String keyUsedByDog = "breedName"; //검색어 자동 완성을 위한 Redis 데이터
-    private String keyUsedByMate = "userNickname"; //검색어 자동 완성을 위한 Redis 데이터
-    private int score = 0;  //Score는 딱히 필요 없으므로 하나로 통일
+    private final String keyUsedByDog = "breedName"; //검색어 자동 완성을 위한 Redis 데이터
+    private final String keyUsedByMate = "userNickname"; //검색어 자동 완성을 위한 Redis 데이터
+    private final int score = 0;  //Score는 딱히 필요 없으므로 하나로 통일
 
     public void addToSortedSetFromMate(String value) {    //Redis SortedSet에 추가
         redisTemplate.opsForZSet().add(keyUsedByMate, value, score);
@@ -45,10 +45,5 @@ public class RedisSortedSetService {    //검색어 자동 완성을 구현할 �
     public void removeFromSortedSetFromMate(String value) {
         redisTemplate.opsForZSet().remove(keyUsedByMate, value);
     }
-
-    public void removeFromSortedSetFromDog(String value) {
-        redisTemplate.opsForZSet().remove(keyUsedByDog, value);
-    }
-
 
 }

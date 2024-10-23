@@ -9,15 +9,19 @@ import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
+import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.repository.UserRepository;
-import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MateException;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -28,14 +32,20 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
 
     private final RedisTemplate<String, List<ChattingResponseDto>> redisTemplateForResponse;
-    private final RedisTemplate<String, List<ChattingRequestDto>> redisTemplateForRequests;
-    private final MateRepository mateRepository;
+    private final RedisTemplate<String, List<ChattingRequestDto>> redisTemplate;
     private final UserRepository userRepository;
+    private final FcmService fcmService;
 
     //채팅방 생성
     public Long createChatRoom(Long sender, Long receiver) {
-        ChatRoom chatRoom = new ChatRoom(sender, receiver);
+        ChatRoom chatRoom = ChatRoom.builder()
+                .receiver(receiver)
+                .sender(sender)
+                .lastTime(Timestamp.valueOf(LocalDateTime.now()))
+                .build();
+
         chatRoomRepository.save(chatRoom);
+
         return chatRoom.getRoomId();
     }
 
@@ -97,7 +107,7 @@ public class ChatService {
         for (ChatRoom chatRoom : chatRooms) {
             String key = "room:" + chatRoom.getRoomId() + ":chat_backup";
             try {
-                List<ChattingRequestDto> existingChats = redisTemplateForRequests.opsForValue().get(key);
+                List<ChattingRequestDto> existingChats = redisTemplate.opsForValue().get(key);
 
                 if (existingChats == null) {
                     existingChats = new ArrayList<>();
@@ -115,7 +125,7 @@ public class ChatService {
                     }
                 }
 
-                redisTemplateForRequests.opsForValue().set(key, existingChats, 3, TimeUnit.DAYS);  // 3일간 보관
+                redisTemplate.opsForValue().set(key, existingChats, 3, TimeUnit.DAYS);  // 3일간 보관
             } catch (Exception e) {
                 log.error("Failed to backup chats for room: " + chatRoom.getRoomId(), e);
             }
@@ -127,12 +137,37 @@ public class ChatService {
         chatRoomRepository.deleteById(roomId);
     }
 
-    private Timestamp getParsedLastTime(String lastTime) {
+    public Timestamp getParsedLastTime(String lastTime) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        try {
+        try{
             return new Timestamp(dateFormat.parse(lastTime).getTime());
-        } catch (Exception e) {
+        }catch (Exception e){
             return new Timestamp(System.currentTimeMillis());
+        }
+    }
+
+    public void sendChatToFcm(ChattingResponseDto chat, String roomId) throws ExecutionException, InterruptedException {
+        NotificationRequestDto notification = NotificationRequestDto.builder()
+                .receiver(chat.getUserId())
+                .title(String.valueOf(chat.getUserId()))
+                .message(chat.getContent())
+                .build();
+
+        fcmService.sendNotification(notification, roomId);
+    }
+
+    public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
+        String key = "chatRoomId:" + roomId;
+        List<ChattingResponseDto> chatList = redisTemplateForResponse.opsForValue().get(key);
+        if (chatList == null) {
+            chatList = new ArrayList<>();
+        }
+        chatList.add(chat);
+
+        try{
+            redisTemplateForResponse.opsForValue().set(key, chatList, 3, TimeUnit.DAYS); // 3일간 저장
+        }catch (Exception e){
+            throw new ChatException(ExceptionCode.REDIS_CONNECTION_FAILURE);
         }
     }
 }

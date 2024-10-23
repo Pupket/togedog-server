@@ -23,10 +23,16 @@ public class LoggingAspect {
     public Object aroundLog(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
         // 메서드 정보 받아오기
-        Method method = getMethod(proceedingJoinPoint);
+        Method method = null;
+        String uri = null;
+        try{
+             method = getMethod(proceedingJoinPoint);
+            uri = getRequestURI();
+        }catch (Exception e){
+            return proceedingJoinPoint.proceed();
+        }
 
         // 요청 URI 확인
-        String uri = getRequestURI();
         if ("/health-check".equals(uri)) {
             return proceedingJoinPoint.proceed(); // /health-check API는 로그 출력하지 않음
         }

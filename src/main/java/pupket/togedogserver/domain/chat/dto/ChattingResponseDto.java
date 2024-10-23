@@ -16,6 +16,7 @@ public class ChattingResponseDto {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
     Timestamp lastTime;
+    private Long roomId;
     Long userId;
     String content;
     String image;

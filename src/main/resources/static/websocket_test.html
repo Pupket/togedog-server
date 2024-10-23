@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>Chat Application</h1>
+<div>
+    <h2>Create Chat Room</h2>
+    <label for="receiverId"></label><input type="text" id="receiverId" placeholder="Receiver ID" />
+    <button id="createRoomBtn">Create and Connect</button> <!-- Button renamed -->
+    <p id="roomIdDisplay"></p>
+</div>
+<div id="chatSection" style="display:none;">
+    <h2>Chat Room: <span id="roomId"></span></h2>
+    <textarea id="message" placeholder="Type a message..."></textarea>
+    <button id="sendMessageBtn">Send</button>
+    <div id="chatHistory"></div> <!-- Chat history div -->
+</div>
+
+<script>
+    let stompClient = null;
+    let roomId = null;
+
+    // 연결 및 구독 함수
+    function connect() {
+        const socket = new SockJS('/ws'); // Change to your WebSocket endpoint
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function(frame) {
+            console.log('Connected:', frame); // frame 객체 전체를 출력
+            console.log('Connected to server:', frame.headers['server'] || 'Unknown'); // 서버 정보가 있다면 출력
+            stompClient.subscribe('/sub/chat/room/' + roomId, function(message) {
+                const msg = JSON.parse(message.body);
+                console.log("Message received:", msg);
+                document.getElementById('chatHistory').innerHTML += `<p>[${msg.lastTime}] ${msg.userId}: ${msg.content}</p>`;
+            });
+        });
+    }
+
+    // 방 생성과 구독을 동시에 수행
+    document.getElementById('createRoomBtn').onclick = function() {
+        const receiverId = document.getElementById('receiverId').value;
+        const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0anNmaGRoa2RAbmF0ZS5jb20iLCJpZCI6MSwiYXV0aCI6Ik1FTUJFUl9LQUtBTyIsImV4cCI6MTcyOTcwNjU3OH0.Qa1Vh8wOrBLBLaitpBRM8RfmkQXBn-bgFcLqd5YfIgo'; // JWT 토큰
+
+        fetch('/api/v1/chat/create?receiver=' + receiverId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token // 헤더에 토큰 추가
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                roomId = data;
+                document.getElementById('roomIdDisplay').innerText = 'Room ID: ' + roomId;
+                document.getElementById('roomId').innerText = roomId;
+                document.getElementById('chatSection').style.display = 'block';
+
+                // 방이 생성되면 바로 연결하고 구독
+                connect(roomId);
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    };
+
+    // 메시지 전송
+    document.getElementById('sendMessageBtn').onclick = function() {
+        const messageContent = document.getElementById('message').value;
+        const message = {
+            roomId: roomId,
+            userId: 1, // Replace with actual user ID
+            content: messageContent,
+            lastTime: new Date().toISOString(),
+            image: ""
+        };
+
+        stompClient.send("/pub/chat", {}, JSON.stringify(message));
+        console.log("Message sent:", message); // 메시지가 전송되었음을 로그로 출력
+
+        // 메시지 입력 필드 비우기
+        document.getElementById('message').value = '';
+    };
+</script>
+</body>
+</html>
