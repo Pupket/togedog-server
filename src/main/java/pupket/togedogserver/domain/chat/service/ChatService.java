@@ -3,17 +3,15 @@ package pupket.togedogserver.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
-import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
-import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
-import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MateException;
 
 import java.sql.Timestamp;
@@ -21,153 +19,124 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
-
-    private final RedisTemplate<String, List<ChattingResponseDto>> redisTemplateForResponse;
-    private final RedisTemplate<String, List<ChattingRequestDto>> redisTemplate;
+    private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
     private final UserRepository userRepository;
     private final FcmService fcmService;
+    private final RedisTemplate<String,ChannelTopic> redisTopicTemplate;
 
-    //채팅방 생성
-    public Long createChatRoom(Long sender, Long receiver) {
-        ChatRoom chatRoom = ChatRoom.builder()
-                .receiver(receiver)
-                .sender(sender)
-                .lastTime(Timestamp.valueOf(LocalDateTime.now()))
-                .build();
-
-        chatRoomRepository.save(chatRoom);
-
-        return chatRoom.getRoomId();
+    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver) {
+        return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
+                .orElseGet(() -> {
+                    ChatRoom newChatRoom = ChatRoom.builder()
+                            .receiver(receiver)
+                            .sender(sender)
+                            .lastTime(Timestamp.valueOf(LocalDateTime.now()))
+                            .build();
+                    chatRoomRepository.save(newChatRoom);
+                    ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
+                    redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);
+                    return newChatRoom;
+                });
     }
 
-    //채팅방 조회
+    public String calculateTimeAgo(Timestamp lastTime) {
+        long diffInMillis = System.currentTimeMillis() - lastTime.getTime();
+        long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis);
+
+        if (diffInMinutes < 60) {
+            return diffInMinutes + "분 전";
+        } else {
+            long diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMillis);
+            if (diffInHours < 24) {
+                return diffInHours + "시간 전";
+            } else {
+                long diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis);
+                return diffInDays + "일 전";
+            }
+        }
+    }
+
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
         List<ChatRoom> chatRooms = chatRoomRepository.findBySender(uuid);
-
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
         for (ChatRoom room : chatRooms) {
             ChatRoomResponseDto chatroom = new ChatRoomResponseDto();
             chatroom.setRoomId(room.getRoomId());
             chatroom.setLastTime(room.getLastTime());
-            chatroom.setSender(userRepository.findById(room.getSender()).orElseThrow(
-                            () -> new MateException(ExceptionCode.NOT_FOUND_MATE)
-                    ).getNickname()
-            );
+            chatroom.setSender(userRepository.findById(room.getSender())
+                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE))
+                    .getNickname());
             chatRoomList.add(chatroom);
         }
-
         return chatRoomList;
     }
 
-    //미수신 채팅 가져오기
-    public List<ChattingResponseDto> getUndeliveredChats(Long room, Timestamp lastTime) {
-        List<ChattingResponseDto> recentChats = getRecentChats(room);
-        if (recentChats == null || recentChats.isEmpty()) {
-            log.warn("No recent chats found for room: {}", room);
-            return new ArrayList<>();  // 데이터가 없을 경우 빈 리스트 반환
-        }
-        return separateUndeliveredChats(recentChats, lastTime);
-    }
+    public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
+        String key = "chatRoomId:" + roomId;
 
-    //최근 채팅 가져오기
-    private List<ChattingResponseDto> getRecentChats(Long room) {
-        return redisTemplateForResponse.opsForValue().get("chatRoomId:" + room);
-    }
-
-    private List<ChattingResponseDto> separateUndeliveredChats(List<ChattingResponseDto> recentChats, Timestamp lastTime) {
-        List<ChattingResponseDto> undeliveredChats = new ArrayList<>();
-
-        if (recentChats != null) {
-            for (ChattingResponseDto chat : recentChats) {
-                Timestamp lastTime1 = chat.getLastTime();
-                if (lastTime1.after(lastTime)) {
-                    undeliveredChats.add(chat);
-                }
-            }
+        // Redis에 메시지 저장
+        List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1); // opsForList 사용
+        if (chatList == null) {
+            chatList = new ArrayList<>();
         }
 
-        return undeliveredChats;
-    }
+        boolean isDuplicate = chatList.stream().anyMatch(savedChat ->
+                savedChat.getLastTime().equals(chat.getLastTime()) &&
+                        savedChat.getContent().equals(chat.getContent())
+        );
 
-    // Redis에 사용자 모든 채팅방을 백업하는 메서드
-    public void backupChats(Long uuid, List<ChattingRequestDto> chats) {
-        // 사용자 uuid가 포함된 모든 채팅방 조회
-        List<ChatRoom> chatRooms = chatRoomRepository.findBySender(uuid);
-
-        // 각 채팅방의 ID를 기준으로 Redis에 채팅 저장
-        for (ChatRoom chatRoom : chatRooms) {
-            String key = "room:" + chatRoom.getRoomId() + ":chat_backup";
-            try {
-                List<ChattingRequestDto> existingChats = redisTemplate.opsForValue().get(key);
-
-                if (existingChats == null) {
-                    existingChats = new ArrayList<>();
-                }
-
-                // 중복 검사: 이미 존재하는 채팅과 동일한 content와 lastTime을 가진 채팅은 추가하지 않음
-                for (ChattingRequestDto newChat : chats) {
-                    boolean isDuplicate = existingChats.stream()
-                            .anyMatch(existingChat ->
-                                    existingChat.getContent().equals(newChat.getContent()) &&
-                                            existingChat.getLastTime().equals(newChat.getLastTime()));
-
-                    if (!isDuplicate) {
-                        existingChats.add(newChat);
-                    }
-                }
-
-                redisTemplate.opsForValue().set(key, existingChats, 3, TimeUnit.DAYS);  // 3일간 보관
-            } catch (Exception e) {
-                log.error("Failed to backup chats for room: " + chatRoom.getRoomId(), e);
-            }
+        if (!isDuplicate) {
+            redisTemplateForSave.opsForList().rightPush(key, chat);
+            redisTemplateForSave.expire(key, 3, TimeUnit.DAYS);
+        } else {
+            log.warn("Duplicate message detected. Not saving to Redis.");
         }
     }
 
-    //방 나가기(삭제)
     public void leaveRoom(Long roomId) {
         chatRoomRepository.deleteById(roomId);
     }
 
     public Timestamp getParsedLastTime(String lastTime) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        try{
+        try {
             return new Timestamp(dateFormat.parse(lastTime).getTime());
-        }catch (Exception e){
+        } catch (Exception e) {
             return new Timestamp(System.currentTimeMillis());
         }
     }
 
-    public void sendChatToFcm(ChattingResponseDto chat, String roomId) throws ExecutionException, InterruptedException {
-        NotificationRequestDto notification = NotificationRequestDto.builder()
-                .receiver(chat.getUserId())
-                .title(String.valueOf(chat.getUserId()))
-                .message(chat.getContent())
-                .build();
-
-        fcmService.sendNotification(notification, roomId);
-    }
-
-    public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
+    // 마지막으로 받은 시간 이후의 메시지들을 조회하는 메서드
+    public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
         String key = "chatRoomId:" + roomId;
-        List<ChattingResponseDto> chatList = redisTemplateForResponse.opsForValue().get(key);
-        if (chatList == null) {
-            chatList = new ArrayList<>();
-        }
-        chatList.add(chat);
 
-        try{
-            redisTemplateForResponse.opsForValue().set(key, chatList, 3, TimeUnit.DAYS); // 3일간 저장
-        }catch (Exception e){
-            throw new ChatException(ExceptionCode.REDIS_CONNECTION_FAILURE);
+        // Redis에서 해당 채팅방의 전체 메시지 조회 (opsForList로 ChattingResponseDto 리스트 가져오기)
+        List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
+
+        if (chatList == null || chatList.isEmpty()) {
+            log.warn("No messages found for roomId: {}", roomId);
+            return new ArrayList<>();  // 데이터가 없을 경우 빈 리스트 반환
         }
+
+        // 마지막으로 받은 시간 이후의 메시지 필터링
+        List<ChattingResponseDto> unreceivedMessages = new ArrayList<>();
+        for (ChattingResponseDto message : chatList) {
+            if (message.getLastTime().after(lastTime)) {
+                log.info("수행되었음");
+                unreceivedMessages.add(message);
+            }
+            log.info("수행안됨");
+            log.info(message.getLastTime()+"");
+            log.info("result={}",message.getLastTime().after(lastTime));
+        }
+
+        return unreceivedMessages;
     }
 }

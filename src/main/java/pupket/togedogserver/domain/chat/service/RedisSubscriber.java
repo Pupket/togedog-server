@@ -1,16 +1,12 @@
 package pupket.togedogserver.domain.chat.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.connection.Message;
-import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
+import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 
 @RequiredArgsConstructor
 @Service
@@ -22,7 +18,7 @@ public class RedisSubscriber {
 
     public void sendMessage(String message) {
         try{
-            ChattingRequestDto requestMessage = objectMapper.readValue(message, ChattingRequestDto.class);
+            ChattingResponseDto requestMessage = objectMapper.readValue(message, ChattingResponseDto.class);
             log.info("chattingRequestDto: {}", requestMessage.getContent());
             messagingTemplate.convertAndSend("/sub/chat/room/" + requestMessage.getRoomId(), requestMessage);
         } catch (Exception e){

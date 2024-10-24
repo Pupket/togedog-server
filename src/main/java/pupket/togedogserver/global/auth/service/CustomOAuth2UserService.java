@@ -24,7 +24,6 @@ import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.auth.dto.OAuthAttributes;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
-import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.PasswordUtil;
 
