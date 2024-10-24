@@ -133,7 +133,7 @@ public class ChatService {
                 unreceivedMessages.add(message);
             }
             log.info("수행안됨");
-            log.info(message.getLastTime()+"");
+            log.info("{}", message.getLastTime());
             log.info("result={}",message.getLastTime().after(lastTime));
         }
 

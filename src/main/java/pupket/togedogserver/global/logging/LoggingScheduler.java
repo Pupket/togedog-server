@@ -17,7 +17,7 @@ public class LoggingScheduler {
     @Scheduled(cron = "0 0 0 * * ?")
     public void removeLog() {
         try {
-            Files.walkFileTree(Paths.get(LOG_DIRECTORY), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(Paths.get(LOG_DIRECTORY), new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws  IOException {
                     LocalDateTime fileTime = LocalDateTime.ofInstant(attrs.lastModifiedTime().toInstant(), ZoneId.systemDefault());

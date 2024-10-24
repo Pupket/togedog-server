@@ -29,10 +29,6 @@ public class FcmService {
         userRepository.updateFcmTokenToNullByUuid(uuid);
     }
 
-    public String getToken(Long uuid) {
-        return userRepository.findByUuid(uuid).get().getFcmToken();
-    }
-
     public void sendNotification(NotificationRequestDto notification, String roomId) throws InterruptedException, ExecutionException {
         String title = notification.getTitle();
         String message = notification.getMessage();
@@ -53,7 +49,7 @@ public class FcmService {
                 .build();
 
         String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
-        log.info("Sent message: " + response);
+        log.info("Sent message: {}", response);
     }
 
 }

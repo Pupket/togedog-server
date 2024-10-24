@@ -73,8 +73,6 @@ public class MateServiceImpl implements MateService {
                 redisSortedSetService.addToSortedSetFromMate(name.substring(0, i)); //곧바로 redis에 저장
             }
         }
-        // long end1 = System.currentTimeMillis(); //뒤에서 성능 비교를 위해 시간을 재는 용도
-        // long elapsed1 = end1 - start1;  //뒤에서 성능 비교를 위해 시간을 재는 용도
     }
 
     @Override

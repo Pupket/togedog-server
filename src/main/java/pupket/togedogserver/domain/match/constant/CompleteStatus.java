@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum CompleteStatus {
     COMPLETE("산책 완료"), INCOMPLETE("산책 전");
 
-    private String status;
+    private final String status;
 
     CompleteStatus(String status) {
         this.status = status;

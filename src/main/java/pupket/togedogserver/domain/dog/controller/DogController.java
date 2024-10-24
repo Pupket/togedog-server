@@ -44,7 +44,6 @@ public class DogController {
             @Schema(
                     description = "프로필 등록 정보 reqeuest body 양 끝에 \" 을 하나씩 더 붙여야 합니다. 기입이 안되서 설명에 적어놓습니다!",
                     type = "string",
-                    nullable = false,
                     example = " { " +
                             "\\\"name\\\": \\\"Buddy\\\", " +
                             "\\\"breed\\\": \\\"아프간 하운드\\\", " +

@@ -11,13 +11,13 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 import java.util.List;
 
 public interface DogService {
-    public void create(@AuthenticationPrincipal CustomUserDetail user, DogRegistRequest request, MultipartFile profileImages);
+     void create(@AuthenticationPrincipal CustomUserDetail user, DogRegistRequest request, MultipartFile profileImages);
 
-    public void update(@AuthenticationPrincipal CustomUserDetail user, DogUpdateRequest request, MultipartFile profileImages);
+     void update(@AuthenticationPrincipal CustomUserDetail user, DogUpdateRequest request, MultipartFile profileImages);
 
-    public void delete(@AuthenticationPrincipal CustomUserDetail user, @PathVariable Long id);
+     void delete(@AuthenticationPrincipal CustomUserDetail user, @PathVariable Long id);
 
-    public DogResponse find(@AuthenticationPrincipal CustomUserDetail user, @PathVariable Long id);
+     DogResponse find(@AuthenticationPrincipal CustomUserDetail user, @PathVariable Long id);
 
-    public List<DogResponse> findAll(@AuthenticationPrincipal CustomUserDetail user);
+     List<DogResponse> findAll(@AuthenticationPrincipal CustomUserDetail user);
 }

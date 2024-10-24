@@ -1,7 +1,9 @@
 package pupket.togedogserver.global.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 public class TogedogException extends RuntimeException {
 
     private final ExceptionCode exceptionCode;
@@ -14,10 +16,6 @@ public class TogedogException extends RuntimeException {
     public TogedogException() {
         super(ExceptionCode.INVALID_PARAMETER.getMessage());
         this.exceptionCode = ExceptionCode.INVALID_PARAMETER;
-    }
-
-    public ExceptionCode getExceptionCode() {
-        return this.exceptionCode;
     }
 
     public HttpStatus getHttpStatus() {

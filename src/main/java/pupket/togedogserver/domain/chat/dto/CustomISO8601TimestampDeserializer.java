@@ -12,7 +12,7 @@ import java.time.Instant;
 public class CustomISO8601TimestampDeserializer extends JsonDeserializer<Timestamp> {
 
     @Override
-    public Timestamp deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public Timestamp deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         // ISO 8601 형식의 문자열을 Timestamp로 변환
         return Timestamp.from(Instant.parse(p.getText()));
     }

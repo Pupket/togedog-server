@@ -9,7 +9,7 @@ import java.util.Random;
 public class PasswordUtil {
 
     public static String generateRandomPassword() {
-        int index = 0;
+        int index;
         char[] charSet = new char[]{
                 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -18,7 +18,7 @@ public class PasswordUtil {
                 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         };    //배열안의 문자 숫자는 원하는대로
 
-        StringBuffer password = new StringBuffer();
+        StringBuilder password = new StringBuilder();
         Random random = new Random();
 
         for (int i = 0; i < 8; i++) {

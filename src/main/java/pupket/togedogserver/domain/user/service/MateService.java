@@ -11,13 +11,13 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 public interface MateService {
 
-    public void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage);
+     void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage);
 
-    public FindMateResponse find(CustomUserDetail userDetail);
+     FindMateResponse find(CustomUserDetail userDetail);
 
-    public Page<FindMateResponse> findRandom(Pageable pageable);
+     Page<FindMateResponse> findRandom(Pageable pageable);
 
-    public void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImages);
+     void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImages);
 
-    public void delete(CustomUserDetail userDetail);
+     void delete(CustomUserDetail userDetail);
 }

@@ -22,6 +22,8 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.util.Objects;
+
 @RestController
 @Slf4j
 @RequiredArgsConstructor
@@ -84,8 +86,8 @@ public class UserController {
         }
 
         String refreshTokenInDB = userServiceImpl.getRefreshToken(userDetail.getUuid());
-        JwtToken newToken = null;
-        if (refreshTokenInRequest.equals(refreshTokenInDB)) {
+        JwtToken newToken;
+        if (Objects.requireNonNull(refreshTokenInRequest).equals(refreshTokenInDB)) {
             newToken = userServiceImpl.reissueToken(refreshTokenInDB);
         } else {
             throw new MemberException(ExceptionCode.INVALID_TOKEN);

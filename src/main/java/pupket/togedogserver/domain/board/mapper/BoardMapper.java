@@ -35,9 +35,8 @@ public interface BoardMapper {
     @AfterMapping
     default void afterMapping(@MappingTarget BoardFindResponse response, Board board, Dog dog) {
         response.getDogs().forEach(
-                eachDog -> {
-                    eachDog.setBreed(EnumMapper.enumToKorean(dog.getDogType()));
-                });
+                eachDog -> eachDog.setBreed(EnumMapper.enumToKorean(dog.getDogType()))
+                );
         response.setFeeType(EnumMapper.enumToKorean(board.getFeeType()));
 
         if (board.getWalkingPlaceTag() != null) {

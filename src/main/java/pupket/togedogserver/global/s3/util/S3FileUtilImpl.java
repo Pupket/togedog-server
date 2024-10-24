@@ -45,7 +45,7 @@ public class S3FileUtilImpl implements S3FileUtil {
     }
 
     private String uploadImage(MultipartFile image) {
-        this.validateImageFiletExtention(image.getOriginalFilename());
+        this.validateImageFiletExtention(Objects.requireNonNull(image.getOriginalFilename()));
         try {
             return this.uploadImageToS3(image);
         } catch (IOException e) {
@@ -55,7 +55,7 @@ public class S3FileUtilImpl implements S3FileUtil {
 
     private String uploadImageToS3(MultipartFile image) throws IOException {
         String originalFileName = image.getOriginalFilename();
-        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String extension = Objects.requireNonNull(originalFileName).substring(originalFileName.lastIndexOf("."));
 
         String s3FileName = UUID.randomUUID().toString().substring(0, 10) + originalFileName;
 

@@ -14,14 +14,14 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 public interface UserService {
 
-    public ResponseEntity<Void> signUp(@Validated @RequestBody RegistMateRequest request);
+     ResponseEntity<Void> signUp(@Validated @RequestBody RegistMateRequest request);
 
-    public ResponseEntity<FindUserResponse> find(@AuthenticationPrincipal CustomUserDetail user);
+     ResponseEntity<FindUserResponse> find(@AuthenticationPrincipal CustomUserDetail user);
 
-    public ResponseEntity<Void> update(@AuthenticationPrincipal CustomUserDetail user, @RequestBody UpdateMateRequest updateReq);
+     ResponseEntity<Void> update(@AuthenticationPrincipal CustomUserDetail user, @RequestBody UpdateMateRequest updateReq);
 
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response);
+     ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response);
 
-    public ResponseEntity<String> reissue(HttpServletRequest request, HttpServletResponse response);
+     ResponseEntity<String> reissue(HttpServletRequest request, HttpServletResponse response);
 
 }

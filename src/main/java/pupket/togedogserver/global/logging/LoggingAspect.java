@@ -23,8 +23,8 @@ public class LoggingAspect {
     public Object aroundLog(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
         // 메서드 정보 받아오기
-        Method method = null;
-        String uri = null;
+        Method method;
+        String uri;
         try{
              method = getMethod(proceedingJoinPoint);
             uri = getRequestURI();

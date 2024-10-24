@@ -15,44 +15,44 @@ import java.util.Set;
 @Schema(description = "산책 게시판 글 수정 요청")
 public class BoardUpdateRequest {
 
-    @Schema(description = "게시글 ID", example = "1", required = true)
+    @Schema(description = "게시글 ID", example = "1")
     private Long id;
 
-    @Schema(description = "게시글 제목", example = "딸랑구 산책 시켜주실분", minLength = 5, maxLength = 20, required = false)
+    @Schema(description = "게시글 제목", example = "딸랑구 산책 시켜주실분", minLength = 5, maxLength = 20)
     @Size(min = 5, max = 20, message = "제목은 5자 이상 20자 미만입니다.")
     private String title;
 
-    @Schema(description = "산책 장소 추천 태그", example = "[\"서울대입구\", \"강남역 2번출구\"]", required = false)
+    @Schema(description = "산책 장소 추천 태그", example = "[\"서울대입구\", \"강남역 2번출구\"]")
     private Set<String> tag;
 
-    @Schema(description = "도로명 주소", example = "서울특별시 관악구 청룡동 ~로", required = false)
+    @Schema(description = "도로명 주소", example = "서울특별시 관악구 청룡동 ~로")
     private String pickupLocation1;
 
-    @Schema(description = "x좌표", example = "24.1298371", required = false)
+    @Schema(description = "x좌표", example = "24.1298371")
     private Double mapX;
 
-    @Schema(description = "y좌표", example = "24.1298371", required = false)
+    @Schema(description = "y좌표", example = "24.1298371")
     private Double mapY;
 
-    @Schema(description = "강아지 고유번호", example = "[1]", required = false)
+    @Schema(description = "강아지 고유번호", example = "[1]")
     private List<Long> dogIds;
 
-    @Schema(description = "픽업 날짜", example = "2024-12-20", required = false)
+    @Schema(description = "픽업 날짜", example = "2024-12-20")
     private LocalDate pickUpDay;
 
-    @Schema(description = "시작 시간", example = "12:20:00", required = false, type = "string", format = "time")
+    @Schema(description = "시작 시간", example = "12:20:00", type = "string", format = "time")
     private LocalTime startTime;
 
-    @Schema(description = "종료 시간", example = "20:00:00", required = false, type = "string", format = "time")
+    @Schema(description = "종료 시간", example = "20:00:00", type = "string", format = "time")
     private LocalTime endTime;
 
-    @Schema(description = "요금 종류(시급,건별)", example = "시급", required = false)
+    @Schema(description = "요금 종류(시급,건별)", example = "시급")
     private FeeType feeType;
 
-    @Schema(description = "요금", example = "20000", required = false)
+    @Schema(description = "요금", example = "20000")
     private Long fee;
 
-    @Schema(description = "연락처", example = "01012345678", required = false)
+    @Schema(description = "연락처", example = "01012345678")
     @Pattern(regexp = "^[0-9]+$", message = "연락처에는 특수 문자, 공백을 사용할 수 없습니다.")
     private String phoneNumber;
 }
