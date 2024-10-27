@@ -11,8 +11,12 @@
 <h1>Chat Application</h1>
 <div>
     <h2>Create Chat Room</h2>
+    <label for="token">JWT Token:</label>
+    <input type="text" id="token" placeholder="Enter JWT Token" />
+
     <label for="receiverId">Receiver ID:</label>
     <input type="text" id="receiverId" placeholder="Receiver ID" />
+
     <button id="createRoomBtn">Create and Connect</button>
     <p id="roomIdDisplay"></p>
 </div>
@@ -44,13 +48,18 @@
     // 방 생성과 구독을 동시에 수행
     document.getElementById('createRoomBtn').onclick = function() {
         const receiverId = document.getElementById('receiverId').value;
-        const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0anNmaGRoa2RAbmF0ZS5jb20iLCJpZCI6MSwiYXV0aCI6Ik1FTUJFUl9LQUtBTyIsImV4cCI6MTcyOTk1MjY1NH0.swRY3WH2NbeofxOwCKm0J3B3_zeuDlBm-xNGq5YYOBE'; // JWT 토큰
+        const token = document.getElementById('token').value; // 사용자 입력 토큰
+
+        if (!token) {
+            alert('Please enter a valid JWT token.');
+            return;
+        }
 
         fetch('/api/v1/chat/get-or-create?receiver=' + receiverId, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token // 헤더에 토큰 추가
+                'Authorization': 'Bearer ' + token // 헤더에 입력된 토큰 추가
             }
         })
             .then(response => {
