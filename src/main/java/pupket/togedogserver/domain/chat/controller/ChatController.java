@@ -22,6 +22,7 @@ import pupket.togedogserver.domain.chat.service.RedisPublisher;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -34,13 +35,15 @@ public class ChatController {
     private final ChatService chatService;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RedisPublisher redisPublisher;
-    private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
 
     @MessageMapping("/chat")
-    public void message(@Payload ChattingRequestDto message) {
-        log.info("Received Message : {} ", message);
+    public void message(@Payload ChattingRequestDto message) throws IOException {
 
         Timestamp parsedLastTime = chatService.getParsedLastTime(message.getLastTime());
+        String imageUrl="";
+        if(!message.getImage().isEmpty()){
+            imageUrl = chatService.convertImageToString(message.getImage());
+        }
 
         // ChattingRequestDto -> ChattingResponseDto로 변환하여 사용
         ChattingResponseDto responseDto = ChattingResponseDto.builder()
@@ -48,7 +51,7 @@ public class ChatController {
                 .roomId(message.getRoomId())
                 .userId(message.getUserId())
                 .content(message.getContent())
-                .image(message.getImage())
+                .image(message.getImage()!=null?imageUrl : null)
                 .build();
 
         // Redis에 메시지 저장

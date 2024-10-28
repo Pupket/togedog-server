@@ -19,6 +19,7 @@ public class RedisSubscriber {
         try{
             ChattingResponseDto requestMessage = objectMapper.readValue(message, ChattingResponseDto.class);
             log.info("chattingRequestDto: {}", requestMessage.getContent());
+            log.info("chattingResponseDto: {}", requestMessage.getImage());
             messagingTemplate.convertAndSend("/sub/chat/room/" + requestMessage.getRoomId(), requestMessage);
         } catch (Exception e){
             log.error(e.getMessage());

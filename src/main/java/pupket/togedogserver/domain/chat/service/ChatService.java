@@ -13,7 +13,9 @@ import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
+import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final FcmService fcmService;
     private final RedisTemplate<String,ChannelTopic> redisTopicTemplate;
+    private final S3FileUtilImpl s3FileUtilImpl;
 
     public ChatRoom getOrCreateChatRoom(Long sender, Long receiver) {
         return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
@@ -115,7 +118,7 @@ public class ChatService {
 
     // 마지막으로 받은 시간 이후의 메시지들을 조회하는 메서드
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
-        String key = "chatRoomId:" + roomId;
+        String key = "RoomId:" + roomId;
 
         // Redis에서 해당 채팅방의 전체 메시지 조회 (opsForList로 ChattingResponseDto 리스트 가져오기)
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
@@ -138,5 +141,9 @@ public class ChatService {
         }
 
         return unreceivedMessages;
+    }
+
+    public String convertImageToString(String image) throws IOException {
+        return s3FileUtilImpl.uploadImageToS3UsingByteImage(image);
     }
 }
