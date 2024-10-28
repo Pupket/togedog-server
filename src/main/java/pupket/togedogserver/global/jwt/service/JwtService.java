@@ -3,6 +3,7 @@ package pupket.togedogserver.global.jwt.service;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -217,5 +218,19 @@ public class JwtService {
         } else {
             return new JwtException();
         }
+    }
+
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // "Bearer " 이후의 토큰만 반환
+        }
+        return null;
+    }
+
+    public Long getUserIdFromToken(String token) {
+        Claims claims = parseClaims(token); // parseClaims는 이미 클래스에 구현되어 있음
+        Number id = (Number) claims.get("id"); // "id" 클레임을 Number로 캐스팅
+        return id.longValue(); // Number 타입에서 Long으로 변환
     }
 }

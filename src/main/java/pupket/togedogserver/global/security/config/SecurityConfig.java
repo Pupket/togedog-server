@@ -23,6 +23,7 @@ import pupket.togedogserver.global.auth.handler.OAuth2LoginSuccessHandler;
 import pupket.togedogserver.global.auth.service.CustomOAuth2UserService;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.redis.RedisLoginService;
+import pupket.togedogserver.global.security.filter.DuplicateLoginFilter;
 import pupket.togedogserver.global.security.filter.JwtAuthenticationProcessingFilter;
 import pupket.togedogserver.global.security.service.LoginService;
 
@@ -52,7 +53,8 @@ public class SecurityConfig {
                 )
                 .oauth2Login(login -> login.userInfoEndpoint(config -> config.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler))
-                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService, userRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationProcessingFilter(jwtService,userRepository), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new DuplicateLoginFilter(jwtService, redisLoginService), JwtAuthenticationProcessingFilter.class);
 
         return http.build();
     }

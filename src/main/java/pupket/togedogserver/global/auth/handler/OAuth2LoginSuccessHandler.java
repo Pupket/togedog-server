@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.jwt.service.JwtService;
+import pupket.togedogserver.global.redis.RedisLoginService;
+import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.io.IOException;
 
@@ -19,12 +21,19 @@ import java.io.IOException;
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtTokenProvider;
+    private final RedisLoginService redisLoginService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
         JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+
+        CustomUserDetail userDetail = (CustomUserDetail) authentication.getPrincipal();
+
+
+        redisLoginService.saveAccessToken(jwtToken.getAccessToken(),userDetail.getUuid());
+
 
         String targetUrl = UriComponentsBuilder.fromUriString("togedog://togedog/login")
                 .queryParam("accessToken", jwtToken.getAccessToken())

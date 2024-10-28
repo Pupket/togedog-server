@@ -60,6 +60,15 @@ public class RedisConfig {
     }
 
     @Bean
+    public RedisTemplate<String, Object> redisTemplateForToken() {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer()); // Key를 String으로 처리
+        redisTemplate.setValueSerializer(new StringRedisSerializer()); // Value를 String으로 처리
+        return redisTemplate;
+    }
+
+    @Bean
     public RedisTemplate<String, ChattingResponseDto> redisTemplateForSave() {
         RedisTemplate<String,ChattingResponseDto> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
