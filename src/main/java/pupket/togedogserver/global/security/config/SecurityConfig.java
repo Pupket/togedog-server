@@ -28,6 +28,7 @@ import pupket.togedogserver.global.security.filter.JwtAuthenticationProcessingFi
 import pupket.togedogserver.global.security.service.LoginService;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableJpaAuditing
@@ -62,7 +63,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token"));
         configuration.setAllowCredentials(false);

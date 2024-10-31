@@ -42,6 +42,7 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
 
         // 요청에서 JWT 토큰을 가져옴
         String token = jwtService.resolveToken(request);
+        try{
         if (token != null && jwtService.validateToken(token)) {
             Long userId = jwtService.getUserIdFromToken(token);
             log.info("기존 토큰={}", token);
@@ -53,6 +54,9 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
             if (redisToken != null && !redisToken.equals(token)) {
                 handleJwtException(response, new JwtException(ExceptionCode.DUPLICATE_LOGIN));
             }
+        }
+        }catch (JwtException e){
+            handleJwtException(response, e);
         }
 
         filterChain.doFilter(request, response);
