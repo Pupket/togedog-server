@@ -83,8 +83,8 @@ public class ChatController {
     @PostMapping("/get-or-create")
     public ResponseEntity<Long> getOrCreateChatRoom(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-            Long receiver,
-            String roomTitle
+             @RequestParam Long receiver,
+            @RequestParam String roomTitle
     ) {
         Long roomId = chatService.getOrCreateChatRoom(userDetail.getUuid(), receiver,roomTitle).getRoomId();
         return ResponseEntity.ok(roomId);

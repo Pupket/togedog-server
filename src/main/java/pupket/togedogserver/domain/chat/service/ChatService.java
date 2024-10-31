@@ -35,6 +35,7 @@ public class ChatService {
     private final S3FileUtilImpl s3FileUtilImpl;
 
     public ChatRoom getOrCreateChatRoom(Long sender, Long receiver,String roomTitle) {
+        log.info("roomTitle={}",roomTitle);
         return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatRoom.builder()
@@ -75,8 +76,8 @@ public class ChatService {
             chatroom.setRoomId(room.getRoomId());
             chatroom.setLastTime(room.getLastTime());
             chatroom.setTitle(room.getTitle());
-            chatroom.setSender(userRepository.findById(room.getReceiver())
-                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE))
+            chatroom.setSender(userRepository.findByUuid(room.getReceiver())
+                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MEMBER))
                     .getNickname());
             chatRoomList.add(chatroom);
         }
