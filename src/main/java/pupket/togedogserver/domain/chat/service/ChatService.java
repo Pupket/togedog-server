@@ -34,12 +34,13 @@ public class ChatService {
     private final RedisTemplate<String,ChannelTopic> redisTopicTemplate;
     private final S3FileUtilImpl s3FileUtilImpl;
 
-    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver) {
+    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver,String roomTitle) {
         return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatRoom.builder()
                             .receiver(receiver)
                             .sender(sender)
+                            .title(roomTitle)
                             .lastTime(Timestamp.valueOf(LocalDateTime.now()))
                             .build();
                     chatRoomRepository.save(newChatRoom);
@@ -73,7 +74,8 @@ public class ChatService {
             ChatRoomResponseDto chatroom = new ChatRoomResponseDto();
             chatroom.setRoomId(room.getRoomId());
             chatroom.setLastTime(room.getLastTime());
-            chatroom.setSender(userRepository.findById(room.getSender())
+            chatroom.setTitle(room.getTitle());
+            chatroom.setSender(userRepository.findById(room.getReceiver())
                     .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE))
                     .getNickname());
             chatRoomList.add(chatroom);

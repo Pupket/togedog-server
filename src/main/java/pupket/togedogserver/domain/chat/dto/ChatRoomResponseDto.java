@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 @Data
 public class ChatRoomResponseDto {
     Long roomId;
+    String title;
     String sender;
     Timestamp lastTime;
 }

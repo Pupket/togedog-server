@@ -95,12 +95,14 @@ public class S3FileUtilImpl implements S3FileUtil {
             }else {
                 extension = "jpg";
             }
+            log.info("extension={}",extension);
 
             byte[] bindingImage = DatatypeConverter.parseBase64Binary(base64Image);
 
             File tempFile = File.createTempFile("image", "." + extension); // createTempFile을 통해 임시 파일을 생성해준다. (임시파일은 지워줘야함)
+            log.info("tempFile={}",tempFile.getName());
             try (OutputStream outputStream = new FileOutputStream(tempFile)) {
-                outputStream.write(bindingImage); //  outputStream 객체에 imageBytes를 작성해준다.
+                outputStream.write(bindingImage); //outputStream 객체에 imageBytes를 작성해준다.
             }
 
             String originalName = UUID.randomUUID().toString(); // uuid를 통해 파일명이 겹치지 않게 해준다

@@ -27,5 +27,7 @@ public class ChatRoom {
 
     private Long receiver;
 
+    private String title;
+
     private Timestamp lastTime;
 }
