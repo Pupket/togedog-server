@@ -4,11 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.global.exception.ExceptionCode;
-import pupket.togedogserver.global.exception.customException.MemberException;
-
-import java.time.Duration;
 
 @Service
 @Slf4j

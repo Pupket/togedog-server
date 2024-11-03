@@ -29,12 +29,12 @@ public class FcmService {
         userRepository.updateFcmTokenToNullByUuid(uuid);
     }
 
-    public void sendNotification(NotificationRequestDto notification, String roomId) throws InterruptedException, ExecutionException {
+    public void sendNotification(NotificationRequestDto notification, Long roomId) throws InterruptedException, ExecutionException {
         String title = notification.getTitle();
         String message = notification.getMessage();
         String image = notification.getImage();
         Map<String, String> data = new HashMap<>();
-        data.put("roomId", roomId);
+        data.put("roomId", String.valueOf(roomId));
         Message firebaseMessage = Message.builder()
                 .setToken(userRepository.findByUuid(notification.getReceiver()).get().getFcmToken())
                 .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")

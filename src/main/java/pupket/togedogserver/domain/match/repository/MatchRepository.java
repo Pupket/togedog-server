@@ -2,7 +2,6 @@ package pupket.togedogserver.domain.match.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;

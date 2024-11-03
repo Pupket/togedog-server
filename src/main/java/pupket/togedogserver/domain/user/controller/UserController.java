@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
-import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
+import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -34,10 +34,10 @@ public class UserController {
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
     @GetMapping
-    public ResponseEntity<FindUserResponse> find(
+    public ResponseEntity<FindUserInfoResponse> find(
             @AuthenticationPrincipal CustomUserDetail user
     ) {
-        FindUserResponse updateUser = userServiceImpl.getMemberDetails(user.getUuid());
+        FindUserInfoResponse updateUser = userServiceImpl.getMemberDetails(user.getUuid());
         return ResponseEntity.status(HttpStatus.OK).body(updateUser);
     }
 
@@ -110,22 +110,6 @@ public class UserController {
     ) {
         userServiceImpl.deleteSocialMember(user.getUuid());
 
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @Operation(description = "회원 IP정보 출력", summary = "회원 정보 redis에 저장하여 중복 로그인 방지")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "소셜 회원 탈퇴 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "해당 소셜 회원이 존재하지 않습니다.")
-    })
-    @GetMapping("/social/duplicate-account-check")
-    public ResponseEntity<Void> duplicateAccountCheck(HttpServletRequest request) {
-        String ipAddress = request.getHeader("X-Forwarded-For");
-        if (ipAddress == null || ipAddress.isEmpty()) {
-            ipAddress = request.getRemoteAddr();
-        }
-        log.info("Client IP Address: {}", ipAddress);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

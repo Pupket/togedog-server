@@ -10,4 +10,5 @@ public class NotificationRequestDto {
     String title;
     String message;
     String image;
+    Long roomId;
 }

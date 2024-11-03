@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -17,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
+import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.chat.service.ChatService;
 import pupket.togedogserver.domain.chat.service.RedisPublisher;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
@@ -34,26 +33,10 @@ public class ChatController {
 
     private final ChatService chatService;
     private final S3FileUtilImpl s3FileUtilImpl;
-    private final RedisPublisher redisPublisher;
 
     @MessageMapping("/chat")
     public void message(@Payload ChattingRequestDto message) throws IOException {
-
-        Timestamp parsedLastTime = chatService.getParsedLastTime(message.getLastTime());
-
-        ChattingResponseDto responseDto = ChattingResponseDto.builder()
-                .lastTime(parsedLastTime)
-                .roomId(message.getRoomId())
-                .userId(message.getUserId())
-                .content(message.getContent())
-                .image(message.getImage())
-                .build();
-
-        // Redis에 메시지 저장
-        chatService.saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
-
-        // 메시지 발행
-        redisPublisher.publish(responseDto);
+        chatService.sendMessageToPublisher(message);
     }
 
     @CrossOrigin

@@ -1,6 +1,5 @@
 package pupket.togedogserver.global.auth.service;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,8 +11,6 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import pupket.togedogserver.domain.token.entity.SocialAccessToken;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.constant.RoleType;
@@ -29,7 +26,6 @@ import pupket.togedogserver.global.security.util.PasswordUtil;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 @Slf4j

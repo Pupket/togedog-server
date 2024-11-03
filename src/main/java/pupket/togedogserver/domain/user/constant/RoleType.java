@@ -12,4 +12,14 @@ public enum RoleType {
             default -> MEMBER_NORMAL;
         };
     }
+
+    public static String toKoreanValue(RoleType roleType) {
+        return switch (roleType) {
+            case MEMBER_NORMAL -> "member";
+            case MEMBER_GOOGLE -> "GOOGLE";
+            case MEMBER_KAKAO -> "KAKAO";
+            case MEMBER_NAVER -> "NAVER";
+            default -> "";
+        };
+    }
 }

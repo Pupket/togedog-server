@@ -6,24 +6,31 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
+import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -31,12 +38,15 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
+    private final RedisTemplate<String, String> redisTemplateForUserStatus;
     private final UserRepository userRepository;
     private final FcmService fcmService;
-    private final RedisTemplate<String,ChannelTopic> redisTopicTemplate;
+    private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final S3FileUtilImpl s3FileUtilImpl;
+    private final RedisPublisher redisPublisher;
+    private final WebSocketEventListener webSocketEventListener;
 
-    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver,String roomTitle) {
+    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
         User findSender = userRepository.findById(sender).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
@@ -44,8 +54,8 @@ public class ChatService {
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
 
-        String findSenderProfileImage = findSender.getProfileImage().isEmpty()?null:findSender.getProfileImage();
-        String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty()?null:findReceiver.getProfileImage();
+        String findSenderProfileImage = findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
+        String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage();
 
         return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
                 .orElseGet(() -> {
@@ -86,13 +96,22 @@ public class ChatService {
         List<ChatRoom> chatRooms = chatRoomRepository.findBySender(uuid);
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
         for (ChatRoom room : chatRooms) {
-            ChatRoomResponseDto chatroom = new ChatRoomResponseDto();
-            chatroom.setRoomId(room.getRoomId());
-            chatroom.setLastTime(room.getLastTime());
-            chatroom.setTitle(room.getTitle());
-            chatroom.setSender(userRepository.findByUuid(room.getReceiver())
-                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MEMBER))
-                    .getNickname());
+            User findSender = userRepository.findByUuid(room.getReceiver())
+                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MEMBER));
+            User findReceiver = userRepository.findByUuid(room.getSender()).orElseThrow(
+                    () -> new MateException(ExceptionCode.NOT_FOUND_MEMBER)
+            );
+
+            ChatRoomResponseDto chatroom = ChatRoomResponseDto.builder()
+                    .roomId(room.getRoomId())
+                    .lastTime(room.getLastTime())
+                    .title(room.getTitle())
+                    .sender(findSender.getNickname())
+                    .senderImage(findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage())
+                    .receiver(findReceiver.getNickname())
+                    .receiverImage(findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage())
+                    .build();
+
             chatRoomList.add(chatroom);
         }
         return chatRoomList;
@@ -137,7 +156,6 @@ public class ChatService {
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
         String key = "RoomId:" + roomId;
 
-        // Redis에서 해당 채팅방의 전체 메시지 조회 (opsForList로 ChattingResponseDto 리스트 가져오기)
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
 
         if (chatList == null || chatList.isEmpty()) {
@@ -145,22 +163,55 @@ public class ChatService {
             return new ArrayList<>();  // 데이터가 없을 경우 빈 리스트 반환
         }
 
-        // 마지막으로 받은 시간 이후의 메시지 필터링
-        List<ChattingResponseDto> unreceivedMessages = new ArrayList<>();
-        for (ChattingResponseDto message : chatList) {
-            if (message.getLastTime().after(lastTime)) {
-                log.info("수행되었음");
-                unreceivedMessages.add(message);
-            }
-            log.info("수행안됨");
-            log.info("{}", message.getLastTime());
-            log.info("result={}",message.getLastTime().after(lastTime));
-        }
+        // 마지막으로 받은 시간 이후의 메시지 필터링 및 정렬
+        List<ChattingResponseDto> unreceivedMessages = chatList.stream()
+                .filter(message -> message.getLastTime().after(lastTime))
+                .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
+                .collect(Collectors.toList());
 
         return unreceivedMessages;
     }
 
     public String convertImageToString(String image) throws IOException {
         return s3FileUtilImpl.uploadImageToS3UsingByteImage(image);
+    }
+
+    public void sendMessageToPublisher(ChattingRequestDto message) {
+
+        Timestamp parsedLastTime = getParsedLastTime(message.getLastTime());
+        ChatRoom findChatRoom = chatRoomRepository.findById(message.getRoomId()).orElseThrow(
+                () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
+        );
+
+        Long reciever = findChatRoom.getReceiver();
+        String receiverStatus = redisTemplateForUserStatus.opsForValue().get("user:status:" + reciever);
+        if (!webSocketEventListener.isSessionConnected(receiverStatus)) {
+            NotificationRequestDto notificationRequestDto = NotificationRequestDto.builder()
+                    .message(message.getContent())
+                    .title(findChatRoom.getTitle())
+                    .receiver(findChatRoom.getReceiver())
+                    .image(message.getImage())
+                    .roomId(findChatRoom.getRoomId())
+                    .build();
+            try {
+                fcmService.sendNotification(notificationRequestDto, findChatRoom.getRoomId());
+            } catch (Exception e) {
+                throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
+            }
+        }
+
+        ChattingResponseDto responseDto = ChattingResponseDto.builder()
+                .lastTime(parsedLastTime)
+                .roomId(message.getRoomId())
+                .userId(message.getUserId())
+                .content(message.getContent())
+                .image(message.getImage())
+                .build();
+
+        // Redis에 메시지 저장
+        saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
+
+        // 메시지 발행
+        redisPublisher.publish(responseDto);
     }
 }

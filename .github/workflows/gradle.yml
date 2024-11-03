@@ -32,6 +32,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+          # Firebase 서비스 계정 JSON 파일 생성
+      - name: Create Firebase service account key file
+        run: |
+          mkdir -p ./src/main/resources/firebase
+          echo "${{ secrets.FIREBASE_CONFIG_JSON }}" > ./src/main/resources/firebase/serviceAccountKey.json
+
+
       # 환경 설정(application-dev.yml 파일 생성)
       - name: Make application-dev.yml
         if: contains(github.ref, 'develop')

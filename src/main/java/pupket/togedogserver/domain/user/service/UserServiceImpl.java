@@ -9,10 +9,11 @@ import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
+import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.DogActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
-import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
+import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
@@ -86,10 +87,16 @@ public class UserServiceImpl {
                 );
     }
 
-    public FindUserResponse getMemberDetails(Long uuid) {
+    public FindUserInfoResponse getMemberDetails(Long uuid) {
         User user = getUserById(uuid);
 
-        return userMapper.of(user);
+        return FindUserInfoResponse.builder()
+                .uuid(user.getUuid())
+                .email(user.getEmail())
+                .name(user.getName())
+                .platform(RoleType.toKoreanValue(user.getRole()))
+                .phoneNumber(user.getPhoneNumber())
+                .build();
     }
 
     public void deleteSocialMember(Long uuid) {
