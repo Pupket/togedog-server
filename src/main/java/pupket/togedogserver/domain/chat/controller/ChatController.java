@@ -39,6 +39,7 @@ public class ChatController {
     @MessageMapping("/chat")
     public void message(@Payload ChattingRequestDto message) throws IOException {
 
+        log.info(message.getImage());
         Timestamp parsedLastTime = chatService.getParsedLastTime(message.getLastTime());
         String imageUrl="";
         if(!message.getImage().isEmpty()){

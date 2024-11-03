@@ -42,7 +42,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         }
 
         if (isExcludedPath(requestURI)) {
-            log.info("it's excluded path = {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }

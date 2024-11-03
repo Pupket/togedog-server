@@ -65,18 +65,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         int birthday = memberAttribute.get("birthday") != null ? (int) memberAttribute.get("birthday") : 0;
         int birthyear = memberAttribute.get("birthyear") != null ? (int) memberAttribute.get("birthyear") : 0;
 
-        //user IP 가져오기
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        log.info("server={}", Objects.requireNonNull(attributes).getRequest().getRemoteAddr());
-        String remoteAddr;
-        HttpServletRequest request = Objects.requireNonNull(attributes).getRequest();
-        remoteAddr = request.getHeader("X-Forwarded-For");
-        if(remoteAddr==null){
-            remoteAddr = request.getRemoteAddr();
-        }
-
-        String finalRemoteAddr = remoteAddr;
-        log.info(finalRemoteAddr);
         User user = userRepository.findByEmail(email)
                 .map(existingUser -> {
                     if (existingUser.accountStatus.toString().equals("DELETED")) {
