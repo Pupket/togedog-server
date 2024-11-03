@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
@@ -46,7 +47,7 @@ public class ChatService {
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
-    public ChatRoom getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
+    public ChatRoomCreateResponse getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
         User findSender = userRepository.findById(sender).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
@@ -57,7 +58,7 @@ public class ChatService {
         String findSenderProfileImage = findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
         String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage();
 
-        return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
+        ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiver(sender, receiver)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatRoom.builder()
                             .receiver(receiver)
@@ -73,6 +74,23 @@ public class ChatService {
                     redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);
                     return newChatRoom;
                 });
+
+        if (findChatRoom.getTitle().isEmpty() && roomTitle != null) {
+            ChatRoom updateChatRoom = findChatRoom.toBuilder()
+                    .title(roomTitle)
+                    .build();
+
+            findChatRoom = chatRoomRepository.save(updateChatRoom);
+        }
+        User findRecievUser = userRepository.findById(receiver).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+
+        return ChatRoomCreateResponse.builder()
+                .roomTitle(findChatRoom.getTitle())
+                .roomId(findChatRoom.getRoomId())
+                .nickName(findRecievUser.getNickname())
+                .build();
     }
 
     public String calculateTimeAgo(Timestamp lastTime) {
@@ -95,12 +113,18 @@ public class ChatService {
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
         List<ChatRoom> chatRooms = chatRoomRepository.findBySender(uuid);
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
+
         for (ChatRoom room : chatRooms) {
             User findSender = userRepository.findByUuid(room.getReceiver())
                     .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MEMBER));
             User findReceiver = userRepository.findByUuid(room.getSender()).orElseThrow(
                     () -> new MateException(ExceptionCode.NOT_FOUND_MEMBER)
             );
+            Timestamp lastTime = room.getLastTime();
+            List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime);
+
+            int unreceivedMessageCount = unreceivedMessages.size();
+            String lastMessage = unreceivedMessages.isEmpty() ? null : unreceivedMessages.get(0).getContent();
 
             ChatRoomResponseDto chatroom = ChatRoomResponseDto.builder()
                     .roomId(room.getRoomId())
@@ -110,6 +134,8 @@ public class ChatService {
                     .senderImage(findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage())
                     .receiver(findReceiver.getNickname())
                     .receiverImage(findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage())
+                    .unreceivedMessageCount(unreceivedMessageCount)
+                    .lastMessage(lastMessage)
                     .build();
 
             chatRoomList.add(chatroom);

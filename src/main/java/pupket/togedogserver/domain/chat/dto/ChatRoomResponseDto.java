@@ -15,4 +15,6 @@ public class ChatRoomResponseDto {
     String receiver;
     String receiverImage;
     Timestamp lastTime;
+     int unreceivedMessageCount;
+     String lastMessage;
 }

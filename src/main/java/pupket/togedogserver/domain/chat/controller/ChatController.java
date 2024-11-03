@@ -12,15 +12,15 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
-import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.chat.service.ChatService;
-import pupket.togedogserver.domain.chat.service.RedisPublisher;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
@@ -36,6 +36,7 @@ public class ChatController {
 
     @MessageMapping("/chat")
     public void message(@Payload ChattingRequestDto message) throws IOException {
+
         chatService.sendMessageToPublisher(message);
     }
 
@@ -59,13 +60,15 @@ public class ChatController {
     }
 
     @PostMapping("/get-or-create")
-    public ResponseEntity<Long> getOrCreateChatRoom(
+    public ResponseEntity<ChatRoomCreateResponse> getOrCreateChatRoom(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-             @RequestParam Long receiver,
-            @RequestParam String roomTitle
+             @RequestParam @Nullable Long receiver,
+            @RequestParam @Nullable String roomTitle
     ) {
-        Long roomId = chatService.getOrCreateChatRoom(userDetail.getUuid(), receiver,roomTitle).getRoomId();
-        return ResponseEntity.ok(roomId);
+        ChatRoomCreateResponse chatRoomCreateResponse= chatService.getOrCreateChatRoom(userDetail.getUuid(), receiver,roomTitle);
+        log.info("ChatRoomResponse id={}, title={}, nickName={}", chatRoomCreateResponse.getRoomId(), chatRoomCreateResponse.getRoomTitle(), chatRoomCreateResponse.getNickName());
+
+        return ResponseEntity.ok(chatRoomCreateResponse);
     }
 
     @GetMapping("/chatroom-list")

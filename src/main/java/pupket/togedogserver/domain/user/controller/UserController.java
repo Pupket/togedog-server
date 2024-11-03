@@ -20,6 +20,7 @@ import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
+import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.Objects;
@@ -31,6 +32,7 @@ import java.util.Objects;
 public class UserController {
 
     private final UserServiceImpl userServiceImpl;
+    private final RedisLoginService redisLoginService;
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
     @GetMapping
@@ -92,6 +94,7 @@ public class UserController {
         } else {
             throw new MemberException(ExceptionCode.INVALID_TOKEN);
         }
+        redisLoginService.saveAccessToken(newToken.getAccessToken(), userDetail.getUuid());
         HttpHeaders headers = new HttpHeaders();
         headers.add("accessToken", newToken.getAccessToken());
         headers.add("refreshToken", newToken.getRefreshToken());
