@@ -79,9 +79,11 @@ public class UserController {
     @GetMapping("/reissue-token")
     @Transactional
     public ResponseEntity<String> reissue(
-            @AuthenticationPrincipal CustomUserDetail userDetail, HttpServletRequest request) {
+            @AuthenticationPrincipal CustomUserDetail userDetail,
+            HttpServletRequest request
+    ) {
 
-        String refreshTokenInRequest = request.getHeader("Authorization");
+        String refreshTokenInRequest = request.getHeader("refresh-token");
 
         if (refreshTokenInRequest != null && refreshTokenInRequest.startsWith("Bearer ")) {
             refreshTokenInRequest = refreshTokenInRequest.substring(7); // "Bearer " 부분 제거

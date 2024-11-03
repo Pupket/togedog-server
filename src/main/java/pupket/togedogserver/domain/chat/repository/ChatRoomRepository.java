@@ -12,5 +12,5 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     List<ChatRoom> findBySender(Long uuid);
 
-    Optional<ChatRoom> findBySenderAndReceiver(Long sender, Long receiver);
+    Optional<ChatRoom> findBySenderAndReceiverAndTitle(Long sender, Long receiver, String title);
 }

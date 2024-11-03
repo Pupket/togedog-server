@@ -419,7 +419,7 @@ public class MateServiceImpl implements MateService {
 
         //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
         //검색어 자동 완성 기능 최대 개수
-        int maxSize = 100;
+        int maxSize = 2000;
 
         return allValuesAfterIndexFromSortedSet.stream()
                 .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))

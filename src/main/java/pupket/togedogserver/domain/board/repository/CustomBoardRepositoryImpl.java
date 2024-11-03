@@ -141,9 +141,12 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
     private TypedQuery<Object[]> getBoardRelatedResponse(Long uuid, Pageable pageable) {
         String query = "SELECT b, bd, d FROM Board b " +
-                "JOIN b.boardDog bd  " +
-                "JOIN bd.dog d " +
-                "WHERE b.deleted = false AND b.user.uuid = :uuid";
+                "JOIN fetch b.boardDog bd " +
+                "JOIN fetch bd.dog d " +
+                "WHERE b.deleted = false " +
+                "AND " +
+                "bd.deleted = false  And d.deleted = false And " +
+                "b.user.uuid = :uuid";
 
         TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
         result.setParameter("uuid", uuid);

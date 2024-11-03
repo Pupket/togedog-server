@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.match.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.repository.BoardRepository;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
@@ -25,6 +26,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
@@ -111,6 +113,10 @@ public class MatchServiceImpl implements MatchService {
 
         //게시판에서 가져올 수 있는 것 -> boardDog
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
+
+        if (findBoard.getMatch() == null) {
+            throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
+        }
 
         Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
         if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {

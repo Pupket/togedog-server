@@ -24,8 +24,10 @@ import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -175,20 +177,30 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                     .build());
         });
 
+        log.info("정보={}",boardResponseMap);
+
         List<BoardFindResponse> boardResponses = new ArrayList<>(boardResponseMap.values());
 
-        // 카운트 쿼리
-        String countQuery = "SELECT COUNT(b) FROM Board b " +
-                "JOIN b.boardDog bd " +
-                "JOIN bd.dog d " +
-                "WHERE b.deleted = false AND d.deleted = false " +
-                "AND b.match.mate.mateUuid = :mateId" +
-                "   and b.createdAt between :startOfMonth and :endOfMonth";
+        Long count;
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX);
+        try{
+            // 카운트 쿼리
+            String countQuery = "SELECT COUNT(b) FROM Board b " +
+                    "JOIN b.boardDog bd " +
+                    "JOIN bd.dog d " +
+                    "WHERE b.deleted = false AND d.deleted = false " +
+                    "AND b.match.mate.mateUuid = :mateId" +
+                    "   and b.createdAt between :startOfMonth and :endOfMonth";
 
-
-        Long count = em.createQuery(countQuery, Long.class)
-                .setParameter("mateId", mateId)
-                .getSingleResult();
+            count = em.createQuery(countQuery, Long.class)
+                    .setParameter("mateId", mateId)
+                    .setParameter("startOfMonth", startOfMonth)
+                    .setParameter("endOfMonth", endOfMonth)
+                    .getSingleResult();
+        }catch (Exception e){
+            throw new MateException(ExceptionCode.NOT_FOUND_SCHEDULE);
+        }
 
         return new PageImpl<>(boardResponses, pageable, count);
     }
