@@ -30,4 +30,8 @@ public class ChatRoom {
     private String title;
 
     private Timestamp lastTime;
+
+    private String senderImage;
+
+    private String receiverImage;
 }

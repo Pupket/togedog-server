@@ -10,9 +10,11 @@ import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.notification.service.FcmService;
+import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
+import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 
 import java.io.IOException;
@@ -35,15 +37,27 @@ public class ChatService {
     private final S3FileUtilImpl s3FileUtilImpl;
 
     public ChatRoom getOrCreateChatRoom(Long sender, Long receiver,String roomTitle) {
-        log.info("roomTitle={}",roomTitle);
+        User findSender = userRepository.findById(sender).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+        User findReceiver = userRepository.findById(receiver).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+
+        String findSenderProfileImage = findSender.getProfileImage().isEmpty()?null:findSender.getProfileImage();
+        String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty()?null:findReceiver.getProfileImage();
+
         return chatRoomRepository.findBySenderAndReceiver(sender, receiver)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatRoom.builder()
                             .receiver(receiver)
                             .sender(sender)
+                            .senderImage(findSenderProfileImage)
                             .title(roomTitle)
+                            .receiverImage(findReceiverProfileImage)
                             .lastTime(Timestamp.valueOf(LocalDateTime.now()))
                             .build();
+
                     chatRoomRepository.save(newChatRoom);
                     ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
                     redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);

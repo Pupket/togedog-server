@@ -39,20 +39,14 @@ public class ChatController {
     @MessageMapping("/chat")
     public void message(@Payload ChattingRequestDto message) throws IOException {
 
-        log.info("수신한 이미지 = {} " , message.getImage());
         Timestamp parsedLastTime = chatService.getParsedLastTime(message.getLastTime());
-        String imageUrl="";
-        if(!message.getImage().isEmpty()){
-            imageUrl = chatService.convertImageToString(message.getImage());
-        }
 
-        // ChattingRequestDto -> ChattingResponseDto로 변환하여 사용
         ChattingResponseDto responseDto = ChattingResponseDto.builder()
                 .lastTime(parsedLastTime)
                 .roomId(message.getRoomId())
                 .userId(message.getUserId())
                 .content(message.getContent())
-                .image(message.getImage()!=null?imageUrl : null)
+                .image(message.getImage())
                 .build();
 
         // Redis에 메시지 저장
