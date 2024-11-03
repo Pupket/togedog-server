@@ -33,6 +33,9 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+        if (!requestURI.startsWith("/health")) {
+            log.info("request.URI = {}", requestURI);
+        }
 
         // 특정 경로에 대해 필터링을 제외
         if (isExcludedUrl(requestURI)) {
