@@ -62,11 +62,12 @@ public class ChatController {
     @PostMapping("/get-or-create")
     public ResponseEntity<ChatRoomCreateResponse> getOrCreateChatRoom(
             @AuthenticationPrincipal CustomUserDetail userDetail,
-             @RequestParam @Nullable Long receiver,
-            @RequestParam @Nullable String roomTitle
+             @RequestParam  Long receiver,
+            @RequestParam  String roomTitle
     ) {
-        ChatRoomCreateResponse chatRoomCreateResponse= chatService.getOrCreateChatRoom(userDetail.getUuid(), receiver,roomTitle);
-        log.info("ChatRoomResponse id={}, title={}, nickName={}", chatRoomCreateResponse.getRoomId(), chatRoomCreateResponse.getRoomTitle(), chatRoomCreateResponse.getNickName());
+        ChatRoomCreateResponse chatRoomCreateResponse=
+
+                chatService.getOrCreateChatRoom(userDetail.getUuid(), receiver,roomTitle);
 
         return ResponseEntity.ok(chatRoomCreateResponse);
     }

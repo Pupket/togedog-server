@@ -58,7 +58,7 @@ public class ChatService {
         String findSenderProfileImage = findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
         String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage();
 
-        ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiverAndTitle(sender, receiver,roomTitle)
+        ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatRoom.builder()
                             .receiver(receiver)
@@ -83,8 +83,16 @@ public class ChatService {
             findChatRoom = chatRoomRepository.save(updateChatRoom);
         }
 
+        if(findChatRoom.getSender().equals(findSender.getUuid())) {
+            return  ChatRoomCreateResponse.builder()
+                    .roomTitle(findChatRoom.getTitle())
+                    .roomId(findChatRoom.getRoomId())
+                    .nickName(null)
+                    .build();
+        }
+
         return ChatRoomCreateResponse.builder()
-                .roomTitle(findChatRoom.getTitle())
+                .roomTitle(null)
                 .roomId(findChatRoom.getRoomId())
                 .nickName(findReceiver.getNickname())
                 .build();
