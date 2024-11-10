@@ -91,7 +91,7 @@ public class UserController {
 
         String refreshTokenInDB = userServiceImpl.getRefreshToken(userDetail.getUuid());
         JwtToken newToken;
-        if (Objects.requireNonNull(refreshTokenInRequest).equals(refreshTokenInDB)) {
+        if (refreshTokenInRequest.equals(refreshTokenInDB)){
             newToken = userServiceImpl.reissueToken(refreshTokenInDB);
         } else {
             throw new MemberException(ExceptionCode.INVALID_TOKEN);

@@ -47,6 +47,12 @@ public class ChatService {
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
+    /**
+     *
+     * @param sender
+     * 방 생성 시 sender는 항상 mate의 uuid로 지정된다.
+     *
+     */
     public ChatRoomCreateResponse getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
         User findSender = userRepository.findById(sender).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
@@ -83,6 +89,9 @@ public class ChatService {
             findChatRoom = chatRoomRepository.save(updateChatRoom);
         }
 
+        //findChatRoom의 sender(메이트)의 uuid와 findSender(현재 로그인 중인 유저)의 uuid가 일치하는 경우 현재 로그인 유저는 mate이기 때문에 채팅방 제목 반환
+        // 일치하지 않는 경우에는 보호자가 로그인한 것이기 때문에 상대방 닉네임을 담아서 반환
+        //TODO : 클라이언트 서버와 통신 필요,메서드 리팩토링 . SOLID. 위배사항 확인
         if(findChatRoom.getSender().equals(findSender.getUuid())) {
             return  ChatRoomCreateResponse.builder()
                     .roomTitle(findChatRoom.getTitle())

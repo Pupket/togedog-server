@@ -38,20 +38,27 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public void match(CustomUserDetail userDetail, String nickname, Long boardId) {
 
+        //유저 조회
         User findUserByUserDetail = getUser(userRepository.findByEmail(userDetail.getUsername()));
 
-        validateNickname(nickname, findUserByUserDetail);
+        //닉네임 유효성 검사
+        validateIsOwnNickname(nickname, findUserByUserDetail);
 
+        //Owner로 등록되어 있는지 검사
         Owner owner = getOwner(findUserByUserDetail);
 
+        //상대방 유저 검사
         User findUserByNickname = getUser(userRepository.findByNickname(nickname));
 
+        //유저의 메이트 조회
         Mate mate = getMate(findUserByNickname);
 
+        //매칭할 게시판 조회
         Board findBoardById = getBoard(boardRepository.findByBoardId(boardId));
 
-        List<Match> matches = matchRepository.findByOwner(owner).orElse(null);
-        if (matches != null) {
+        //이미 매칭된 조회라면 예외 던지기
+        List<Match> matches = matchRepository.findByOwner(owner);
+        if (!matches.isEmpty()) {
             boolean isMatched = matches.stream().anyMatch(
                     match ->
                             match.getMatched().equals(MatchStatus.MATCHED)
@@ -88,20 +95,18 @@ public class MatchServiceImpl implements MatchService {
 
     private User getUser(Optional<User> userRepository) {
         //Owner
-        User findUserByUserDetail = userRepository.orElseThrow(
+        return userRepository.orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
-        return findUserByUserDetail;
     }
 
     private Owner getOwner(User findUserByUserDetail) {
-        Owner owner = ownerRepository.findByUser(findUserByUserDetail).orElseThrow(
+        return ownerRepository.findByUser(findUserByUserDetail).orElseThrow(
                 () -> new OwnerException(ExceptionCode.NOT_FOUND_OWNER)
         );
-        return owner;
     }
 
-    private static void validateNickname(String nickname, User findUserByUserDetail) {
+    private static void validateIsOwnNickname(String nickname, User findUserByUserDetail) {
         if (findUserByUserDetail.getNickname().equals(nickname)) {
             throw new MemberException(ExceptionCode.YOUR_OWN_NICKNAME);
         }
@@ -114,36 +119,38 @@ public class MatchServiceImpl implements MatchService {
         //게시판에서 가져올 수 있는 것 -> boardDog
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
+        //매칭된 건인지 확인
         if (findBoard.getMatch() == null) {
             throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
         }
 
         Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
+
         if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
             throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
         }
-        if (findBoard.getMatched().equals(MatchStatus.MATCHED) || findMatch.getMatched().equals(MatchStatus.MATCHED)) {
+
+        if (findBoard.getMatched().equals(MatchStatus.MATCHED)) {
             throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
-        } else {
-            Match updatedMatch = findMatch.toBuilder()
-                    .matched(MatchStatus.MATCHED)
-                    .build();
-
-            matchRepository.save(updatedMatch);
-
-            Board board = findBoard.toBuilder()
-                    .matched(MatchStatus.MATCHED)
-                    .build();
-
-            boardRepository.save(board);
         }
+        Match updatedMatch = findMatch.toBuilder()
+                .matched(MatchStatus.MATCHED)
+                .build();
+
+        matchRepository.save(updatedMatch);
+
+        Board board = findBoard.toBuilder()
+                .matched(MatchStatus.MATCHED)
+                .build();
+
+        boardRepository.save(board);
+
     }
 
     private Match getMatch(Optional<Match> matchRepository) {
-        Match findMatch = matchRepository.orElseThrow(
+        return matchRepository.orElseThrow(
                 () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
         );
-        return findMatch;
     }
 
     public void matchFail(CustomUserDetail userDetail, Long boardId) {
@@ -151,7 +158,12 @@ public class MatchServiceImpl implements MatchService {
 
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
-        Match match = getMatch(matchRepository.findByBoardAndMate(findBoard, findUser.getMate()));
+        Mate findMate = findUser.getMate();
+        if (findMate == null) {
+            throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
+        }
+
+        Match match = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
 
         Match updatedMatch = match.toBuilder()
                 .matched(MatchStatus.UNMATCHED)
@@ -183,7 +195,7 @@ public class MatchServiceImpl implements MatchService {
                 .matchCount(findMate.getMatchCount() + 1)
                 .build();
 
-        Owner owner = findBoard.getUser().getOwner();
+        Owner owner = findUser.getOwner();
 
         Owner updatedOwner = owner.toBuilder()
                 .matchCount(owner.getMatchCount() + 1)

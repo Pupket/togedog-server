@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface MatchRepository extends JpaRepository<Match, Long> {
 
 
-    Optional<List<Match>> findByOwner(Owner owner);
+    List<Match> findByOwner(Owner owner);
 
     Optional<Match> findByBoardAndMate(Board findBoard, Mate findMate);
 }
