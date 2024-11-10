@@ -36,6 +36,9 @@ public class FcmService {
         String message = notification.getContent();
         String image = notification.getImage();
         Timestamp lastTime = notification.getLastTime();
+        log.info("message={}",message);
+        log.info("image={}",image);
+        log.info("lastTime={}",lastTime);
         Map<String, String> data = new HashMap<>();
         data.put("roomId", String.valueOf(roomId));
         Message firebaseMessage = Message.builder()
