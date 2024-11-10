@@ -223,15 +223,15 @@ public class ChatService {
                 () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
         );
 
-        Long reciever = findChatRoom.getReceiver();
-        String receiverStatus = redisTemplateForUserStatus.opsForValue().get("user:status:" + reciever);
+        Long receiver = findChatRoom.getReceiver();
+        String receiverStatus = redisTemplateForUserStatus.opsForValue().get("user:status:" + receiver);
         if (!webSocketEventListener.isSessionConnected(receiverStatus)) {
             NotificationRequestDto notificationRequestDto = NotificationRequestDto.builder()
-                    .message(message.getContent())
-                    .title(findChatRoom.getTitle())
-                    .receiver(findChatRoom.getReceiver())
+                    .content(message.getContent())
+                    .userId(message.getUserId())
                     .image(message.getImage())
                     .roomId(findChatRoom.getRoomId())
+                    .lastTime(parsedLastTime)
                     .build();
             try {
                 fcmService.sendNotification(notificationRequestDto, findChatRoom.getReceiver());

@@ -72,7 +72,8 @@ public enum ExceptionCode {
     DUPLICATE_LOGIN(CONFLICT, "Duplicate Login", 403),
     INVALID_TIME_FORMAT(CONFLICT, "Invalid Time Format", 403),
     INTERRUPTION_OR_EXECUTION_ERR(CONFLICT, "Interruption or Execution Error", 403),
-    NOT_FOUND_SCHEDULE(CONFLICT, "Not Found Schedule", 403 ),;
+    NOT_FOUND_SCHEDULE(CONFLICT, "Not Found Schedule", 403 ),
+    NOT_FOUND_FCM_TOKEN(CONFLICT, "Not Found FCM Token", 403 );
 
 
     private final HttpStatus httpStatus;

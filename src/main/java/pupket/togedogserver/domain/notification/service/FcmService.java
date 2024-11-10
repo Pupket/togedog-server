@@ -9,7 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.FcmException;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -30,20 +33,23 @@ public class FcmService {
     }
 
     public void sendNotification(NotificationRequestDto notification, Long roomId) throws InterruptedException, ExecutionException {
-        String title = notification.getTitle();
-        String message = notification.getMessage();
+        String message = notification.getContent();
         String image = notification.getImage();
+        Timestamp lastTime = notification.getLastTime();
         Map<String, String> data = new HashMap<>();
         data.put("roomId", String.valueOf(roomId));
         Message firebaseMessage = Message.builder()
-                .setToken(userRepository.findByUuid(notification.getReceiver()).get().getFcmToken())
+                .setToken(userRepository.findByUuid(notification.getUserId()).orElseThrow(
+                        ()-> new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN)
+                ).getFcmToken())
                 .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")
                         .setNotification(
-                                new WebpushNotification(
-                                        title,
-                                        message,
-                                        image
-                                ))
+                                WebpushNotification.builder()
+                                        .setTitle(message)
+                                        .setData(message)
+                                        .setImage(image)
+                                        .setTimestampMillis(lastTime.getTime())
+                                        .build())
                         .putAllData(data)
                         .build())
                 .build();
