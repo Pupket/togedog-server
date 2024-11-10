@@ -24,7 +24,7 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final RedisLoginService redisService;
     private static final List<String> EXCLUDE_URLS = List.of(
-            "/css", "/swagger", "/v3/api-docs", "/login", "/favicon"
+            "/css", "/swagger", "/v3/api-docs", "/login", "/favicon","/api/v1/member/reissue-token"
     );
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 

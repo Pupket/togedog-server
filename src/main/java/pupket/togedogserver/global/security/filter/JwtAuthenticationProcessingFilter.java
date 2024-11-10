@@ -30,6 +30,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private static final List<String> EXCLUDE_URLS = List.of(
             "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/ws","/websocket_test.html"
+            , "/api/v1/member/reissue-token"
     );
 
     @Override

@@ -234,7 +234,7 @@ public class ChatService {
                     .roomId(findChatRoom.getRoomId())
                     .build();
             try {
-                fcmService.sendNotification(notificationRequestDto, findChatRoom.getRoomId());
+                fcmService.sendNotification(notificationRequestDto, findChatRoom.getReceiver());
             } catch (Exception e) {
                 log.error("Failed to send notification", e);
                 throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
