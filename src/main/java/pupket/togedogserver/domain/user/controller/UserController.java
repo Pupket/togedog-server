@@ -20,6 +20,7 @@ import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
+import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
@@ -33,6 +34,7 @@ public class UserController {
 
     private final UserServiceImpl userServiceImpl;
     private final RedisLoginService redisLoginService;
+    private final JwtService jwtService;
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
     @GetMapping
@@ -79,24 +81,25 @@ public class UserController {
     @GetMapping("/reissue-token")
     @Transactional
     public ResponseEntity<String> reissue(
-            @AuthenticationPrincipal CustomUserDetail userDetail,
             HttpServletRequest request
     ) {
 
         String refreshTokenInRequest = request.getHeader("refresh-token");
 
-        if (refreshTokenInRequest != null && refreshTokenInRequest.startsWith("Bearer ")) {
-            refreshTokenInRequest = refreshTokenInRequest.substring(7); // "Bearer " 부분 제거
+        if(refreshTokenInRequest == null) {
+            throw new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN);
         }
 
-        String refreshTokenInDB = userServiceImpl.getRefreshToken(userDetail.getUuid());
+        Long userId = jwtService.getUserIdFromToken(jwtService.resolveToken(request));
+
+        String refreshTokenInDB = userServiceImpl.getRefreshToken(userId);
         JwtToken newToken;
         if (refreshTokenInRequest.equals(refreshTokenInDB)){
             newToken = userServiceImpl.reissueToken(refreshTokenInDB);
         } else {
             throw new MemberException(ExceptionCode.INVALID_TOKEN);
         }
-        redisLoginService.saveAccessToken(newToken.getAccessToken(), userDetail.getUuid());
+        redisLoginService.saveAccessToken(newToken.getAccessToken(), userId);
         HttpHeaders headers = new HttpHeaders();
         headers.add("accessToken", newToken.getAccessToken());
         headers.add("refreshToken", newToken.getRefreshToken());
