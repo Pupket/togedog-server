@@ -24,4 +24,12 @@ public class RedisLoginService {
     public String getAccessToken(String userId) {
         return (String)redisTemplateForToken.opsForValue().get("userId: " + userId);
     }
+
+    public String getAccessToken(Long userId) {
+        return (String)redisTemplateForToken.opsForValue().get("userId: " + userId);
+    }
+
+    public void deleteAccessToken(Long userId) {
+        redisTemplateForToken.delete("userId: " + userId);
+    }
 }

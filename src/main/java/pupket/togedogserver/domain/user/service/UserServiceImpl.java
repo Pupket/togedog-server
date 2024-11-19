@@ -25,6 +25,7 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.jwt.util.JwtUtils;
+import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.security.util.PasswordUtil;
 
@@ -34,7 +35,6 @@ import pupket.togedogserver.global.security.util.PasswordUtil;
 public class UserServiceImpl {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final JwtUtils jwtUtils;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
@@ -44,6 +44,7 @@ public class UserServiceImpl {
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomMateRepositoryImpl customMateRepositoryImpl;
     private final CustomDogRepositoryImpl customDogRepositoryImpl;
+    private final RedisLoginService redisLoginService;
 
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
@@ -131,7 +132,7 @@ public class UserServiceImpl {
     public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
         User findUser = getUserById(userDetail.getUuid());
 
-        if(findUser.getMate()==null){
+        if (findUser.getMate() == null) {
             throw new MemberException(ExceptionCode.MATE_NOT_REGIST);
         }
 
@@ -142,5 +143,39 @@ public class UserServiceImpl {
                 .mateActiveResponse(mateActions)
                 .dogActiveResponse(dogActions)
                 .build();
+    }
+
+    public JwtToken reissueTokenWithValidation(String refreshTokenInRequest, String accessToken) {
+        // 1. 리프레시 토큰이 없으면 예외 발생
+        if (refreshTokenInRequest == null) {
+            throw new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN);
+        }
+        // 2. 액세스 토큰이 없으면 예외 발생
+        if (accessToken == null) {
+            throw new MemberException(ExceptionCode.NOT_FOUND_ACCESS_TOKEN);
+        }
+        // 3. 액세스 토큰에서 유저 아이디 조회
+        Long userId = jwtService.getUserIdFromToken(accessToken);
+        if (userId == null) {
+            throw new MemberException(ExceptionCode.NOT_FOUND_MEMBER);
+        }
+
+        String existingAccessToken = redisLoginService.getAccessToken(userId);
+        if (existingAccessToken != null) {
+            redisLoginService.deleteAccessToken(userId);
+        }
+
+        // 4. 유저 아이디로 리프레시 토큰 조회
+        String refreshTokenInDB = getRefreshToken(userId);
+        if (!refreshTokenInRequest.equals(refreshTokenInDB)) {
+            throw new MemberException(ExceptionCode.INVALID_TOKEN);
+        }
+
+        // 5. 리프레시 토큰이 같으면 토큰 재발급
+        JwtToken newToken = reissueToken(refreshTokenInDB);
+
+        redisLoginService.saveAccessToken(newToken.getAccessToken(), userId);
+
+        return newToken;
     }
 }
