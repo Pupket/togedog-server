@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import pupket.togedogserver.domain.board.constant.FeeType;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.entity.Match;
@@ -25,7 +25,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @AllArgsConstructor
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE board SET deleted = true WHERE board_id = ?")
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Board {
 
     @Id

@@ -17,14 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
 import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
 import pupket.togedogserver.domain.user.service.UserServiceImpl;
-import pupket.togedogserver.global.exception.ExceptionCode;
-import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
-
-import java.util.Objects;
 
 @RestController
 @Slf4j
@@ -33,7 +29,6 @@ import java.util.Objects;
 public class UserController {
 
     private final UserServiceImpl userServiceImpl;
-    private final RedisLoginService redisLoginService;
     private final JwtService jwtService;
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
@@ -85,24 +80,15 @@ public class UserController {
     ) {
 
         String refreshTokenInRequest = request.getHeader("refresh-token");
+        String accessToken = jwtService.resolveToken(request);
 
-        if(refreshTokenInRequest == null) {
-            throw new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN);
-        }
+        // Service로 토큰 재발급 로직 위임
+        JwtToken newToken = userServiceImpl.reissueTokenWithValidation(refreshTokenInRequest, accessToken);
 
-        Long userId = jwtService.getUserIdFromToken(jwtService.resolveToken(request));
-
-        String refreshTokenInDB = userServiceImpl.getRefreshToken(userId);
-        JwtToken newToken;
-        if (refreshTokenInRequest.equals(refreshTokenInDB)){
-            newToken = userServiceImpl.reissueToken(refreshTokenInDB);
-        } else {
-            throw new MemberException(ExceptionCode.INVALID_TOKEN);
-        }
-        redisLoginService.saveAccessToken(newToken.getAccessToken(), userId);
         HttpHeaders headers = new HttpHeaders();
         headers.add("accessToken", newToken.getAccessToken());
         headers.add("refreshToken", newToken.getRefreshToken());
+        
         return ResponseEntity.status(HttpStatus.OK).headers(headers).build();
     }
 

@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import pupket.togedogserver.domain.dog.entity.Dog;
 
 @Entity
@@ -16,7 +16,7 @@ import pupket.togedogserver.domain.dog.entity.Dog;
 @NoArgsConstructor
 @Builder(toBuilder = true)
 @SQLDelete(sql = "UPDATE board_dog SET deleted = true WHERE board_dog_id = ?")
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class BoardDog {
 
     @Id

@@ -20,7 +20,6 @@ import pupket.togedogserver.domain.chat.service.ChatService;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;

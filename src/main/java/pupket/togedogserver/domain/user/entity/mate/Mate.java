@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.User;
@@ -21,7 +21,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @AllArgsConstructor
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE mate SET deleted = true WHERE mate_uuid = ?")
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Mate {
 
     @Id
