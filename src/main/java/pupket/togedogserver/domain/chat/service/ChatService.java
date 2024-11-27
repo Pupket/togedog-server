@@ -125,7 +125,7 @@ public class ChatService {
     }
 
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
-        List<ChatRoom> chatRooms = chatRoomRepository.findBySender(uuid);
+        List<ChatRoom> chatRooms = chatRoomRepository.findBySenderOrReceiver(uuid,uuid);
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
 
         for (ChatRoom room : chatRooms) {
