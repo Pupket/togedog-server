@@ -120,8 +120,8 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
     public Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable) {
         // 여러 마리의 개를 처리할 수 있도록 Board와 Dog 테이블을 JOIN
         String query = "SELECT b, d FROM Board b " +
-                "JOIN b.boardDog bd " +  // BoardDog 테이블도 추가로 JOIN
-                "JOIN bd.dog d " +  // BoardDog과 Dog을 JOIN
+                "JOIN fetch b.boardDog bd " +  // BoardDog 테이블도 추가로 JOIN
+                "JOIN fetch bd.dog d " +  // BoardDog과 Dog을 JOIN
                 "WHERE b.deleted = false AND d.deleted = false " +
                 "AND b.match.mate.mateUuid = :mateId";
 

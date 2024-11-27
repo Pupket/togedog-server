@@ -39,23 +39,32 @@ public class FcmService {
         log.info("message={}",message);
         log.info("image={}",image);
         log.info("lastTime={}",lastTime);
-        Map<String, String> data = new HashMap<>();
-        data.put("roomId", String.valueOf(roomId));
-        Message firebaseMessage = Message.builder()
-                .setToken(userRepository.findByUuid(notification.getUserId()).orElseThrow(
-                        ()-> new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN)
-                ).getFcmToken())
-                .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")
-                        .setNotification(
-                                WebpushNotification.builder()
-                                        .setTitle(message)
-                                        .setData(message)
-                                        .setImage(image)
-                                        .setTimestampMillis(lastTime.getTime())
-                                        .build())
-                        .putAllData(data)
-                        .build())
-                .build();
+        
+        String token = userRepository.findByUuid(notification.getUserId())
+        .orElseThrow(() -> new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN))
+        .getFcmToken();
+
+    if (token == null || token.isEmpty()) {
+        log.error("FCM token is null or empty for userId: {}", notification.getUserId());
+        throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
+    }
+
+    Map<String, String> data = new HashMap<>();
+    data.put("roomId", String.valueOf(roomId));
+
+    Message firebaseMessage = Message.builder()
+        .setToken(token)
+        .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")
+            .setNotification(
+                WebpushNotification.builder()
+                    .setTitle(message)
+                    .setData(message)
+                    .setImage(image)
+                    .setTimestampMillis(lastTime.getTime())
+                    .build())
+            .putAllData(data)
+            .build())
+        .build();
 
         String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
         log.info("Sent message: {}", response);
