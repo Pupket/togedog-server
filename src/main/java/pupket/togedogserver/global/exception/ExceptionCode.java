@@ -74,7 +74,8 @@ public enum ExceptionCode {
     INTERRUPTION_OR_EXECUTION_ERR(CONFLICT, "Interruption or Execution Error", 403),
     NOT_FOUND_SCHEDULE(CONFLICT, "Not Found Schedule", 403 ),
     NOT_FOUND_FCM_TOKEN(CONFLICT, "Not Found FCM Token", 403 ), 
-    NOT_FOUND_ACCESS_TOKEN(CONFLICT, "Not Found Access Token", 403 );
+    NOT_FOUND_ACCESS_TOKEN(CONFLICT, "Not Found Access Token", 403 ),
+    FCM_INITIALIZATION_ERROR(CONFLICT, "FCM Initialization Error" , 403 );
 
 
     private final HttpStatus httpStatus;

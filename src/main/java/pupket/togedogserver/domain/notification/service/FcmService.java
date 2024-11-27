@@ -1,9 +1,6 @@
 package pupket.togedogserver.domain.notification.service;
 
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.WebpushConfig;
-import com.google.firebase.messaging.WebpushNotification;
+import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,35 +33,35 @@ public class FcmService {
         String message = notification.getContent();
         String image = notification.getImage();
         Timestamp lastTime = notification.getLastTime();
-        log.info("message={}",message);
-        log.info("image={}",image);
-        log.info("lastTime={}",lastTime);
         
         String token = userRepository.findByUuid(notification.getUserId())
-        .orElseThrow(() -> new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN))
-        .getFcmToken();
+            .orElseThrow(() -> new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN))
+            .getFcmToken();
 
-    if (token == null || token.isEmpty()) {
-        log.error("FCM token is null or empty for userId: {}", notification.getUserId());
-        throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
-    }
+        if (token == null || token.isEmpty()) {
+            log.error("FCM token is null or empty for userId: {}", notification.getUserId());
+            throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
+        }
 
-    Map<String, String> data = new HashMap<>();
-    data.put("roomId", String.valueOf(roomId));
+        Map<String, String> data = new HashMap<>();
+        data.put("roomId", String.valueOf(roomId));
+        data.put("message", message);
+        data.put("image", image != null ? image : "");
+        data.put("timestamp", String.valueOf(lastTime.getTime()));
 
-    Message firebaseMessage = Message.builder()
-        .setToken(token)
-        .setWebpushConfig(WebpushConfig.builder().putHeader("ttl", "43200")
-            .setNotification(
-                WebpushNotification.builder()
-                    .setTitle(message)
-                    .setData(message)
+        Message firebaseMessage = Message.builder()
+            .setToken(token)
+            .setAndroidConfig(AndroidConfig.builder()
+                .setTtl(43200000)
+                .setPriority(AndroidConfig.Priority.HIGH)
+                .setNotification(AndroidNotification.builder()
+                    .setTitle("새로운 메시지")
+                    .setBody(message)
                     .setImage(image)
-                    .setTimestampMillis(lastTime.getTime())
                     .build())
-            .putAllData(data)
-            .build())
-        .build();
+                .putAllData(data)
+                .build())
+            .build();
 
         String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
         log.info("Sent message: {}", response);

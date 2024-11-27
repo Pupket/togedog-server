@@ -6,8 +6,11 @@ import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import pupket.togedogserver.global.exception.ExceptionCode;
+import pupket.togedogserver.global.exception.customException.FcmException;
 
 import java.io.IOException;
 
@@ -16,20 +19,30 @@ import java.io.IOException;
 public class FcmConfig {
 
     @Value("${fcm.key.path}")
-    private String fcm_key_path;
+    private String fcmKeyPath;
 
     @PostConstruct
     public void fcmInitialize() {
         try {
-            FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(fcm_key_path).getInputStream())).build();
             if (FirebaseApp.getApps().isEmpty()) {
+                GoogleCredentials credentials = GoogleCredentials
+                    .fromStream(new ClassPathResource(fcmKeyPath).getInputStream());
+                
+                FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(credentials)
+                    .build();
+                
                 FirebaseApp.initializeApp(options);
-                log.info("Firebase application has been initialized");
+                log.info("Firebase application has been initialized successfully");
+            } else {
+                log.info("Firebase application is already initialized");
             }
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error("Firebase initialization failed: {}", e.getMessage());
+            throw new FcmException(ExceptionCode.FCM_INITIALIZATION_ERROR);
+        } catch (Exception e) {
+            log.error("Unexpected error during Firebase initialization: {}", e.getMessage());
+            throw new FcmException(ExceptionCode.FCM_INITIALIZATION_ERROR);
         }
     }
-
 }
