@@ -88,6 +88,12 @@ public class LoggingAspect {
     // Service 메서드 호출 전후 로깅
     @Around("service()")
     public Object loggingService(ProceedingJoinPoint joinPoint) throws Throwable {
+         // RedisSortedSetService의 addToSortedSet 메소드는 로깅 제외
+         if (joinPoint.getSignature().getDeclaringType().getSimpleName().equals("RedisSortedSetService") 
+         && joinPoint.getSignature().getName().startsWith("addToSortedSet")) {
+         return joinPoint.proceed();
+     }
+        
         String serviceName = joinPoint.getSignature().getDeclaringType().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 

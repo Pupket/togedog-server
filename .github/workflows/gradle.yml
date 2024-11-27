@@ -36,10 +36,7 @@ jobs:
       - name: Create Firebase service account key file
         run: |
           mkdir -p ./src/main/resources/firebase
-          echo "${{ secrets.FIREBASE_CONFIG_JSON }}" > ./src/main/resources/firebase/firebase_service_key.json
-          cd ./src/main/resources/firebase
-          cat ./firebase_service_key.json
-
+          echo '${{ secrets.FIREBASE_CONFIG_JSON }}' > ./src/main/resources/firebase/firebase_service_key.json
 
       # 환경 설정(application-dev.yml 파일 생성)
       - name: Make application-dev.yml
