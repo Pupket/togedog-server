@@ -90,7 +90,7 @@ public class LoggingAspect {
     public Object loggingService(ProceedingJoinPoint joinPoint) throws Throwable {
          // RedisSortedSetService의 addToSortedSet 메소드는 로깅 제외
          if (joinPoint.getSignature().getDeclaringType().getSimpleName().equals("RedisSortedSetService") 
-         && joinPoint.getSignature().getName().startsWith("addToSortedSet")) {
+         && joinPoint.getSignature().getName().contains("addToSortedSet")) {
          return joinPoint.proceed();
      }
         
