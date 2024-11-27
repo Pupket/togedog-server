@@ -103,4 +103,4 @@ gradle-app.setting
 
 *.yaml
 *.gz
-src/main/resources/firebase/firebase_service_key.json
+togedog-cf1ca-firebase-adminsdk-t0q89-17384e94fb.json
