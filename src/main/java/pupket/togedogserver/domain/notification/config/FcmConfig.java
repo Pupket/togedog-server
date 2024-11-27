@@ -23,6 +23,7 @@ public class FcmConfig {
 
     @PostConstruct
     public void fcmInitialize() {
+        log.info("fcmkeyPath={}", fcmKeyPath);
         try {
             if (FirebaseApp.getApps().isEmpty()) {
                 GoogleCredentials credentials = GoogleCredentials

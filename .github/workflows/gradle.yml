@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir -p ./src/main/resources/firebase
           echo "${{ secrets.FIREBASE_CONFIG_JSON }}" > ./src/main/resources/firebase/firebase_service_key.json
+          cd ./src/main/resources/firebase
           cat ./firebase_service_key.json
 
 
