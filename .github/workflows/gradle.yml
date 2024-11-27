@@ -49,6 +49,15 @@ jobs:
           cat ./application-dev.yml  # 디버그용 출력
         shell: bash
 
+      - name: Verify Firebase service account key file
+        run: |
+          ls -l ./src/main/resources/firebase/
+          cat ./src/main/resources/firebase/firebase_service_key.json
+
+      - name: Verify application-dev.yml
+        run: |
+          cat ./src/main/resources/application-dev.yml
+
       # gradlew 실행 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
