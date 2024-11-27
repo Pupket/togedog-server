@@ -1,7 +1,9 @@
 package pupket.togedogserver.global.logging;
 
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -78,4 +80,61 @@ public class LoggingAspect {
         return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest().getRequestURI();
     }
+
+    // Service의 메서드를 포인트컷으로 지정
+    @Pointcut("within(pupket.togedogserver..*Service)")
+    public void service() {}
+
+    // Service 메서드 호출 전후 로깅
+    @Around("service()")
+    public Object loggingService(ProceedingJoinPoint joinPoint) throws Throwable {
+        String serviceName = joinPoint.getSignature().getDeclaringType().getSimpleName();
+        String methodName = joinPoint.getSignature().getName();
+
+        // 서비스 시작 로그
+        log.info("Service method started: {}.{}()", serviceName, methodName);
+        
+        // 메서드 파라미터 로깅 (민감한 정보 제외)
+        Object[] args = joinPoint.getArgs();
+        if (args != null && args.length > 0) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] != null && !containsSensitiveData(args[i])) {
+                    log.info("Arg[{}]: {}", i, args[i]);
+                }
+            }
+        }
+
+        long startTime = System.currentTimeMillis();
+        Object result = null;
+        
+        try {
+            result = joinPoint.proceed();
+            return result;
+        } finally {
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            log.info("Service method finished: {}.{}() [Execution time: {} ms]", 
+                    serviceName, methodName, elapsedTime);
+            
+            // 결과 로깅 (민감한 정보 제외)
+            if (result != null && !containsSensitiveData(result)) {
+                log.info("Return value: {}", result);
+            }
+        }
+    }
+
+    private boolean containsSensitiveData(Object obj) {
+        // 민감한 정보를 포함하는 객체인지 확인하는 로직
+        return obj.toString().contains("password") || 
+               obj.toString().contains("token") ||
+               obj.toString().contains("key");
+    }
+
+    @AfterReturning(pointcut = "service()", returning = "returnValue")
+    public void afterReturningServiceLogging(JoinPoint joinPoint, Object returnValue) {
+        log.info("### Service method finished: {}", joinPoint.getSignature().toShortString());
+        if (returnValue != null) {
+            log.info("Service return value: {}", returnValue);
+        }
+    }
+
 }

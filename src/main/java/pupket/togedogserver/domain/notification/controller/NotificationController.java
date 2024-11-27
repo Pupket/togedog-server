@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 @RestController
 @RequestMapping("/api/v1/fcm")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "fcm", description = "fcm 생성 및 활용 api")
 public class NotificationController {
 
@@ -39,6 +41,7 @@ public class NotificationController {
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @RequestBody String token
     ) {
+        log.info("fcm token: {}", token);
         fcmService.createToken(
                 userDetail.getUuid(),
                 token
