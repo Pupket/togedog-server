@@ -9,7 +9,6 @@ import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
-import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.controller.port.UserService;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.DogActiveResponse;
@@ -18,7 +17,6 @@ import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
-import pupket.togedogserver.domain.user.repository.CustomMateRepositoryImpl;
 import pupket.togedogserver.domain.user.service.port.CustomMateRepository;
 import pupket.togedogserver.global.auth.service.OAuth2RevokeService;
 import pupket.togedogserver.global.exception.ExceptionCode;
@@ -49,11 +47,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
+        log.info("사용자 생성 시작: 사용자 ID = {}", userDetail.getUuid());
         User user = getUserById(userDetail.getUuid());
-
         User createdUser = createUserByRequest(request, user);
-
         userRepository.save(createdUser);
+        log.info("사용자 생성 완료: 사용자 ID = {}", createdUser.getUuid());
     }
 
     private User createUserByRequest(RegistMateRequest request, User user) {
@@ -66,48 +64,49 @@ public class UserServiceImpl implements UserService {
 
     private String createPassword() {
         String password = PasswordUtil.generateRandomPassword();
-        password = passwordEncoder.encode(password);
-        return password;
+        return passwordEncoder.encode(password);
     }
 
     @Override
     public void logout(String refreshToken, CustomUserDetail userDetail) {
+        log.info("로그아웃 시작: 사용자 ID = {}", userDetail.getUuid());
         jwtUtils.handleExpiredRefreshToken(refreshToken);
         fcmService.deleteToken(userDetail.getUuid());
+        log.info("로그아웃 완료: 사용자 ID = {}", userDetail.getUuid());
     }
 
     @Override
     public JwtToken reissueToken(String refreshToken) {
-        return jwtService.reissueTokenByRefreshToken(refreshToken);
+        log.info("토큰 재발급 시작: 리프레시 토큰 = {}", refreshToken);
+        JwtToken newToken = jwtService.reissueTokenByRefreshToken(refreshToken);
+        log.info("토큰 재발급 완료: 새로운 액세스 토큰 = {}", newToken.getAccessToken());
+        return newToken;
     }
-
 
     @Override
     public FindUserInfoResponse getMemberDetails(Long uuid) {
+        log.info("회원 정보 조회 시작: 사용자 ID = {}", uuid);
         User user = getUserById(uuid);
-
-        return FindUserInfoResponse.builder()
-                .uuid(user.getUuid())
-                .email(user.getEmail())
-                .name(user.getName())
-                .platform(RoleType.toKoreanValue(user.getRole()))
-                .phoneNumber(user.getPhoneNumber())
-                .build();
+        FindUserInfoResponse response = FindUserInfoResponse.from(user);
+        log.info("회원 정보 조회 완료: 사용자 ID = {}", uuid);
+        return response;
     }
 
     @Override
     public void deleteSocialMember(Long uuid) {
+        log.info("소셜 회원 삭제 시작: 사용자 ID = {}", uuid);
         User findUser = getUserById(uuid);
-
-        socialAccessTokenRepository.findByUser(findUser).ifPresent(
-                accessToken -> {
-                    String socialAccessToken = accessToken.getSocialAccessToken();
-                    revokeSocialAccessToken(findUser, socialAccessToken);
-                    socialAccessTokenRepository.delete(accessToken);
-                }
-        );
-
+        deleteTokenFromSocialAccessToken(findUser);
         userRepository.delete(findUser);
+        log.info("소셜 회원 삭제 완료: 사용자 ID = {}", uuid);
+    }
+
+    private void deleteTokenFromSocialAccessToken(User findUser) {
+        socialAccessTokenRepository.findByUser(findUser).ifPresent(accessToken -> {
+            String socialAccessToken = accessToken.getSocialAccessToken();
+            revokeSocialAccessToken(findUser, socialAccessToken);
+            socialAccessTokenRepository.delete(accessToken);
+        });
     }
 
     private void revokeSocialAccessToken(User findUser, String socialAccessToken) {
@@ -120,14 +119,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String getRefreshToken(Long uuid) {
+        log.info("리프레시 토큰 조회 시작: 사용자 ID = {}", uuid);
         RefreshToken refreshToken = refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
+        log.info("리프레시 토큰 조회 완료: 사용자 ID = {}", uuid);
         return refreshToken.getRefreshToken();
     }
 
     @Override
     public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
+        log.info("메이트 및 개 활동 조회 시작: 사용자 ID = {}", userDetail.getUuid());
         User findUser = getUserById(userDetail.getUuid());
 
         if (findUser.getMate() == null) {
@@ -137,54 +139,54 @@ public class UserServiceImpl implements UserService {
         MateActiveResponse mateActions = customMateRepositoryImpl.findMateActions(findUser.getMate().getMateUuid(), findUser);
         DogActiveResponse dogActions = customDogRepositoryImpl.findDogActions(findUser.getUuid());
 
-        return FindMateAndDogResponse.builder()
-                .mateActiveResponse(mateActions)
-                .dogActiveResponse(dogActions)
-                .build();
+        log.info("메이트 및 개 활동 조회 완료: 사용자 ID = {}", userDetail.getUuid());
+        return FindMateAndDogResponse.from(mateActions, dogActions);
     }
 
     @Override
     public JwtToken reissueTokenWithValidation(String refreshTokenInRequest, String accessToken) {
-        // 1. 리프레시 토큰이 없으면 예외 발생
-        if (refreshTokenInRequest == null) {
+        log.info("토큰 유효성 검사 및 재발급 시작: 리프레시 토큰 = {}, 액세스 토큰 = {}", refreshTokenInRequest, accessToken);
+        validateTokens(refreshTokenInRequest, accessToken);
+        Long userId = getUserIdFromAccessToken(accessToken);
+        validateRefreshToken(refreshTokenInRequest, userId);
+        JwtToken newToken = reissueAndSaveNewToken(userId);
+        log.info("토큰 유효성 검사 및 재발급 완료: 새로운 액세스 토큰 = {}", newToken.getAccessToken());
+        return newToken;
+    }
+
+    private void validateTokens(String refreshToken, String accessToken) {
+        if (refreshToken == null) {
             throw new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN);
         }
-        // 2. 액세스 토큰이 없으면 예외 발생
         if (accessToken == null) {
             throw new MemberException(ExceptionCode.NOT_FOUND_ACCESS_TOKEN);
         }
-        // 3. 액세스 토큰에서 유저 아이디 조회
+    }
+
+    private Long getUserIdFromAccessToken(String accessToken) {
         Long userId = jwtService.getUserIdFromToken(accessToken);
         if (userId == null) {
             throw new MemberException(ExceptionCode.NOT_FOUND_MEMBER);
         }
+        return userId;
+    }
 
-        String existingAccessToken = redisLoginService.getAccessToken(userId);
-        if (existingAccessToken != null) {
-            redisLoginService.deleteAccessToken(userId);
-        }
-
-        // 4. 유저 아이디로 리프레시 토큰 조회
+    private void validateRefreshToken(String refreshTokenInRequest, Long userId) {
         String refreshTokenInDB = getRefreshToken(userId);
         if (!refreshTokenInRequest.equals(refreshTokenInDB)) {
             throw new MemberException(ExceptionCode.INVALID_TOKEN);
         }
+    }
 
-        // 5. 리프레시 토큰이 같으면 토큰 재발급
-        JwtToken newToken = reissueToken(refreshTokenInDB);
-
+    private JwtToken reissueAndSaveNewToken(Long userId) {
+        JwtToken newToken = reissueToken(getRefreshToken(userId));
         redisLoginService.saveAccessToken(newToken.getAccessToken(), userId);
-
         return newToken;
     }
 
     private User getUserById(Long uuid) {
-        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.INVALID_TOKEN)
+        return userRepository.findByUuid(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
-        return userRepository.findByUuid(uuid).
-                orElseThrow(
-                        () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-                );
     }
 }
