@@ -1,6 +1,5 @@
 package pupket.togedogserver.domain.user.service.port;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.entity.mate.MatePreferredTime;

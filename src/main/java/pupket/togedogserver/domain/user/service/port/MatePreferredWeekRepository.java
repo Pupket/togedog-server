@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 @Repository
-public interface MatePreferredWeekRepository  {
+public interface MatePreferredWeekRepository {
     void deleteAllByMate(Mate findMate);
 
     MatePreferredWeek save(MatePreferredWeek matePreferredWeek);

@@ -41,8 +41,8 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public List<String> findAllNickname() {
-        return userRepository.findAllNickname();
+    public List<String> findAllNicknames() {
+        return userRepository.findAllByNickname();
     }
 
     @Override

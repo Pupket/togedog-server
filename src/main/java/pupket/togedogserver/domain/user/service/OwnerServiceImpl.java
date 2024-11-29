@@ -1,6 +1,7 @@
 package pupket.togedogserver.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,6 @@ import pupket.togedogserver.domain.user.controller.port.OwnerService;
 import pupket.togedogserver.domain.user.dto.response.FindMatchedScheduleResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
@@ -23,41 +23,14 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OwnerServiceImpl implements OwnerService {
 
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
     private final UserRepository userRepository;
     private final BoardRepository boardRepository;
-
-    //Owner가 내 산책 일정 리스트 반환
-    @Override
-    public Page<BoardFindResponse> findMyBoards(CustomUserDetail userDetail, Pageable page) {
-
-        return customBoardRepositoryImpl.findMyBoardList(userDetail.getUuid(), page);
-    }
-
-    @Override
-    public PageImpl<FindMatchedScheduleResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
-
-        User findUser = userRepository.findByUuid(userDetail.getUuid()).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-
-        List<Board> findBoards = boardRepository.findByUser(findUser).orElseThrow(
-                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
-        );
-
-        List<FindMatchedScheduleResponse> matchedBoardResponses = getFindMatchedScheduleResponses(findBoards);
-
-        // 매핑된 결과를 페이징하여 반환합니다.
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
-
-        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
-    }
 
     private static List<FindMatchedScheduleResponse> getFindMatchedScheduleResponses(List<Board> findBoards) {
         // 요일
@@ -68,20 +41,45 @@ public class OwnerServiceImpl implements OwnerService {
                 .filter(board -> board.getMatched().equals(MatchStatus.MATCHED))
                 .map(board -> {
                     Mate mate = board.getMatch().getMate();
-                    return FindMatchedScheduleResponse.builder()
-                            .boardId(board.getBoardId())
-                            .pickUpDay(board.getPickUpDay().toString()) // 요일
-                            .startTime(board.getStartTime().toString()) // 시간
-                            .endTime(board.getEndTime().toString())
-                            .fee(board.getFee().toString()) // 가격
-                            .feeType(board.getFeeType().toString())
-                            .mateNickname(mate.getUser().getNickname())
-                            .matePhotoUrl(mate.getUser().getProfileImage()) // Mate 사진 URL
-                            .mateId(mate.getMateUuid())
-                            .matchStatus(board.getMatch().getMatched().getStatus())
-                            .completeStatus(board.getMatch().getCompleteStatus().getStatus())
-                            .build();
+                    return FindMatchedScheduleResponse.from(board, mate);
                 })
                 .toList();
+    }
+
+    //Owner가 내 산책 일정 리스트 반환
+    @Override
+    public Page<BoardFindResponse> findMyBoards(CustomUserDetail userDetail, Pageable page) {
+        log.info("Finding boards for user ID: {}", userDetail.getUuid());
+        return customBoardRepositoryImpl.findMyBoardList(userDetail.getUuid(), page);
+    }
+
+    @Override
+    public PageImpl<FindMatchedScheduleResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
+        log.info("Finding schedule for user ID: {}", userDetail.getUuid());
+        User findUser = getUserByUuid(userDetail.getUuid());
+        List<Board> findBoards = getBoardsByUser(findUser);
+
+        List<FindMatchedScheduleResponse> matchedBoardResponses = getFindMatchedScheduleResponses(findBoards);
+
+        // 매핑된 결과를 페이징하여 반환합니다.
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), matchedBoardResponses.size());
+
+        log.info("Returning paginated schedule for user ID: {}", userDetail.getUuid());
+        return new PageImpl<>(matchedBoardResponses.subList(start, end), pageable, matchedBoardResponses.size());
+    }
+
+    private User getUserByUuid(Long uuid) {
+        log.debug("Fetching user by UUID: {}", uuid);
+        return userRepository.findByUuid(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+    }
+
+    private List<Board> getBoardsByUser(User user) {
+        log.debug("Fetching boards for user ID: {}", user.getUuid());
+        return boardRepository.findByUser(user).orElseThrow(
+                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
+        );
     }
 }

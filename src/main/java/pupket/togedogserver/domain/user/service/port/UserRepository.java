@@ -10,10 +10,16 @@ import java.util.Optional;
 public interface UserRepository {
 
     Optional<User> findByEmail(String email);
+
     Optional<User> findByNickname(String nickname);
+
     Optional<User> findByUuid(Long memberUuid);
+
     void updateFcmTokenByUuid(String fcmToken, Long uuid);
+
     int updateFcmTokenToNullByUuid(Long uuid);
-    List<String> findAllNickname();
+
+    List<String> findAllNicknames();
+
     User save(User user);
 }

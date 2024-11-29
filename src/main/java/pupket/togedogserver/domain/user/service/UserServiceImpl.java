@@ -129,7 +129,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
-        log.info("메이트 및 개 활동 조회 시작: 사용자 ID = {}", userDetail.getUuid());
+        log.info("메이트 및 반려견 활동 조회 시작: 사용자 ID = {}", userDetail.getUuid());
         User findUser = getUserById(userDetail.getUuid());
 
         if (findUser.getMate() == null) {
@@ -139,7 +139,7 @@ public class UserServiceImpl implements UserService {
         MateActiveResponse mateActions = customMateRepositoryImpl.findMateActions(findUser.getMate().getMateUuid(), findUser);
         DogActiveResponse dogActions = customDogRepositoryImpl.findDogActions(findUser.getUuid());
 
-        log.info("메이트 및 개 활동 조회 완료: 사용자 ID = {}", userDetail.getUuid());
+        log.info("메이트 및 반려견 활동 조회 완료: 사용자 ID = {}", userDetail.getUuid());
         return FindMateAndDogResponse.from(mateActions, dogActions);
     }
 

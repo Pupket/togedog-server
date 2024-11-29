@@ -26,5 +26,6 @@ public interface UserJPARepository extends JpaRepository<User, Long> {
     @Query("update users u set u.fcmToken = null where u.uuid = :uuid")
     int updateFcmTokenToNullByUuid(Long uuid);
 
-    List<String> findAllNickname();
+    @Query("select u.nickname from users u")
+    List<String> findAllByNickname();
 }
