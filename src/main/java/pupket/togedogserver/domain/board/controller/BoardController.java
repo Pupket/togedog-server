@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pupket.togedogserver.domain.board.controller.port.BoardService;
 import pupket.togedogserver.domain.board.dto.request.BoardCreateRequest;
 import pupket.togedogserver.domain.board.dto.request.BoardUpdateRequest;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
@@ -25,13 +26,16 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 @RequestMapping("/api/v1/board")
 public class BoardController {
 
-    private final BoardServiceImpl boardService;
+    private final BoardService boardService;
 
     @Operation(summary = "산책 게시판 글 등록", description = "산책 게시판 글을 등록합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 등록 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 등록 실패")
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping
     public ResponseEntity<Void> create(
@@ -46,8 +50,9 @@ public class BoardController {
     @Operation(summary = "산책 게시판 글 조회", description = "산책 게시판 글을 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 조회 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 조회 실패")
+                    content = {@Content(schema = @Schema(implementation = BoardFindResponse.class))}),
+            @ApiResponse(responseCode = "403", description = "게시글을 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/{id}")
     public ResponseEntity<BoardFindResponse> find(
@@ -62,8 +67,8 @@ public class BoardController {
     @Operation(summary = "산책 게시판 글 랜덤 반환", description = "산책 게시판 글을 랜덤으로 반환합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 랜덤 반환 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 랜덤 반환 실패")
+                    content = {@Content(schema = @Schema(implementation = Page.class))}),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/random")
     public ResponseEntity<Page<BoardFindResponse>> findRandom(
@@ -83,7 +88,8 @@ public class BoardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 수정 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 수정 실패")
+            @ApiResponse(responseCode = "403", description = "게시글을 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PatchMapping
     public ResponseEntity<Void> update(
@@ -99,7 +105,8 @@ public class BoardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 삭제 성공",
                     content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 삭제 실패")
+            @ApiResponse(responseCode = "403", description = "게시글을 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

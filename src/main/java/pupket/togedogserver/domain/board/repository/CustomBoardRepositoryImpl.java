@@ -12,6 +12,7 @@ import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
+import pupket.togedogserver.domain.board.service.port.CustomBoardRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.global.mapper.EnumMapper;
