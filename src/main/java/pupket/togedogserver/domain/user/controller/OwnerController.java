@@ -2,8 +2,6 @@ package pupket.togedogserver.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
+import pupket.togedogserver.domain.user.controller.port.OwnerService;
 import pupket.togedogserver.domain.user.dto.response.FindMatchedScheduleResponse;
-import pupket.togedogserver.domain.user.service.OwnerService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @RestController
@@ -32,9 +30,10 @@ public class OwnerController {
 
     @Operation(summary = "내 산책 게시글 리스트 반환", description = "내 산책 게시글을 반환합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "게시글 반환 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "게시글 반환 실패")
+            @ApiResponse(responseCode = "200", description = "게시글 반환 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "회원 정보를 찾을 수 없음")
     })
     @GetMapping("/myWalking")
     public ResponseEntity<Page<BoardFindResponse>> findMyBoards(
@@ -59,9 +58,10 @@ public class OwnerController {
 
     @Operation(summary = "내 산책 일정 리스트 반환", description = "내 산책 일정을 반환합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "산책 일정 반환 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "산책 일정 반환 실패")
+            @ApiResponse(responseCode = "200", description = "산책 일정 반환 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "회원 정보를 찾을 수 없음 또는 게시글을 찾을 수 없음")
     })
     @GetMapping("/mySchedule")
     public ResponseEntity<Page<FindMatchedScheduleResponse>> findMySchedules(

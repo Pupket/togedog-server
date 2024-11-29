@@ -16,7 +16,6 @@ public class RedisPublisher {
 
 
     public void publish(ChattingResponseDto message){
-
         redisTemplate.convertAndSend(topic.getTopic(),message);
     }
 }

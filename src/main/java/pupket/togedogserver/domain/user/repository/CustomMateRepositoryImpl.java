@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.user.repository.mateRepo;
+package pupket.togedogserver.domain.user.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -19,6 +19,8 @@ import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.entity.mate.MateTag;
+import pupket.togedogserver.domain.user.repository.jpaRepository.MateJPARepository;
+import pupket.togedogserver.domain.user.service.port.CustomMateRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.mapper.EnumMapper;
@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
 public class CustomMateRepositoryImpl implements CustomMateRepository {
 
     private final EntityManager em;
-    private final MateRepository mateRepository;
+    private final MateJPARepository mateRepository;
 
     @Override
     public Page<FindMateResponse> MateList(Pageable pageable) {
@@ -83,40 +85,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         return new PageImpl<>(MateResponse, pageable, count);
     }
 
-    private static PreferredDetailsResponse getPreferredDetailsResponse(Mate mate) {
-        return PreferredDetailsResponse.builder()
-                .week(mate.getPreferredWeeks().stream()
-                        .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
-                        .collect(Collectors.toSet()))
-                .time(mate.getPreferredTimes().stream()
-                        .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
-                        .collect(Collectors.toSet()))
-                .hashTag(mate.getMateTags().stream()
-                        .map(MateTag::getTagName)
-                        .collect(Collectors.toSet()))
-                .breed(mate.getPreferredBreeds().stream()
-                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType())) // preferredBreed 변환
-                        .collect(Collectors.toSet()))
-                .build();
-    }
-
-    private Long getCount() {
-        // JPQL로 전체 개수 쿼리 작성
-        String countJpql = "SELECT COUNT(b) FROM Mate b WHERE b.deleted = false";
-        Long count = em.createQuery(countJpql, Long.class).getSingleResult();
-        return count;
-    }
-
-    private List<Mate> getMates(Pageable pageable) {
-        String query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
-        TypedQuery<Mate> result = em.createQuery(query, Mate.class);
-
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
-        List<Mate> mateList = result.getResultList();
-        return mateList;
-    }
-
+    @Override
     public Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable) {
         // 여러 마리의 개를 처리할 수 있도록 Board와 Dog 테이블을 JOIN
         String query = "SELECT b, d FROM Board b " +
@@ -205,6 +174,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         return new PageImpl<>(boardResponses, pageable, count);
     }
 
+    @Override
     public MateActiveResponse findMateActions(Long mateUuid, User findUser) {
         String query = "select b from " +
                 "Board b join matching m " +
@@ -259,6 +229,40 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
 
         return mateActiveResponse;
+    }
+
+    private PreferredDetailsResponse getPreferredDetailsResponse(Mate mate) {
+        return PreferredDetailsResponse.builder()
+                .week(mate.getPreferredWeeks().stream()
+                        .map(week -> EnumMapper.enumToKorean(week.getPreferredWeek())) // preferredWeek 변환
+                        .collect(Collectors.toSet()))
+                .time(mate.getPreferredTimes().stream()
+                        .map(time -> EnumMapper.enumToKorean(time.getPreferredTime())) // preferredTime 변환
+                        .collect(Collectors.toSet()))
+                .hashTag(mate.getMateTags().stream()
+                        .map(MateTag::getTagName)
+                        .collect(Collectors.toSet()))
+                .breed(mate.getPreferredBreeds().stream()
+                        .map(breed -> EnumMapper.enumToKorean(breed.getPreferredDogType())) // preferredBreed 변환
+                        .collect(Collectors.toSet()))
+                .build();
+    }
+
+    private Long getCount() {
+        // JPQL로 전체 개수 쿼리 작성
+        String countJpql = "SELECT COUNT(b) FROM Mate b WHERE b.deleted = false";
+        Long count = em.createQuery(countJpql, Long.class).getSingleResult();
+        return count;
+    }
+
+    private List<Mate> getMates(Pageable pageable) {
+        String query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
+        TypedQuery<Mate> result = em.createQuery(query, Mate.class);
+
+        result.setFirstResult((int) pageable.getOffset());
+        result.setMaxResults(pageable.getPageSize());
+        List<Mate> mateList = result.getResultList();
+        return mateList;
     }
 }
 

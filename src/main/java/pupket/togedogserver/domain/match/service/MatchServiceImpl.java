@@ -13,9 +13,9 @@ import pupket.togedogserver.domain.match.repository.MatchRepository;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.OwnerRepository;
-import pupket.togedogserver.domain.user.repository.UserRepository;
-import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.OwnerJPARepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.MateJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.*;
 import pupket.togedogserver.global.security.CustomUserDetail;
@@ -30,9 +30,9 @@ import java.util.Optional;
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
-    private final UserRepository userRepository;
-    private final OwnerRepository ownerRepository;
-    private final MateRepository mateRepository;
+    private final UserJPARepository userRepository;
+    private final OwnerJPARepository ownerRepository;
+    private final MateJPARepository mateRepository;
     private final BoardRepository boardRepository;
 
     @Override
