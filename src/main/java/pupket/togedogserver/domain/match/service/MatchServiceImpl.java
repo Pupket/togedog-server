@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.board.repository.BoardRepository;
+import pupket.togedogserver.domain.board.repository.jpaRepositry.BoardJPARepository;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.entity.Match;
@@ -33,7 +33,7 @@ public class MatchServiceImpl implements MatchService {
     private final UserJPARepository userRepository;
     private final OwnerJPARepository ownerRepository;
     private final MateJPARepository mateRepository;
-    private final BoardRepository boardRepository;
+    private final BoardJPARepository boardJPARepository;
 
     @Override
     public void match(CustomUserDetail userDetail, String nickname, Long boardId) {
@@ -54,7 +54,7 @@ public class MatchServiceImpl implements MatchService {
         Mate mate = getMate(findUserByNickname);
 
         //매칭할 게시판 조회
-        Board findBoardById = getBoard(boardRepository.findByBoardId(boardId));
+        Board findBoardById = getBoard(boardJPARepository.findByBoardId(boardId));
 
         //이미 매칭된 조회라면 예외 던지기
         List<Match> matches = matchRepository.findByOwner(owner);
@@ -117,7 +117,7 @@ public class MatchServiceImpl implements MatchService {
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
 
         //게시판에서 가져올 수 있는 것 -> boardDog
-        Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
+        Board findBoard = getBoard(boardJPARepository.findByBoardId(boardId));
 
         //매칭된 건인지 확인
         if (findBoard.getMatch() == null) {
@@ -143,7 +143,7 @@ public class MatchServiceImpl implements MatchService {
                 .matched(MatchStatus.MATCHED)
                 .build();
 
-        boardRepository.save(board);
+        boardJPARepository.save(board);
 
     }
 
@@ -156,7 +156,7 @@ public class MatchServiceImpl implements MatchService {
     public void matchFail(CustomUserDetail userDetail, Long boardId) {
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
 
-        Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
+        Board findBoard = getBoard(boardJPARepository.findByBoardId(boardId));
 
         Mate findMate = findUser.getMate();
         if (findMate == null) {
@@ -175,7 +175,7 @@ public class MatchServiceImpl implements MatchService {
                 .matched(MatchStatus.UNMATCHED)
                 .build();
 
-        boardRepository.save(board);
+        boardJPARepository.save(board);
     }
 
     public void completeWalking(Long boardId, CustomUserDetail userDetail) {
@@ -185,7 +185,7 @@ public class MatchServiceImpl implements MatchService {
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
 
-        Board findBoard = getBoard(boardRepository.findById(boardId));
+        Board findBoard = getBoard(boardJPARepository.findById(boardId));
 
         Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
 

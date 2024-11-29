@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
-import pupket.togedogserver.domain.board.repository.BoardRepository;
+import pupket.togedogserver.domain.board.repository.jpaRepositry.BoardJPARepository;
 import pupket.togedogserver.domain.board.repository.CustomBoardRepositoryImpl;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.user.controller.port.OwnerService;
@@ -30,7 +30,7 @@ public class OwnerServiceImpl implements OwnerService {
 
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
     private final UserRepository userRepository;
-    private final BoardRepository boardRepository;
+    private final BoardJPARepository boardJPARepository;
 
     private static List<FindMatchedScheduleResponse> getFindMatchedScheduleResponses(List<Board> findBoards) {
         // 요일
@@ -78,7 +78,7 @@ public class OwnerServiceImpl implements OwnerService {
 
     private List<Board> getBoardsByUser(User user) {
         log.debug("Fetching boards for user ID: {}", user.getUuid());
-        return boardRepository.findByUser(user).orElseThrow(
+        return boardJPARepository.findByUser(user).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
     }

@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.board.repository;
+package pupket.togedogserver.domain.board.service.port;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,5 +8,6 @@ public interface CustomBoardRepository {
     Page<BoardFindResponse> BoardList(Pageable pageable);
 
     Page<BoardFindResponse> findMyBoardList(Long uuid, Pageable pageable);
+
 
 }

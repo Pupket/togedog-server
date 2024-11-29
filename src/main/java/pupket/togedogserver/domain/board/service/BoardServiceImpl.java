@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.board.controller.port.BoardService;
 import pupket.togedogserver.domain.board.dto.request.BoardCreateRequest;
 import pupket.togedogserver.domain.board.dto.request.BoardUpdateRequest;
 import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
@@ -14,19 +15,18 @@ import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.board.mapper.BoardMapper;
-import pupket.togedogserver.domain.board.repository.BoardDogRepository;
-import pupket.togedogserver.domain.board.repository.BoardRepository;
-import pupket.togedogserver.domain.board.repository.CustomBoardRepositoryImpl;
-import pupket.togedogserver.domain.board.repository.WalkingPlaceTagRepository;
+import pupket.togedogserver.domain.board.service.port.BoardDogRepository;
+import pupket.togedogserver.domain.board.service.port.BoardRepository;
+import pupket.togedogserver.domain.board.service.port.CustomBoardRepository;
+import pupket.togedogserver.domain.board.service.port.WalkingPlaceTagRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.repository.DogRepository;
-import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
-import pupket.togedogserver.domain.user.repository.CustomMateRepositoryImpl;
-import pupket.togedogserver.domain.user.repository.jpaRepository.MateJPARepository;
+import pupket.togedogserver.domain.user.service.port.CustomMateRepository;
+import pupket.togedogserver.domain.user.service.port.MateRepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.DogException;
@@ -47,34 +47,36 @@ import java.util.stream.Collectors;
 public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
-    private final UserJPARepository userRepository;
-    private final BoardMapper boardMapper;
+    private final UserRepository userRepository;
     private final WalkingPlaceTagRepository walkingPlaceTagRepository;
+    private final BoardMapper boardMapper;
     private final DogRepository dogRepository;
-    private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
+    private final CustomBoardRepository customBoardRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final CustomMateRepositoryImpl customMateRepositoryImpl;
-    private final MateJPARepository mateRepository;
+    private final CustomMateRepository customMateRepository;
+    private final MateRepository mateRepository;
     private final BoardDogRepository boardDogRepository;
 
     @Override
     public void create(CustomUserDetail userDetail, BoardCreateRequest boardCreateRequest) {
-        User findUser = getUserById(userDetail.getUuid()); //유저 엔티티 반환
+        log.info("Creating board for user: {}", userDetail.getUuid());
+        User findUser = getUserById(userDetail.getUuid());
 
-        List<Dog> dogList = validateEachDog(boardCreateRequest.getDogIds(), findUser); //각 강아지 유효성 검사
+        List<Dog> dogList = validateEachDog(boardCreateRequest.getDogIds(), findUser);
 
-        Board mapperBoard = boardMapper.toBoard(boardCreateRequest); // Board 엔티티 생성
-
+        Board mapperBoard = boardMapper.toBoard(boardCreateRequest);
         boardRepository.save(mapperBoard);
 
-        List<BoardDog> boardDogList = mapDogsToBoard(dogList, mapperBoard); //BoardDog 엔티티 생성
+        List<BoardDog> boardDogList = mapDogsToBoard(dogList, mapperBoard);
 
-        Board savedBoard = saveTags(boardCreateRequest, mapperBoard, findUser); // 게시판에 태그 저장
+        Board savedBoard = saveTags(boardCreateRequest, mapperBoard, findUser);
 
-        boardRepository.save(savedBoard.toBuilder().boardDog(boardDogList).build()); // 각 엔티티 연결 및 저장
+        boardRepository.save(savedBoard.toBuilder().boardDog(boardDogList).build());
+        log.info("Board created successfully for user: {}", userDetail.getUuid());
     }
 
     private List<Dog> validateEachDog(List<Long> dogIds, User findUser) {
+        log.debug("Validating dogs for user: {}", findUser.getUuid());
         return dogIds.stream().map(dogId -> {
             Dog findDog = dogRepository.findById(dogId).orElseThrow(() ->
                     new DogException(ExceptionCode.NOT_FOUND_DOG));
@@ -85,57 +87,46 @@ public class BoardServiceImpl implements BoardService {
         }).collect(Collectors.toList());
     }
 
+    @Override
     public BoardFindResponse find(CustomUserDetail userDetail, Long boardId) {
-        // 유저 찾기
+        log.info("Finding board with ID: {} for user: {}", boardId, userDetail.getUuid());
         getUserById(userDetail.getUuid());
 
         // 보드 찾기
-        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
-                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
-        );
+        Board findBoard = findBoard(boardId);
 
-        // 보드에 속한 도그가 존재하는지 확인하고, 없으면 예외 처리
-        boolean hasDogs = findBoard.getBoardDog().stream()
-                .map(BoardDog::getDog)
-                .findAny()
-                .isPresent();
-
-        if (!hasDogs) {
+        if (!isPresent(findBoard)) {
             throw new DogException(ExceptionCode.NOT_FOUND_DOG);
         }
 
         // 해당 보드에 속한 도그 목록 찾기
-        List<Dog> findDogs = findBoard.getBoardDog().stream()
-                .map(BoardDog::getDog)
-                .collect(Collectors.toList());
-
-        // Board의 기본 정보 처리
-        String fee = findBoard.getFee().toString();
-        String startTime = findBoard.getStartTime().toString();
-        String endTime = findBoard.getEndTime().toString();
-        String feeType = EnumMapper.enumToKorean(findBoard.getFeeType());
-        List<String> walkingPlaceTags = findBoard.getWalkingPlaceTag().stream()
-                .map(WalkingPlaceTag::getPlaceName)
-                .collect(Collectors.toList());
+        List<Dog> findDogs = getDogListByBoard(findBoard);
 
         // 여러 마리의 개 정보를 DogResponse로 변환
         List<BoardDogResponse> boardDogRespons = getBoardDogResponses(findDogs);
 
-        // BoardFindResponse 객체 생성
-        return BoardFindResponse.builder()
-                .boardId(findBoard.getBoardId())
-                .userId(findBoard.getUser().getUuid())
-                .title(findBoard.getTitle())
-                .pickUpDay(findBoard.getPickUpDay())
-                .fee(fee)
-                .startTime(startTime)
-                .endTime(endTime)
-                .pickupLocation1(findBoard.getPickupLocation1())
-                .walkingPlaceTag(walkingPlaceTags)
-                .feeType(feeType)
-                .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
-                .completeStatus(findBoard.getMatch()==null? CompleteStatus.INCOMPLETE.getStatus() : findBoard.getMatch().getCompleteStatus().getStatus())
-                .build();
+        log.info("Board found successfully with ID: {}", boardId);
+        return BoardFindResponse.to(findBoard, boardDogRespons);
+    }
+
+    private static List<Dog> getDogListByBoard(Board findBoard) {
+        return findBoard.getBoardDog().stream()
+                .map(BoardDog::getDog)
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isPresent(Board findBoard) {
+        return findBoard.getBoardDog().stream()
+                .map(BoardDog::getDog)
+                .findAny()
+                .isPresent();
+    }
+
+    private Board findBoard(Long boardId) {
+        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
+                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
+        );
+        return findBoard;
     }
 
     private static List<BoardDogResponse> getBoardDogResponses(List<Dog> findDogs) {
@@ -152,14 +143,13 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Transactional
+    @Override
     public void update(CustomUserDetail userDetail, BoardUpdateRequest boardUpdateRequest) {
-        //유저 찾기
+        log.info("Updating board with ID: {} for user: {}", boardUpdateRequest.getId(), userDetail.getUuid());
         User findUser = getUserById(userDetail.getUuid());
 
         //게시판 찾기
-        Board findBoard = boardRepository.findByUserAndBoardId(findUser, boardUpdateRequest.getId()).orElseThrow(
-                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
-        );
+        Board findBoard = getFindBoardByUpdateRequest(boardUpdateRequest, findUser);
 
         //각 강아지 유효성 검사
         List<Dog> dogList = validateEachDog(boardUpdateRequest.getDogIds(), findUser);
@@ -171,9 +161,7 @@ public class BoardServiceImpl implements BoardService {
         List<BoardDog> boardDogList = mapDogsToBoard(dogList, findBoard);
 
         //산책지역태그 찾기
-        List<WalkingPlaceTag> existingTags = walkingPlaceTagRepository.findAllByBoard(findBoard).orElseThrow(
-                () -> new WalkingPlaceTagException(ExceptionCode.NOT_FOUND_WALKING_PLACE_TAG)
-        );
+        List<WalkingPlaceTag> existingTags = getWalkingPlaceTags(findBoard);
 
         //기존의 태그 모두 삭제
         walkingPlaceTagRepository.deleteAll(existingTags);
@@ -183,7 +171,19 @@ public class BoardServiceImpl implements BoardService {
         saveTags(boardUpdateRequest, newBoard);
 
         boardRepository.save(newBoard);
+        log.info("Board updated successfully with ID: {}", boardUpdateRequest.getId());
+    }
 
+    private List<WalkingPlaceTag> getWalkingPlaceTags(Board findBoard) {
+        return walkingPlaceTagRepository.findAllByBoard(findBoard).orElseThrow(
+                () -> new WalkingPlaceTagException(ExceptionCode.NOT_FOUND_WALKING_PLACE_TAG)
+        );
+    }
+
+    private Board getFindBoardByUpdateRequest(BoardUpdateRequest boardUpdateRequest, User findUser) {
+        return boardRepository.findByUserAndBoardId(findUser, boardUpdateRequest.getId()).orElseThrow(
+                () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
+        );
     }
 
     private static Board updateBoard(BoardUpdateRequest boardUpdateRequest, Board findBoard, List<BoardDog> boardDogList) {
@@ -248,32 +248,38 @@ public class BoardServiceImpl implements BoardService {
         );
     }
 
+    @Override
     public void delete(CustomUserDetail userDetail, Long id) {
+        log.info("Deleting board with ID: {} for user: {}", id, userDetail.getUuid());
         User findUser = getUserById(userDetail.getUuid());
 
         Board findBoard = boardRepository.findByUserAndBoardId(findUser, id).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
 
-        List<WalkingPlaceTag> findWalkingPlaceTag = walkingPlaceTagRepository.findAllByBoard(findBoard).orElseThrow(
-                () -> new WalkingPlaceTagException(ExceptionCode.NOT_FOUND_WALKING_PLACE_TAG)
-        );
+        List<WalkingPlaceTag> findWalkingPlaceTag = getWalkingPlaceTags(findBoard);
 
         walkingPlaceTagRepository.deleteAll(findWalkingPlaceTag);
         boardRepository.delete(findBoard);
     }
 
+    @Override
     public Page<BoardFindResponse> findRandom(Pageable pageable) {
-        return customBoardRepositoryImpl.BoardList(pageable);
+        return customBoardRepository.BoardList(pageable);
     }
 
+    @Override
     public Page<BoardFindResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
         User findUser = getUserById(userDetail.getUuid());
 
-        Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
+        Mate findMate = findMate(findUser);
+
+        return customMateRepository.findMyScheduleList(findMate.getMateUuid(), pageable);
+    }
+
+    private Mate findMate(User findUser) {
+        return mateRepository.findByUser(findUser).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MATE)
         );
-
-        return customMateRepositoryImpl.findMyScheduleList(findMate.getMateUuid(), pageable);
     }
 }

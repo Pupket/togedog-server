@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.board.service;
+package pupket.togedogserver.domain.board.controller.port;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,4 +18,6 @@ public interface BoardService {
     void delete(CustomUserDetail userDetail, Long id);
 
     Page<BoardFindResponse> findRandom(Pageable pageable);
+
+    Page<BoardFindResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable);
 }
