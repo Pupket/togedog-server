@@ -82,7 +82,7 @@ public class LoggingAspect {
     }
 
     // Service의 메서드를 포인트컷으로 지정
-    @Pointcut("within(pupket.togedogserver..*Service)")
+    @Pointcut("within(pupket.togedogserver.domain..*Service)")
     public void service() {}
 
     // Service 메서드 호출 전후 로깅
@@ -137,6 +137,9 @@ public class LoggingAspect {
 
     @AfterReturning(pointcut = "service()", returning = "returnValue")
     public void afterReturningServiceLogging(JoinPoint joinPoint, Object returnValue) {
+        if (joinPoint.getSignature().toShortString().contains("addToSortedSet")) {
+            return;
+        }
         log.info("### Service method finished: {}", joinPoint.getSignature().toShortString());
         if (returnValue != null) {
             log.info("Service return value: {}", returnValue);

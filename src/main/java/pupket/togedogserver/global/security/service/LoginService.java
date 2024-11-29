@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.security.CustomUserDetail;
@@ -15,7 +15,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 @RequiredArgsConstructor
 public class LoginService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {

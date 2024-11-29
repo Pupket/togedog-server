@@ -12,7 +12,6 @@ import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
-import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 import java.util.Collection;

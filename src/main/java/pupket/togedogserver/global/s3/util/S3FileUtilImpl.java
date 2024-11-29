@@ -52,6 +52,7 @@ public class S3FileUtilImpl implements S3FileUtil {
         }
     }
 
+    @Override
     public String uploadImageToS3(MultipartFile image) throws IOException {
         String originalFileName = image.getOriginalFilename();
         String extension = Objects.requireNonNull(originalFileName).substring(originalFileName.lastIndexOf("."));
@@ -79,55 +80,6 @@ public class S3FileUtilImpl implements S3FileUtil {
         }
 
         return amazonS3.getUrl(bucket, s3FileName).toString();
-    }
-
-    public String uploadImageToS3UsingByteImage(String image) throws IOException {
-        String s3ImageUrl= "";
-        try{
-            String[] imageFile = image.split(",");
-            String base64Image = imageFile[0];
-            String extension;
-
-            if(imageFile[0].equals("data:image/jpeg;base64,")){
-                extension = "jpeg";
-            }else if(imageFile[0].equals("data:image/png;base64,")){
-                extension = "png";
-            }else {
-                extension = "jpg";
-            }
-            log.info("extension={}",extension);
-
-            byte[] bindingImage = DatatypeConverter.parseBase64Binary(base64Image);
-
-            File tempFile = File.createTempFile("image", "." + extension); // createTempFile을 통해 임시 파일을 생성해준다. (임시파일은 지워줘야함)
-            log.info("tempFile={}",tempFile.getName());
-            try (OutputStream outputStream = new FileOutputStream(tempFile)) {
-                outputStream.write(bindingImage); //outputStream 객체에 imageBytes를 작성해준다.
-            }
-
-            String originalName = UUID.randomUUID().toString(); // uuid를 통해 파일명이 겹치지 않게 해준다
-
-            amazonS3.putObject(new PutObjectRequest(bucket, originalName, tempFile).withCannedAcl(CannedAccessControlList.PublicRead)); // s3에 tempFile을 저장해준다.
-
-             s3ImageUrl = amazonS3.getUrl(bucket, originalName).toString(); // s3에 저장된 이미지 불러오기
-
-            try {
-                FileOutputStream fileOutputStream = new FileOutputStream(tempFile); // 파일 삭제시 전부 아웃풋 닫아줘야함 (방금 생성한 임시 파일을 지워주는 과정
-                fileOutputStream.close(); // 아웃풋 닫아주기
-                if (tempFile.delete()) {
-                    log.info("File delete success"); // tempFile.delete()를 통해 삭제
-                } else {
-                    log.info("File delete fail");
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-
-        }catch (IOException ex) {
-            log.error("IOException Error Message : {}",ex.getMessage());
-        }
-
-        return s3ImageUrl;
     }
 
     private void validateImageFiletExtention(String fileName) {

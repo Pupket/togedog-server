@@ -10,7 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.TogedogException;
 import pupket.togedogserver.global.exception.customException.JwtException;
@@ -26,11 +26,11 @@ import java.util.List;
 public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
 
     private static final List<String> EXCLUDE_URLS = List.of(
             "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/ws","/websocket_test.html"
-            ,"/api/v1/member/reissue-token"
+            ,"/api/v1/member/reissue-token","/createChatRoom.html","/chatRoomList.html","/chatRoom.html"
 
     );
 
