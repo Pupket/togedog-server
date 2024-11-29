@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.constant.RoleType;
+import pupket.togedogserver.domain.user.controller.port.MateService;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -18,8 +19,7 @@ import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.entity.mate.MateTag;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
-import pupket.togedogserver.domain.user.repository.UserRepository;
-import pupket.togedogserver.domain.user.repository.mateRepo.*;
+import pupket.togedogserver.domain.user.service.port.*;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.exception.customException.MateTagException;
@@ -47,7 +47,7 @@ public class MateServiceImpl implements MateService {
     private final MatePreferredTimeRepository matePreferredTimeRepository;
     private final MateRepository mateRepository;
     private final MateTagRepository mateTagRepository;
-    private final CustomMateRepositoryImpl customMateRepositoryImpl;
+    private final CustomMateRepository customMateRepository;
     private final UserMapper userMapper;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -73,6 +73,32 @@ public class MateServiceImpl implements MateService {
                 redisSortedSetService.addToSortedSetFromMate(name.substring(0, i)); //곧바로 redis에 저장
             }
         }
+    }
+
+    @Override
+    public List<String> autoCompleteKeyword(String keyword) {
+        return autocorrect(keyword);
+    }
+
+    @Override
+    public List<String> autocorrect(String keyword) { //검색어 자동 완성 기능 관련 로직
+        Long index = redisSortedSetService.findFromSortedSetFromMate(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
+        if (index == null) {
+            log.info("index가 비어있음");
+            return new ArrayList<>();   //만약 사용자 검색어 바탕으로 자동 완성 검색어를 만들 수 없으면 Empty Array 리턴
+        }
+
+        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInMateAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
+
+        //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
+        //검색어 자동 완성 기능 최대 개수
+        int maxSize = 2000;
+
+        return allValuesAfterIndexFromSortedSet.stream()
+                .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
+                .map(this::removeEnd)
+                .limit(maxSize)
+                .toList();
     }
 
     @Override
@@ -225,7 +251,7 @@ public class MateServiceImpl implements MateService {
     @Override
     public Page<FindMateResponse> findRandom(Pageable pageable) {
 
-        return customMateRepositoryImpl.MateList(pageable);
+        return customMateRepository.MateList(pageable);
 
     }
 
@@ -397,35 +423,12 @@ public class MateServiceImpl implements MateService {
 
     }
 
+    @Override
     public boolean checkNickname(CustomUserDetail userDetail, String nickname) {
         User findUser = getUserById(userDetail.getUuid());
 
         //내 닉네임은 그대로 사용할 수 있게 true로 반환
         return findUser.getNickname().equals(nickname) || userRepository.findByNickname(nickname).isEmpty();
-    }
-
-    public List<String> autoCompleteKeyword(String keyword) {
-        return autocorrect(keyword);
-    }
-
-    public List<String> autocorrect(String keyword) { //검색어 자동 완성 기능 관련 로직
-        Long index = redisSortedSetService.findFromSortedSetFromMate(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
-        if (index == null) {
-            log.info("index가 비어있음");
-            return new ArrayList<>();   //만약 사용자 검색어 바탕으로 자동 완성 검색어를 만들 수 없으면 Empty Array 리턴
-        }
-
-        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInMateAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
-
-        //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
-        //검색어 자동 완성 기능 최대 개수
-        int maxSize = 2000;
-
-        return allValuesAfterIndexFromSortedSet.stream()
-                .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
-                .map(this::removeEnd)
-                .limit(maxSize)
-                .toList();
     }
 
     private String removeEnd(String str) {

@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.service.BoardServiceImpl;
 import pupket.togedogserver.domain.match.service.MatchServiceImpl;
+import pupket.togedogserver.domain.user.controller.port.MateService;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
@@ -41,7 +42,7 @@ import java.util.List;
 @RequestMapping("/api/v1/mate")
 public class MateController {
 
-    private final MateServiceImpl mateService;
+    private final MateService mateService;
     private final BoardServiceImpl boardServiceImpl;
     private final MatchServiceImpl matchServiceImpl;
 

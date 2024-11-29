@@ -1,8 +1,6 @@
 package pupket.togedogserver.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,12 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import pupket.togedogserver.domain.user.controller.port.UserService;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
 import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
-import pupket.togedogserver.domain.user.service.UserServiceImpl;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.jwt.service.JwtService;
-import pupket.togedogserver.global.redis.RedisLoginService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @RestController
@@ -28,7 +25,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 @RequestMapping("/api/v1/member")
 public class UserController {
 
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
     private final JwtService jwtService;
 
     @Operation(summary = "회원 정보 조회", description = "인증 토큰을 사용하여 회원 정보를 조회합니다.")
@@ -42,7 +39,7 @@ public class UserController {
     public ResponseEntity<FindUserInfoResponse> find(
             @AuthenticationPrincipal CustomUserDetail user
     ) {
-        FindUserInfoResponse updateUser = userServiceImpl.getMemberDetails(user.getUuid());
+        FindUserInfoResponse updateUser = userService.getMemberDetails(user.getUuid());
         return ResponseEntity.status(HttpStatus.OK).body(updateUser);
     }
 
@@ -57,7 +54,7 @@ public class UserController {
     public ResponseEntity<FindMateAndDogResponse> findMateAndDogActive(
             @AuthenticationPrincipal CustomUserDetail userDetail
     ) {
-        FindMateAndDogResponse mateAndDogActives = userServiceImpl.findMateAndDogActive(userDetail);
+        FindMateAndDogResponse mateAndDogActives = userService.findMateAndDogActive(userDetail);
 
         return ResponseEntity.ok().body(mateAndDogActives);
     }
@@ -73,9 +70,9 @@ public class UserController {
     public ResponseEntity<Void> logout(
             @AuthenticationPrincipal CustomUserDetail userDetail
     ) {
-        String refreshToken = userServiceImpl.getRefreshToken(userDetail.getUuid());
+        String refreshToken = userService.getRefreshToken(userDetail.getUuid());
 
-        userServiceImpl.logout(refreshToken, userDetail);
+        userService.logout(refreshToken, userDetail);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -97,7 +94,7 @@ public class UserController {
         String accessToken = jwtService.resolveToken(request);
 
         // Service로 토큰 재발급 로직 위임
-        JwtToken newToken = userServiceImpl.reissueTokenWithValidation(refreshTokenInRequest, accessToken);
+        JwtToken newToken = userService.reissueTokenWithValidation(refreshTokenInRequest, accessToken);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("accessToken", newToken.getAccessToken());
@@ -117,7 +114,7 @@ public class UserController {
     public ResponseEntity<Void> deleteSocialMember(
             @AuthenticationPrincipal CustomUserDetail user
     ) {
-        userServiceImpl.deleteSocialMember(user.getUuid());
+        userService.deleteSocialMember(user.getUuid());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

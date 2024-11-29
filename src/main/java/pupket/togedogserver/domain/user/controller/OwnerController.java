@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
+import pupket.togedogserver.domain.user.controller.port.OwnerService;
 import pupket.togedogserver.domain.user.dto.response.FindMatchedScheduleResponse;
-import pupket.togedogserver.domain.user.service.OwnerService;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @RestController

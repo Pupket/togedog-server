@@ -10,10 +10,12 @@ import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.repository.BoardRepository;
 import pupket.togedogserver.domain.board.repository.CustomBoardRepositoryImpl;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
+import pupket.togedogserver.domain.user.controller.port.OwnerService;
 import pupket.togedogserver.domain.user.dto.response.FindMatchedScheduleResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -24,18 +26,20 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class OwnerService {
+public class OwnerServiceImpl implements OwnerService {
 
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
     private final UserRepository userRepository;
     private final BoardRepository boardRepository;
 
     //Owner가 내 산책 일정 리스트 반환
+    @Override
     public Page<BoardFindResponse> findMyBoards(CustomUserDetail userDetail, Pageable page) {
 
         return customBoardRepositoryImpl.findMyBoardList(userDetail.getUuid(), page);
     }
 
+    @Override
     public PageImpl<FindMatchedScheduleResponse> findMySchedule(CustomUserDetail userDetail, Pageable pageable) {
 
         User findUser = userRepository.findByUuid(userDetail.getUuid()).orElseThrow(

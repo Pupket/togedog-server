@@ -10,15 +10,16 @@ import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
 import pupket.togedogserver.domain.user.constant.RoleType;
+import pupket.togedogserver.domain.user.controller.port.UserService;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.DogActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
 import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.mapper.UserMapper;
-import pupket.togedogserver.domain.user.repository.UserRepository;
-import pupket.togedogserver.domain.user.repository.mateRepo.CustomMateRepositoryImpl;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.repository.CustomMateRepositoryImpl;
+import pupket.togedogserver.domain.user.service.port.CustomMateRepository;
 import pupket.togedogserver.global.auth.service.OAuth2RevokeService;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -32,20 +33,21 @@ import pupket.togedogserver.global.security.util.PasswordUtil;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserServiceImpl {
+public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final SocialAccessTokenRepository socialAccessTokenRepository;
+    private final CustomMateRepository customMateRepositoryImpl;
+    private final CustomDogRepositoryImpl customDogRepositoryImpl;
     private final JwtUtils jwtUtils;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final OAuth2RevokeService oAuth2RevokeService;
     private final FcmService fcmService;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final CustomMateRepositoryImpl customMateRepositoryImpl;
-    private final CustomDogRepositoryImpl customDogRepositoryImpl;
     private final RedisLoginService redisLoginService;
 
+    @Override
     public void create(CustomUserDetail userDetail, RegistMateRequest request) {
         User user = getUserById(userDetail.getUuid());
 
@@ -68,26 +70,19 @@ public class UserServiceImpl {
         return password;
     }
 
+    @Override
     public void logout(String refreshToken, CustomUserDetail userDetail) {
         jwtUtils.handleExpiredRefreshToken(refreshToken);
         fcmService.deleteToken(userDetail.getUuid());
     }
 
+    @Override
     public JwtToken reissueToken(String refreshToken) {
         return jwtService.reissueTokenByRefreshToken(refreshToken);
     }
 
 
-    private User getUserById(Long uuid) {
-        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.INVALID_TOKEN)
-        );
-        return userRepository.findByUuid(uuid).
-                orElseThrow(
-                        () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-                );
-    }
-
+    @Override
     public FindUserInfoResponse getMemberDetails(Long uuid) {
         User user = getUserById(uuid);
 
@@ -100,6 +95,7 @@ public class UserServiceImpl {
                 .build();
     }
 
+    @Override
     public void deleteSocialMember(Long uuid) {
         User findUser = getUserById(uuid);
 
@@ -122,6 +118,7 @@ public class UserServiceImpl {
         }
     }
 
+    @Override
     public String getRefreshToken(Long uuid) {
         RefreshToken refreshToken = refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
@@ -129,6 +126,7 @@ public class UserServiceImpl {
         return refreshToken.getRefreshToken();
     }
 
+    @Override
     public FindMateAndDogResponse findMateAndDogActive(CustomUserDetail userDetail) {
         User findUser = getUserById(userDetail.getUuid());
 
@@ -145,6 +143,7 @@ public class UserServiceImpl {
                 .build();
     }
 
+    @Override
     public JwtToken reissueTokenWithValidation(String refreshTokenInRequest, String accessToken) {
         // 1. 리프레시 토큰이 없으면 예외 발생
         if (refreshTokenInRequest == null) {
@@ -177,5 +176,15 @@ public class UserServiceImpl {
         redisLoginService.saveAccessToken(newToken.getAccessToken(), userId);
 
         return newToken;
+    }
+
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.INVALID_TOKEN)
+        );
+        return userRepository.findByUuid(uuid).
+                orElseThrow(
+                        () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+                );
     }
 }
