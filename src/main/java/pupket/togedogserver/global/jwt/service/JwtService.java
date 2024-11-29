@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.JwtException;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -37,12 +37,12 @@ public class JwtService {
     private final long accessTokenExpirationTime;
     private final long refreshTokenExpirationTime;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserRepository memberRepository;
+    private final UserJPARepository memberRepository;
 
     public JwtService(@Value("${jwt.secret}") String secretKey,
                       @Value("${jwt.token.access-token-expiration-time}") long accessTokenExpirationTime,
                       @Value("${jwt.token.refresh-token-expiration-time}") long refreshTokenExpirationTime,
-                      RefreshTokenRepository refreshTokenRepository, UserRepository memberRepository) {
+                      RefreshTokenRepository refreshTokenRepository, UserJPARepository memberRepository) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.memberRepository = memberRepository;
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);

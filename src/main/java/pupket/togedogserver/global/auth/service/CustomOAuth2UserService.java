@@ -17,7 +17,7 @@ import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.auth.dto.OAuthAttributes;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -33,7 +33,7 @@ import java.util.Map;
 @Transactional
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
     private final SocialAccessTokenRepository socialAccessTokenRepository;
     private final UserMapper userMapper;
 

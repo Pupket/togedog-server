@@ -1,18 +1,10 @@
 package pupket.togedogserver.domain.user.controller.port;
 
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestBody;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
-import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
 import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
-import pupket.togedogserver.domain.user.dto.response.FindUserResponse;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
 

@@ -33,9 +33,6 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        if (!requestURI.startsWith("/health")) {
-            log.info("request.URI = {}", requestURI);
-        }
 
         // 특정 경로에 대해 필터링을 제외
         if (isExcludedUrl(requestURI)) {
@@ -48,10 +45,9 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
         try{
         if (token != null && jwtService.validateToken(token)) {
             Long userId = jwtService.getUserIdFromToken(token);
-            log.info("기존 토큰={}", token);
+
             // Redis에서 저장된 사용자의 토큰을 가져옴
             String redisToken = redisService.getAccessToken(String.valueOf(userId));
-            log.info("현재 저장된 토큰={}", redisToken);
 
             // Redis에 저장된 토큰과 요청의 토큰이 다르면 중복 로그인으로 간주
             if (redisToken != null && !redisToken.equals(token)) {
@@ -86,7 +82,5 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
         response.getWriter().flush();
         response.getWriter().close();
     }
-
-
 
 }

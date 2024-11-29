@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.auth.handler.OAuth2LoginSuccessHandler;
 import pupket.togedogserver.global.auth.service.CustomOAuth2UserService;
 import pupket.togedogserver.global.jwt.service.JwtService;
@@ -41,7 +41,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, UserRepository userRepository, RedisLoginService redisLoginService) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, UserJPARepository userRepository, RedisLoginService redisLoginService) throws Exception {
         http
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
