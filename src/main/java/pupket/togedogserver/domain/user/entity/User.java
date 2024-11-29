@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import pupket.togedogserver.domain.board.entity.Board;
@@ -26,6 +27,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLDelete(sql = "UPDATE users SET account_status = 'DELETED' WHERE uuid = ?")
+@SQLRestriction("account_status = 'ACTIVE'")
 public class User {
 
     @Id
@@ -70,11 +72,11 @@ public class User {
     @Builder.Default
     public AccountStatus accountStatus = AccountStatus.ACTIVE;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     private Mate mate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
