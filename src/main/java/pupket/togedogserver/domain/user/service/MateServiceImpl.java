@@ -1,6 +1,7 @@
 package pupket.togedogserver.domain.user.service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,12 +17,12 @@ import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.entity.mate.MateTag;
 import pupket.togedogserver.domain.user.mapper.UserMapper;
+import pupket.togedogserver.domain.user.repository.MateRepositoryImpl;
+import pupket.togedogserver.domain.user.repository.MateTagRepositoryImpl;
 import pupket.togedogserver.domain.user.service.port.*;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
-import pupket.togedogserver.global.exception.customException.MateTagException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.redis.RedisSortedSetService;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
@@ -41,12 +42,13 @@ public class MateServiceImpl implements MateService {
     private final MatePreferredBreedRepository matePreferredBreedRepository;
     private final MatePreferredWeekRepository matePreferredWeekRepository;
     private final MatePreferredTimeRepository matePreferredTimeRepository;
-    private final MateRepository mateRepository;
-    private final MateTagRepository mateTagRepository;
+    private final MateRepositoryImpl mateRepository;
+    private final MateTagRepositoryImpl mateTagRepository;
     private final CustomMateRepository customMateRepository;
     private final UserMapper userMapper;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EntityManager entityManager;
 
     private final String suffix = "*";
     private final RedisSortedSetService redisSortedSetService;
@@ -130,11 +132,11 @@ public class MateServiceImpl implements MateService {
     private Mate TwoWayMappingUserAndMate(Mate createdMate, User findUser) {
         Mate updatedMate = connectWithUser(createdMate, findUser);
 
-        mateRepository.save(updatedMate);
+        updatedMate= mateRepository.save(updatedMate);
 
         User connectedUser = connectWithMate(findUser, updatedMate);
 
-        userRepository.save(connectedUser);
+        connectedUser=userRepository.save(connectedUser);
 
         return updatedMate;
     }
@@ -247,7 +249,7 @@ public class MateServiceImpl implements MateService {
 
         savedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
 
-        mateRepository.save(savedMate);
+        savedMate = mateRepository.save(savedMate);
 
         saveMatePreferences(savedMate, request);
         log.info("메이트 업데이트 완료: 사용자 ID = {}", userDetail.getUuid());
@@ -348,28 +350,31 @@ public class MateServiceImpl implements MateService {
     }
 
     @Override
+    @Transactional
     public void delete(CustomUserDetail userDetail) {
         log.info("메이트 삭제 시작: 사용자 ID = {}", userDetail.getUuid());
         User findUser = getUserById(userDetail.getUuid());
 
-        Mate findMate = getMate(findUser);
-
-        List<MateTag> findMateTag = getMateTags(findMate);
-
         if (findUser.getProfileImage() != null) {
             s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
         }
+        Mate findMate = getMate(findUser);
+        userRepository.save(findUser.toBuilder().mate(null).build());
+        log.info("User와 Mate 관계 해제 완료: 사용자 ID = {}", userDetail.getUuid());
 
+        log.info("findMateTag삭제 수행");
+        mateTagRepository.deleteAll(findMate.getMateTags());
+        matePreferredBreedRepository.deleteAllByMate(findMate);
+        matePreferredTimeRepository.deleteAllByMate(findMate);
+        matePreferredWeekRepository.deleteAllByMate(findMate);
+
+
+        log.info("findMate삭제 수행");
+        findMate = findMate.toBuilder().user(null).build();
+        findMate = mateRepository.save(findMate);
+        entityManager.flush();
         mateRepository.delete(findMate);
-        mateTagRepository.deleteAll(findMateTag);
         log.info("메이트 삭제 완료: 사용자 ID = {}", userDetail.getUuid());
-    }
-
-    private List<MateTag> getMateTags(Mate findMate) {
-        List<MateTag> findMateTag = mateTagRepository.findAllByMate(findMate).orElseThrow(
-                () -> new MateTagException(ExceptionCode.NOT_FOUND_MATE_TAG)
-        );
-        return findMateTag;
     }
 
     private User getUserById(Long uuid) {
@@ -384,6 +389,7 @@ public class MateServiceImpl implements MateService {
     private void saveMatePreferences(Mate savedMate, RegistMateRequest request) {
         log.info("메이트 선호도 저장 시작: 메이트 ID = {}", savedMate.getMateUuid());
         Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
+        updatedMate = mateRepository.save(updatedMate);
 
         matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
         matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
@@ -393,13 +399,11 @@ public class MateServiceImpl implements MateService {
     }
 
     private void saveMatePreferences(Mate savedMate, UpdateMateRequest request) {
-        log.info("메이트 선호도 저장 시작: 메이트 ID = {}", savedMate.getMateUuid());
-        Mate updatedMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), savedMate);
         log.info("모든 태그 저장 쿼리");
-        matePreferredBreedRepository.saveAll(updatedMate.getPreferredBreeds());
-        matePreferredTimeRepository.saveAll(updatedMate.getPreferredTimes());
-        matePreferredWeekRepository.saveAll(updatedMate.getPreferredWeeks());
-        mateTagRepository.saveAll(updatedMate.getMateTags());
+        matePreferredBreedRepository.saveAll(savedMate.getPreferredBreeds());
+        matePreferredTimeRepository.saveAll(savedMate.getPreferredTimes());
+        matePreferredWeekRepository.saveAll(savedMate.getPreferredWeeks());
+        mateTagRepository.saveAll(savedMate.getMateTags());
         log.info("메이트 선호도 저장 완료: 메이트 ID = {}", savedMate.getMateUuid());
     }
 

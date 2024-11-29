@@ -14,7 +14,7 @@ import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MateException;
@@ -22,7 +22,6 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -40,7 +39,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
     private final RedisTemplate<String, String> redisTemplateForUserStatus;
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
     private final FcmService fcmService;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final S3FileUtilImpl s3FileUtilImpl;
@@ -212,9 +211,6 @@ public class ChatService {
         return unreceivedMessages;
     }
 
-    public String convertImageToString(String image) throws IOException {
-        return s3FileUtilImpl.uploadImageToS3UsingByteImage(image);
-    }
 
     public void sendMessageToPublisher(ChattingRequestDto message) {
 

@@ -4,6 +4,7 @@ package pupket.togedogserver.domain.user.controller.port;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
@@ -13,6 +14,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 import java.util.List;
 
 @Service
+@Transactional
 public interface MateService {
 
      void create(CustomUserDetail userDetail, RegistMateRequest request, MultipartFile profileImage);

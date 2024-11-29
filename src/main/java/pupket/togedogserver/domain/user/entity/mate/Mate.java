@@ -46,19 +46,19 @@ public class Mate {
     @Builder.Default
     private boolean deleted = Boolean.FALSE;
 
-    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mate")
     private List<Match> match;
 
-    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mate")
     private Set<MatePreferredBreed> preferredBreeds;
 
-    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mate")
     private Set<MatePreferredTime> preferredTimes;
 
-    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mate")
     private Set<MatePreferredWeek> preferredWeeks;
 
-    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mate")
     private Set<MateTag> mateTags;
 
     @Enumerated(EnumType.STRING)

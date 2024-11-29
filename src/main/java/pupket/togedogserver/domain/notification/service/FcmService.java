@@ -4,8 +4,9 @@ import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.FcmException;
 
@@ -17,9 +18,10 @@ import java.util.concurrent.ExecutionException;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class FcmService {
 
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
 
     public void createToken(Long uuid, String token) {
         userRepository.updateFcmTokenByUuid(token, uuid);

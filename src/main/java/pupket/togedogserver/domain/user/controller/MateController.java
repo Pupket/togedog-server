@@ -8,9 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,7 +26,6 @@ import pupket.togedogserver.domain.user.controller.port.MateService;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.request.UpdateMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
-import pupket.togedogserver.domain.user.service.MateServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.HashMap;
@@ -189,9 +185,6 @@ public class MateController {
     public ResponseEntity<HashMap<String,Object>> checkNickName(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @PathVariable("nickname")
-            @NotBlank(message = "닉네임은 필수 입력 값입니다.")
-            @Size(max = 10, message = "닉네임은 10자 이하로 입력해야 합니다.")
-            @Pattern(regexp = "^[\\p{L}0-9]+$", message = "닉네임에는 특수 문자를 사용할 수 없습니다.")
             String nickname
     ) {
         boolean flag = mateService.checkNickname(userDetail, nickname);

@@ -22,8 +22,8 @@ import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.OwnerRepository;
-import pupket.togedogserver.domain.user.repository.UserRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.OwnerJPARepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.DogException;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -44,10 +44,10 @@ import java.util.stream.Collectors;
 public class DogServiceImpl implements DogService {
 
     private final DogRepository dogRepository;
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
     private final DogMapper dogMapper;
     private final DogPersonalityTagRepository dogPersonalityTagRepository;
-    private final OwnerRepository ownerRepository;
+    private final OwnerJPARepository ownerRepository;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomDogRepositoryImpl customDogRepository;
@@ -57,10 +57,9 @@ public class DogServiceImpl implements DogService {
 
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
-        List<String> allUserNickname = dogRepository.findAllBreedData();
-        log.info("size={}", allUserNickname.size());
-        saveAllSubstring(allUserNickname); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-        log.info("수행됨");
+        List<String> dogBreedList = dogRepository.findAllBreedData();
+        log.info("size={}", dogBreedList.size());
+        saveAllSubstring(dogBreedList); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
 
     }
 
@@ -70,9 +69,7 @@ public class DogServiceImpl implements DogService {
             for (int i = name.length(); i > 0; --i) { //음절 단위로 잘라서 모든 Substring 구하기
                 redisSortedSetService.addToSortedSetFromDog(name.substring(0, i)); //곧바로 redis에 저장
             }
-
         }
-
     }
 
     @Override

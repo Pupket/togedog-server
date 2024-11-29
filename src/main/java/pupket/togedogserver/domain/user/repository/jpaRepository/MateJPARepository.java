@@ -12,4 +12,5 @@ public interface MateJPARepository extends JpaRepository<Mate, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Mate> findByUser(User User);
+
 }

@@ -10,5 +10,5 @@ public interface MateRepository {
 
     Mate save(Mate Mate);
 
-    void delete(Mate findMate);
+    void delete(Mate mate);
 }

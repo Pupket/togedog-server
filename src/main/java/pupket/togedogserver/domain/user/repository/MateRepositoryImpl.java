@@ -26,7 +26,7 @@ public class MateRepositoryImpl implements MateRepository {
     }
 
     @Override
-    public void delete(Mate findMate) {
-        mateRepository.delete(findMate);
+    public void delete(Mate findMateId) {
+        mateRepository.delete(findMateId);
     }
 }

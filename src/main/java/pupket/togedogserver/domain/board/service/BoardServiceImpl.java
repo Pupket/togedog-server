@@ -24,9 +24,9 @@ import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
-import pupket.togedogserver.domain.user.repository.UserRepository;
-import pupket.togedogserver.domain.user.repository.mateRepo.CustomMateRepositoryImpl;
-import pupket.togedogserver.domain.user.repository.mateRepo.MateRepository;
+import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.repository.CustomMateRepositoryImpl;
+import pupket.togedogserver.domain.user.repository.jpaRepository.MateJPARepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.BoardException;
 import pupket.togedogserver.global.exception.customException.DogException;
@@ -47,14 +47,14 @@ import java.util.stream.Collectors;
 public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
-    private final UserRepository userRepository;
+    private final UserJPARepository userRepository;
     private final BoardMapper boardMapper;
     private final WalkingPlaceTagRepository walkingPlaceTagRepository;
     private final DogRepository dogRepository;
     private final CustomBoardRepositoryImpl customBoardRepositoryImpl;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomMateRepositoryImpl customMateRepositoryImpl;
-    private final MateRepository mateRepository;
+    private final MateJPARepository mateRepository;
     private final BoardDogRepository boardDogRepository;
 
     @Override
