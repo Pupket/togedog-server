@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.domain.dog.constant.DogType;
+import pupket.togedogserver.domain.dog.controller.port.DogService;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
@@ -16,14 +17,14 @@ import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
 import pupket.togedogserver.domain.dog.mapper.DogMapper;
 import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
-import pupket.togedogserver.domain.dog.repository.DogPersonalityTagRepository;
-import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.dog.service.port.DogPersonalityTagRepository;
+import pupket.togedogserver.domain.dog.service.port.DogRepository;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.constant.Region;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.jpaRepository.OwnerJPARepository;
-import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.service.port.OwnerRepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.DogException;
 import pupket.togedogserver.global.exception.customException.MemberException;
@@ -44,10 +45,10 @@ import java.util.stream.Collectors;
 public class DogServiceImpl implements DogService {
 
     private final DogRepository dogRepository;
-    private final UserJPARepository userRepository;
+    private final UserRepository userRepository;
     private final DogMapper dogMapper;
     private final DogPersonalityTagRepository dogPersonalityTagRepository;
-    private final OwnerJPARepository ownerRepository;
+    private final OwnerRepository ownerRepository;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomDogRepositoryImpl customDogRepository;
@@ -56,18 +57,17 @@ public class DogServiceImpl implements DogService {
     private final String suffix = "*";
 
     @PostConstruct
-    public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
+    public void init() {    // 이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
         List<String> dogBreedList = dogRepository.findAllBreedData();
-        log.info("size={}", dogBreedList.size());
-        saveAllSubstring(dogBreedList); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-
+        log.info("Breed data size: {}", dogBreedList.size());
+        saveAllSubstring(dogBreedList); // MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
     }
 
-    private void saveAllSubstring(List<String> userNickName) { //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
+    private void saveAllSubstring(List<String> userNickName) { // MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
         for (String name : userNickName) {
-            redisSortedSetService.addToSortedSetFromDog(name + suffix);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
-            for (int i = name.length(); i > 0; --i) { //음절 단위로 잘라서 모든 Substring 구하기
-                redisSortedSetService.addToSortedSetFromDog(name.substring(0, i)); //곧바로 redis에 저장
+            redisSortedSetService.addToSortedSetFromDog(name + suffix);   // 완벽한 형태의 단어일 경우에는 *을 붙여 구분
+            for (int i = name.length(); i > 0; --i) { // 음절 단위로 잘라서 모든 Substring 구하기
+                redisSortedSetService.addToSortedSetFromDog(name.substring(0, i)); // 곧바로 redis에 저장
             }
         }
     }
@@ -76,9 +76,8 @@ public class DogServiceImpl implements DogService {
     public void create(CustomUserDetail user, DogRegistRequest request, MultipartFile profileImages) {
         User findUser = getUserById(user.getUuid());
 
-        if (dogRepository.findAllByUser(findUser).size() + 1 >= 6) {
-            throw new DogException(ExceptionCode.AVAILABLE_FOR_REGISTRATION_EXCEEDED);
-        }
+        // 5마리 이상 등록하면 예외 발생
+        validationDogCount(findUser);
 
         Owner findOwner = ownerRepository.findByUser(findUser).orElse(null);
         if (findOwner == null) {
@@ -86,11 +85,9 @@ public class DogServiceImpl implements DogService {
         }
 
         Dog createdDog = dogMapper.toDog(request, findUser);
-
         dogRepository.save(createdDog);
 
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), createdDog);
-
         String uploadedDogImage = getUploadedDogImage(profileImages);
 
         createdDog = createdDog.toBuilder()
@@ -99,28 +96,28 @@ public class DogServiceImpl implements DogService {
                 .build();
 
         dogRepository.save(createdDog);
-
         dogPersonalityTagRepository.saveAll(tags);
 
+        log.info("Dog created with ID: {}", createdDog.getDogId());
+    }
+
+    private void validationDogCount(User findUser) {
+        if (dogRepository.findAllByUser(findUser).size() + 1 >= 6) {
+            log.warn("User {} has exceeded the dog registration limit", findUser.getUuid());
+            throw new DogException(ExceptionCode.AVAILABLE_FOR_REGISTRATION_EXCEEDED);
+        }
     }
 
     private String getUploadedDogImage(MultipartFile profileImages) {
-        String uploadedDogImage = null;
         if (profileImages != null) {
-            uploadedDogImage = s3FileUtilImpl.upload(profileImages);
+            return s3FileUtilImpl.upload(profileImages);
         }
-        return uploadedDogImage;
+        return null;
     }
 
     private void saveOwner(User findUser) {
-        Owner owner = Owner.builder()
-                .user(findUser)
-                .build();
-
-        User updatedUser = findUser.toBuilder()
-                .owner(owner)
-                .build();
-
+        Owner owner = Owner.builder().user(findUser).build();
+        User updatedUser = findUser.toBuilder().owner(owner).build();
 
         ownerRepository.save(owner);
         userRepository.save(updatedUser);
@@ -129,13 +126,11 @@ public class DogServiceImpl implements DogService {
     @Override
     public void update(CustomUserDetail user, DogUpdateRequest request, MultipartFile profileImage) {
         getUserById(user.getUuid());
-
         Dog findDog = findDogById(dogRepository.findById(request.getId()));
 
         DogType dogType = determineDogTypeBasedOnWeight(request);
 
         if (findDog.getDogImage() != null) {
-
             s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
         }
 
@@ -155,15 +150,13 @@ public class DogServiceImpl implements DogService {
                 .build();
 
         dogPersonalityTagRepository.deleteAllByDog(findDog);
-
         Set<DogPersonalityTag> tags = dogMapper.toDogPersonalityTags(request.getTags(), findDog);
 
-        findDog.toBuilder()
-                .dogPersonalityTags(tags)
-                .build();
+        findDog.toBuilder().dogPersonalityTags(tags).build();
         dogRepository.save(findDog);
-
         dogPersonalityTagRepository.saveAll(tags);
+
+        log.info("Dog updated with ID: {}", findDog.getDogId());
     }
 
     private static DogType determineDogTypeBasedOnWeight(DogUpdateRequest request) {
@@ -202,24 +195,24 @@ public class DogServiceImpl implements DogService {
         Dog findDog = findDogById(dogRepository.findById(id));
 
         DogResponse dogResponse = dogMapper.toResponse(findDog);
+
         dogMapper.afterMapping(dogResponse, findDog);
 
         return dogResponse;
     }
 
     private Dog findDogById(Optional<Dog> dogRepository) {
-        return dogRepository.orElseThrow(() ->
-                new DogException(ExceptionCode.NOT_FOUND_DOG)
-        );
+        return dogRepository.orElseThrow(() -> {
+            log.error("Dog not found");
+            return new DogException(ExceptionCode.NOT_FOUND_DOG);
+        });
     }
 
     @Override
     public List<DogResponse> findAll(CustomUserDetail user) {
         User findUser = getUserById(user.getUuid());
 
-        List<Dog> dogList = dogRepository.findByUser(findUser).orElseThrow(() ->
-                new DogException(ExceptionCode.NOT_FOUND_DOG)
-        );
+        List<Dog> dogList = getDogList(findUser);
 
         return dogList.stream()
                 .map(dog -> {
@@ -231,20 +224,29 @@ public class DogServiceImpl implements DogService {
 
     }
 
-    private User getUserById(Long uuid) {
-        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN)
-        );
-        return userRepository.findByUuid(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+    private List<Dog> getDogList(User findUser) {
+        return dogRepository.findByUser(findUser).orElseThrow(() ->
+                new DogException(ExceptionCode.NOT_FOUND_DOG)
         );
     }
 
-    public Page<DogResponse> findRandom(Pageable pageable) {
+    private User getUserById(Long uuid) {
+        refreshTokenRepository.getRefreshTokenByMemberId(uuid).orElseThrow(() -> {
+            log.error("Refresh token not found for user: {}", uuid);
+            return new MemberException(ExceptionCode.NOT_FOUND_REFRESH_TOKEN);
+        });
+        return userRepository.findByUuid(uuid).orElseThrow(() -> {
+            log.error("User not found with UUID: {}", uuid);
+            return new MemberException(ExceptionCode.NOT_FOUND_MEMBER);
+        });
+    }
 
+    @Override
+    public Page<DogResponse> findRandom(Pageable pageable) {
         return customDogRepository.dogList(pageable);
     }
 
+    @Override
     public List<String> autoCompleteKeyword(String keyword) {
         Long index = redisSortedSetService.findFromSortedSetFromDog(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
         if (index == null) {

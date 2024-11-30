@@ -1,7 +1,6 @@
-package pupket.togedogserver.domain.dog.repository;
+package pupket.togedogserver.domain.dog.service.port;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.user.entity.User;
 
@@ -9,14 +8,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface DogRepository extends JpaRepository<Dog, Long> {
-
+public interface DogRepository {
     Optional<List<Dog>> findByUser(User findUser);
 
     Collection<Dog> findAllByUser(User user);
 
     Optional<Dog> findByUserAndDogId(User findUser, Long id);
 
-    @Query("select m.breedName from DogBreed m ")
     List<String> findAllBreedData();
+
+    Dog save(Dog dog);
+
+    void deleteById(Long id);
+
+    Optional<Dog> findById(Long id);
 }

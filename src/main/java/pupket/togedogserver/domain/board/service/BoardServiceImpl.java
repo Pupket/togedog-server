@@ -20,7 +20,7 @@ import pupket.togedogserver.domain.board.service.port.BoardRepository;
 import pupket.togedogserver.domain.board.service.port.CustomBoardRepository;
 import pupket.togedogserver.domain.board.service.port.WalkingPlaceTagRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
-import pupket.togedogserver.domain.dog.repository.DogRepository;
+import pupket.togedogserver.domain.dog.repository.jpaRepository.DogJPARepository;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
@@ -50,7 +50,7 @@ public class BoardServiceImpl implements BoardService {
     private final UserRepository userRepository;
     private final WalkingPlaceTagRepository walkingPlaceTagRepository;
     private final BoardMapper boardMapper;
-    private final DogRepository dogRepository;
+    private final DogJPARepository dogJPARepository;
     private final CustomBoardRepository customBoardRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomMateRepository customMateRepository;
@@ -78,7 +78,7 @@ public class BoardServiceImpl implements BoardService {
     private List<Dog> validateEachDog(List<Long> dogIds, User findUser) {
         log.debug("Validating dogs for user: {}", findUser.getUuid());
         return dogIds.stream().map(dogId -> {
-            Dog findDog = dogRepository.findById(dogId).orElseThrow(() ->
+            Dog findDog = dogJPARepository.findById(dogId).orElseThrow(() ->
                     new DogException(ExceptionCode.NOT_FOUND_DOG));
             if (!Objects.equals(findDog.getUser().getUuid(), findUser.getUuid())) {
                 throw new DogException(ExceptionCode.NOT_YOUR_DOG);
