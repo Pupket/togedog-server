@@ -29,7 +29,7 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.DogException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.redis.RedisSortedSetService;
-import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class DogServiceImpl implements DogService {
     private final DogMapper dogMapper;
     private final DogPersonalityTagRepository dogPersonalityTagRepository;
     private final OwnerRepository ownerRepository;
-    private final S3FileUtilImpl s3FileUtilImpl;
+    private final S3FileUtil s3FileUtil;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomDogRepositoryImpl customDogRepository;
     private final RedisSortedSetService redisSortedSetService;
@@ -110,7 +110,7 @@ public class DogServiceImpl implements DogService {
 
     private String getUploadedDogImage(MultipartFile profileImages) {
         if (profileImages != null) {
-            return s3FileUtilImpl.upload(profileImages);
+            return s3FileUtil.upload(profileImages);
         }
         return null;
     }
@@ -131,7 +131,7 @@ public class DogServiceImpl implements DogService {
         DogType dogType = determineDogTypeBasedOnWeight(request);
 
         if (findDog.getDogImage() != null) {
-            s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
+            s3FileUtil.deleteImageFromS3(findDog.getDogImage());
         }
 
         String uploadedDogImage = getUploadedDogImage(profileImage);
@@ -181,7 +181,7 @@ public class DogServiceImpl implements DogService {
         Dog findDog = findDogById(dogRepository.findByUserAndDogId(findUser, id));
 
         if (findDog.getDogImage() != null) {
-            s3FileUtilImpl.deleteImageFromS3(findDog.getDogImage());
+            s3FileUtil.deleteImageFromS3(findDog.getDogImage());
         }
 
         dogRepository.deleteById(id);

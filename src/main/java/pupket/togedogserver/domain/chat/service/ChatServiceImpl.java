@@ -19,7 +19,7 @@ import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MemberException;
-import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
@@ -41,7 +41,7 @@ public class ChatServiceImpl implements ChatService {
     private final UserRepository userRepository;
     private final FcmService fcmServiceImpl;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
-    private final S3FileUtilImpl s3FileUtilImpl;
+    private final S3FileUtil s3FileUtilImpl;
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
@@ -60,8 +60,8 @@ public class ChatServiceImpl implements ChatService {
 
         //findChatRoom의 sender(메이트)의 uuid와 findSender(현재 로그인 중인 유저)의 uuid가 일치하는 경우 현재 로그인 유저는 mate이기 때문에 채팅방 제목 반환
         // 일치하지 않는 경우에는 보호자가 로그인한 것이기 때문에 상대방 닉네임을 담아서 반환
-        if(findChatRoom.getSender().equals(findSender.getUuid())) {
-            return  ChatRoomCreateResponse.builder()
+        if (findChatRoom.getSender().equals(findSender.getUuid())) {
+            return ChatRoomCreateResponse.builder()
                     .roomTitle(findChatRoom.getTitle())
                     .roomId(findChatRoom.getRoomId())
                     .build();
@@ -76,7 +76,7 @@ public class ChatServiceImpl implements ChatService {
     private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
         ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
-                    ChatRoom newChatRoom = ChatRoom.to(receiver,sender,findSenderProfileImage,roomTitle,findReceiverProfileImage);
+                    ChatRoom newChatRoom = ChatRoom.to(receiver, sender, findSenderProfileImage, roomTitle, findReceiverProfileImage);
 
                     chatRoomRepository.save(newChatRoom);
 
@@ -102,7 +102,7 @@ public class ChatServiceImpl implements ChatService {
         return findChatRoom;
     }
 
-    private  String getProfileImage(User findSender) {
+    private String getProfileImage(User findSender) {
         return findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
     }
 
@@ -138,7 +138,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
-        List<ChatRoom> chatRooms = chatRoomRepository.findBySenderOrReceiver(uuid,uuid);
+        List<ChatRoom> chatRooms = chatRoomRepository.findBySenderOrReceiver(uuid, uuid);
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
 
         for (ChatRoom room : chatRooms) {
@@ -148,7 +148,7 @@ public class ChatServiceImpl implements ChatService {
             Timestamp lastTime = room.getLastTime();
             List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime);
 
-            ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room,findSender,findReceiver,unreceivedMessages);
+            ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room, findSender, findReceiver, unreceivedMessages);
 
             chatRoomList.add(chatroom);
         }
@@ -200,6 +200,7 @@ public class ChatServiceImpl implements ChatService {
             return new Timestamp(System.currentTimeMillis());
         }
     }
+
     @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
         String key = "RoomId:" + roomId;
@@ -231,10 +232,10 @@ public class ChatServiceImpl implements ChatService {
 
         // 사용자 ID를 기반으로 세션 ID 가져오기
         String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + receiver);
-        if (sessionId == null) {
-            log.warn("No session found for user: {}", receiver);
+        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
+            log.warn("User {} is offline. Sending notification.", receiver);
+            sendNotificationToDisConnectedUser(message, sessionId, findChatRoom, parsedLastTime, receiver);
         }
-        sendNotificationToDisConnectedUser(message, sessionId, findChatRoom, parsedLastTime, receiver);
 
         ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
 
@@ -247,14 +248,12 @@ public class ChatServiceImpl implements ChatService {
 
     private void sendNotificationToDisConnectedUser(ChattingRequestDto message, String sessionId, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
         // 세션 ID를 기반으로 연결 상태 확인
-        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
-            NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime);
-            try {
-                fcmServiceImpl.sendNotification(notificationRequestDto, receiver);
-            } catch (Exception e) {
-                log.error("Failed to send notification", e);
-                throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
-            }
+        NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime);
+        try {
+            fcmServiceImpl.sendNotification(notificationRequestDto, receiver);
+        } catch (Exception e) {
+            log.error("Failed to send notification", e);
+            throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
         }
     }
 

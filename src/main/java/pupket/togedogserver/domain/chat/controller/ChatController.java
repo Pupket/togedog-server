@@ -17,7 +17,7 @@ import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
-import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
-    private final S3FileUtilImpl s3FileUtilImpl;
+    private final S3FileUtil s3FileUtil;
 
     @MessageMapping("/chat")
     public void message(@Payload ChattingRequestDto message) throws IOException {
@@ -86,7 +86,7 @@ public class ChatController {
     @PostMapping(value = "/get-imageUrl", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> getImageUrl(
             @RequestPart("image") MultipartFile image) {
-        String uploadedImage = s3FileUtilImpl.upload(image);
+        String uploadedImage = s3FileUtil.upload(image);
         return ResponseEntity.ok(uploadedImage);
     }
 }

@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import pupket.togedogserver.global.jwt.service.JwtService;
+import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -30,17 +33,27 @@ public class WebSocketEventListener {
         String sessionId = headerAccessor.getSessionId();
         String token = headerAccessor.getFirstNativeHeader("Authorization");
 
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);  // "Bearer " 제거
-            Long userId = jwtTokenProvider.getUserIdFromToken(token); // JWT 토큰에서 사용자 ID 추출
-            log.info("userId={}", userId);
+        // SecurityContext에서 인증 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
 
-            if (userId != null) {
-                // Redis에 사용자 ID와 세션 ID를 매핑하여 저장
-                redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.MINUTES);
-                redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.MINUTES);
-                log.info("User {} is now online", userId);
+            // UserDetails 또는 사용자 ID 추출
+            String userId;
+            if (principal instanceof CustomUserDetail) {
+                userId = ((CustomUserDetail) principal).getUuid().toString();
+            } else {
+                userId = 0L+"";
             }
+
+            log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
+
+            // Redis에 사용자와 세션 매핑
+            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:user:" + sessionId, userId, 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
+        } else {
+            log.warn("WebSocket 연결 실패: 인증되지 않은 사용자입니다.");
         }
 
         log.info("WebSocket 연결됨: 세션 ID = {}", sessionId);
@@ -51,11 +64,16 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
+        String userId = redisTemplate.opsForValue().get("session:user:" + sessionId);
 
-        // 세션 ID를 기반으로 사용자 상태를 "offline"으로 저장
-        redisTemplate.opsForValue().set("session:status:" + sessionId, "offline");
-        log.info("WebSocket 연결 종료됨: 세션 ID = {}", sessionId);
-        connectedSessions.remove(sessionId);
+        if (userId != null) {
+            redisTemplate.opsForValue().set("user:status:" + userId, "offline");
+            redisTemplate.delete("user:session:" + userId);
+        }
+
+        redisTemplate.delete("session:user:" + sessionId);
+        redisTemplate.delete("session:status:" + sessionId);
+        log.info("WebSocket 연결 종료: Session ID = {}", sessionId);
     }
 
     // 특정 세션이 접속 중인지 확인하는 메서드

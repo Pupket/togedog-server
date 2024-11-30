@@ -5,13 +5,14 @@ import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.user.dto.request.RegistMateRequest;
 import pupket.togedogserver.domain.user.dto.response.FindMateAndDogResponse;
 import pupket.togedogserver.domain.user.dto.response.FindUserInfoResponse;
+import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.jwt.entity.JwtToken;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @Service
 public interface UserService {
 
-    void create(CustomUserDetail userDetail, RegistMateRequest request);
+    User create(CustomUserDetail userDetail, RegistMateRequest request);
 
     public void logout(String refreshToken, CustomUserDetail userDetail);
 

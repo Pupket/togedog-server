@@ -25,7 +25,7 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.redis.RedisSortedSetService;
-import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
+import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class MateServiceImpl implements MateService {
     private final MateTagRepositoryImpl mateTagRepository;
     private final CustomMateRepository customMateRepository;
     private final UserMapper userMapper;
-    private final S3FileUtilImpl s3FileUtilImpl;
+    private final S3FileUtil s3FileUtil;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EntityManager entityManager;
 
@@ -181,7 +181,7 @@ public class MateServiceImpl implements MateService {
         String uploadedProfileImage = null;
         if (profileImage != null) {
             log.info("프로필 이미지 업로드 시작");
-            uploadedProfileImage = s3FileUtilImpl.upload(profileImage);
+            uploadedProfileImage = s3FileUtil.upload(profileImage);
             log.info("프로필 이미지 업로드 완료");
         }
         return uploadedProfileImage;
@@ -301,7 +301,7 @@ public class MateServiceImpl implements MateService {
         log.info("프로필 이미지 업데이트 시작: 사용자 ID = {}", findUser.getUuid());
         // 프로필 이미지 삭제 및 업로드 로직
         if (findUser.getProfileImage() != null) {
-            s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
+            s3FileUtil.deleteImageFromS3(findUser.getProfileImage());
         }
 
         String newProfileImage = uploadProfileImage(profileImage);
@@ -356,7 +356,7 @@ public class MateServiceImpl implements MateService {
         User findUser = getUserById(userDetail.getUuid());
 
         if (findUser.getProfileImage() != null) {
-            s3FileUtilImpl.deleteImageFromS3(findUser.getProfileImage());
+            s3FileUtil.deleteImageFromS3(findUser.getProfileImage());
         }
         Mate findMate = getMate(findUser);
         userRepository.save(findUser.toBuilder().mate(null).build());

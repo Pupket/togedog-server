@@ -46,12 +46,12 @@ public class UserServiceImpl implements UserService {
     private final RedisLoginService redisLoginService;
 
     @Override
-    public void create(CustomUserDetail userDetail, RegistMateRequest request) {
+    public User create(CustomUserDetail userDetail, RegistMateRequest request) {
         log.info("사용자 생성 시작: 사용자 ID = {}", userDetail.getUuid());
         User user = getUserById(userDetail.getUuid());
         User createdUser = createUserByRequest(request, user);
-        userRepository.save(createdUser);
         log.info("사용자 생성 완료: 사용자 ID = {}", createdUser.getUuid());
+        return userRepository.save(createdUser);
     }
 
     private User createUserByRequest(RegistMateRequest request, User user) {
