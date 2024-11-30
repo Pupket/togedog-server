@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.domain.dog.service.port.CustomDogRepository;
 import pupket.togedogserver.domain.user.dto.response.DogActiveResponse;
 import pupket.togedogserver.global.mapper.EnumMapper;
 

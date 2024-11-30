@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pupket.togedogserver.domain.dog.controller.port.DogService;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
@@ -30,7 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DogController {
 
-    private final DogServiceImpl dogService;
+    private final DogService dogService;
 
     @Operation(summary = "강아지 프로필 등록", description = "강아지 프로필을 등록합니다.")
     @ApiResponses(value = {

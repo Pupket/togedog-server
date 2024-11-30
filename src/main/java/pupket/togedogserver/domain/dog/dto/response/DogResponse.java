@@ -23,6 +23,4 @@ public class DogResponse {
     private String region;
     private int age;
 
-
-
 }

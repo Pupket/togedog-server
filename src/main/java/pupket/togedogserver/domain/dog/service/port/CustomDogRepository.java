@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.dog.repository;
+package pupket.togedogserver.domain.dog.service.port;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

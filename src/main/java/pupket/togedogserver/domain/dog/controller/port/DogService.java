@@ -1,5 +1,7 @@
-package pupket.togedogserver.domain.dog.service;
+package pupket.togedogserver.domain.dog.controller.port;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,4 +22,8 @@ public interface DogService {
      DogResponse find(@AuthenticationPrincipal CustomUserDetail user, @PathVariable Long id);
 
      List<DogResponse> findAll(@AuthenticationPrincipal CustomUserDetail user);
+
+     Page<DogResponse> findRandom(Pageable pageable);
+
+     List<String> autoCompleteKeyword(String keyword);
 }

@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.dog.service;
+package pupket.togedogserver.domain.dog.desrializer;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

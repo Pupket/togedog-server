@@ -3,7 +3,7 @@ package pupket.togedogserver.domain.dog.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import pupket.togedogserver.domain.dog.service.DogTypeDeserializer;
+import pupket.togedogserver.domain.dog.desrializer.DogTypeDeserializer;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.DogException;
 
