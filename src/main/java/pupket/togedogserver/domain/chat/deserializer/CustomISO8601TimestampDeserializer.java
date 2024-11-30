@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.chat.dto;
+package pupket.togedogserver.domain.chat.deserializer;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

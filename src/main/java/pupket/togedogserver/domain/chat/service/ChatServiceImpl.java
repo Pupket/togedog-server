@@ -5,26 +5,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
+import pupket.togedogserver.domain.chat.controller.port.ChatService;
 import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
-import pupket.togedogserver.domain.chat.repository.ChatRoomRepository;
+import pupket.togedogserver.domain.chat.service.port.ChatRoomRepository;
+import pupket.togedogserver.domain.notification.controller.port.FcmService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
-import pupket.togedogserver.domain.notification.service.FcmService;
 import pupket.togedogserver.domain.user.entity.User;
-import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
-import pupket.togedogserver.global.exception.customException.MateException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtilImpl;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -34,52 +33,65 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ChatService {
+public class ChatServiceImpl implements ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
     private final RedisTemplate<String, String> redisTemplateForUserStatus;
-    private final UserJPARepository userRepository;
-    private final FcmService fcmService;
+    private final UserRepository userRepository;
+    private final FcmService fcmServiceImpl;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final S3FileUtilImpl s3FileUtilImpl;
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
-    /**
-     *
-     * @param sender
-     * 방 생성 시 sender는 항상 mate의 uuid로 지정된다.
-     *
-     */
+
+    @Override
     public ChatRoomCreateResponse getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
-        User findSender = userRepository.findById(sender).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
-        User findReceiver = userRepository.findById(receiver).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
+        User findSender = findSender(sender);
+        User findReceiver = findReceiver(receiver);
 
-        String findSenderProfileImage = findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
-        String findReceiverProfileImage = findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage();
+        String findSenderProfileImage = getProfileImage(findSender);
+        String findReceiverProfileImage = getProfileImage(findReceiver);
 
+        ChatRoom findChatRoom = createChatRoom(sender, receiver, roomTitle, findSenderProfileImage, findReceiverProfileImage);
+
+        findChatRoom = validateChatRoom(roomTitle, findChatRoom);
+
+        //findChatRoom의 sender(메이트)의 uuid와 findSender(현재 로그인 중인 유저)의 uuid가 일치하는 경우 현재 로그인 유저는 mate이기 때문에 채팅방 제목 반환
+        // 일치하지 않는 경우에는 보호자가 로그인한 것이기 때문에 상대방 닉네임을 담아서 반환
+        if(findChatRoom.getSender().equals(findSender.getUuid())) {
+            return  ChatRoomCreateResponse.builder()
+                    .roomTitle(findChatRoom.getTitle())
+                    .roomId(findChatRoom.getRoomId())
+                    .build();
+        }
+
+        return ChatRoomCreateResponse.builder()
+                .roomTitle(findReceiver.getNickname())
+                .roomId(findChatRoom.getRoomId())
+                .build();
+    }
+
+    private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
         ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
-                    ChatRoom newChatRoom = ChatRoom.builder()
-                            .receiver(receiver)
-                            .sender(sender)
-                            .senderImage(findSenderProfileImage)
-                            .title(roomTitle)
-                            .receiverImage(findReceiverProfileImage)
-                            .lastTime(Timestamp.valueOf(LocalDateTime.now()))
-                            .build();
+                    ChatRoom newChatRoom = ChatRoom.to(receiver,sender,findSenderProfileImage,roomTitle,findReceiverProfileImage);
 
                     chatRoomRepository.save(newChatRoom);
-                    ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
-                    redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);
+
+                    setTopicInRedisTemplate(newChatRoom);
                     return newChatRoom;
                 });
+        return findChatRoom;
+    }
 
+    private void setTopicInRedisTemplate(ChatRoom newChatRoom) {
+        ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
+        redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);
+    }
+
+    private ChatRoom validateChatRoom(String roomTitle, ChatRoom findChatRoom) {
         if (findChatRoom.getTitle().isEmpty() && roomTitle != null) {
             ChatRoom updateChatRoom = findChatRoom.toBuilder()
                     .title(roomTitle)
@@ -87,25 +99,26 @@ public class ChatService {
 
             findChatRoom = chatRoomRepository.save(updateChatRoom);
         }
-
-        //findChatRoom의 sender(메이트)의 uuid와 findSender(현재 로그인 중인 유저)의 uuid가 일치하는 경우 현재 로그인 유저는 mate이기 때문에 채팅방 제목 반환
-        // 일치하지 않는 경우에는 보호자가 로그인한 것이기 때문에 상대방 닉네임을 담아서 반환
-        //TODO : 클라이언트 서버와 통신 필요,메서드 리팩토링 . SOLID. 위배사항 확인
-        if(findChatRoom.getSender().equals(findSender.getUuid())) {
-            return  ChatRoomCreateResponse.builder()
-                    .roomTitle(findChatRoom.getTitle())
-                    .roomId(findChatRoom.getRoomId())
-                    .nickName(null)
-                    .build();
-        }
-
-        return ChatRoomCreateResponse.builder()
-                .roomTitle(null)
-                .roomId(findChatRoom.getRoomId())
-                .nickName(findReceiver.getNickname())
-                .build();
+        return findChatRoom;
     }
 
+    private  String getProfileImage(User findSender) {
+        return findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
+    }
+
+    private User findReceiver(Long receiver) {
+        return userRepository.findById(receiver).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+    }
+
+    private User findSender(Long sender) {
+        return userRepository.findById(sender).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+    }
+
+    @Override
     public String calculateTimeAgo(Timestamp lastTime) {
         long diffInMillis = System.currentTimeMillis() - lastTime.getTime();
         long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis);
@@ -123,33 +136,19 @@ public class ChatService {
         }
     }
 
+    @Override
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
         List<ChatRoom> chatRooms = chatRoomRepository.findBySenderOrReceiver(uuid,uuid);
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
 
         for (ChatRoom room : chatRooms) {
-            User findSender = userRepository.findByUuid(room.getReceiver())
-                    .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MEMBER));
-            User findReceiver = userRepository.findByUuid(room.getSender()).orElseThrow(
-                    () -> new MateException(ExceptionCode.NOT_FOUND_MEMBER)
-            );
+            User findSender = findSender(room.getSender());
+            User findReceiver = findReceiver(room.getReceiver());
+
             Timestamp lastTime = room.getLastTime();
             List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime);
 
-            int unreceivedMessageCount = unreceivedMessages.size();
-            String lastMessage = unreceivedMessages.isEmpty() ? null : unreceivedMessages.get(0).getContent();
-
-            ChatRoomResponseDto chatroom = ChatRoomResponseDto.builder()
-                    .roomId(room.getRoomId())
-                    .lastTime(room.getLastTime())
-                    .title(room.getTitle())
-                    .sender(findSender.getNickname())
-                    .senderImage(findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage())
-                    .receiver(findReceiver.getNickname())
-                    .receiverImage(findReceiver.getProfileImage().isEmpty() ? null : findReceiver.getProfileImage())
-                    .unreceivedMessageCount(unreceivedMessageCount)
-                    .lastMessage(lastMessage)
-                    .build();
+            ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room,findSender,findReceiver,unreceivedMessages);
 
             chatRoomList.add(chatroom);
         }
@@ -160,11 +159,12 @@ public class ChatService {
         String key = "chatRoomId:" + roomId;
 
         // Redis에 메시지 저장
-        List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1); // opsForList 사용
-        if (chatList == null) {
-            chatList = new ArrayList<>();
-        }
+        List<ChattingResponseDto> chatList = saveMessageInRedis(key);
 
+        isDuplicate(chat, chatList, key);
+    }
+
+    private void isDuplicate(ChattingResponseDto chat, List<ChattingResponseDto> chatList, String key) {
         boolean isDuplicate = chatList.stream().anyMatch(savedChat ->
                 savedChat.getLastTime().equals(chat.getLastTime()) &&
                         savedChat.getContent().equals(chat.getContent())
@@ -178,10 +178,20 @@ public class ChatService {
         }
     }
 
+    private List<ChattingResponseDto> saveMessageInRedis(String key) {
+        List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1); // opsForList 사용
+        if (chatList == null) {
+            chatList = new ArrayList<>();
+        }
+        return chatList;
+    }
+
+    @Override
     public void leaveRoom(Long roomId) {
         chatRoomRepository.deleteById(roomId);
     }
 
+    @Override
     public Timestamp getParsedLastTime(String lastTime) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
@@ -190,8 +200,7 @@ public class ChatService {
             return new Timestamp(System.currentTimeMillis());
         }
     }
-
-    // 마지막으로 받은 시간 이후의 메시지들을 조회하는 메서드
+    @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
         String key = "RoomId:" + roomId;
 
@@ -212,43 +221,46 @@ public class ChatService {
     }
 
 
+    @Override
     public void sendMessageToPublisher(ChattingRequestDto message) {
-
         Timestamp parsedLastTime = getParsedLastTime(message.getLastTime());
-        ChatRoom findChatRoom = chatRoomRepository.findById(message.getRoomId()).orElseThrow(
-                () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
-        );
+        ChatRoom findChatRoom = findChatRoom(message);
 
-        Long receiver = findChatRoom.getReceiver();
-        String receiverStatus = redisTemplateForUserStatus.opsForValue().get("user:status:" + receiver);
-        if (!webSocketEventListener.isSessionConnected(receiverStatus)) {
-            NotificationRequestDto notificationRequestDto = NotificationRequestDto.builder()
-                    .content(message.getContent())
-                    .userId(message.getUserId())
-                    .image(message.getImage())
-                    .roomId(findChatRoom.getRoomId())
-                    .lastTime(parsedLastTime)
-                    .build();
-            try {
-                fcmService.sendNotification(notificationRequestDto, findChatRoom.getReceiver());
-            } catch (Exception e) {
-                log.error("Failed to send notification", e);
-                throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
-            }
+        Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
+        log.info("receiverId= {}", receiver);
+
+        // 사용자 ID를 기반으로 세션 ID 가져오기
+        String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + receiver);
+        if (sessionId == null) {
+            log.warn("No session found for user: {}", receiver);
         }
+        sendNotificationToDisConnectedUser(message, sessionId, findChatRoom, parsedLastTime, receiver);
 
-        ChattingResponseDto responseDto = ChattingResponseDto.builder()
-                .lastTime(parsedLastTime)
-                .roomId(message.getRoomId())
-                .userId(message.getUserId())
-                .content(message.getContent())
-                .image(message.getImage())
-                .build();
+        ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
 
         // Redis에 메시지 저장
         saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
 
         // 메시지 발행
         redisPublisher.publish(responseDto);
+    }
+
+    private void sendNotificationToDisConnectedUser(ChattingRequestDto message, String sessionId, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
+        // 세션 ID를 기반으로 연결 상태 확인
+        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
+            NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime);
+            try {
+                fcmServiceImpl.sendNotification(notificationRequestDto, receiver);
+            } catch (Exception e) {
+                log.error("Failed to send notification", e);
+                throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
+            }
+        }
+    }
+
+    private ChatRoom findChatRoom(ChattingRequestDto message) {
+        return chatRoomRepository.findById(message.getRoomId()).orElseThrow(
+                () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
+        );
     }
 }

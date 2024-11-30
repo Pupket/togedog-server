@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pupket.togedogserver.domain.chat.deserializer.CustomISO8601TimestampDeserializer;
 
 import java.sql.Timestamp;
 
@@ -24,4 +25,13 @@ public class ChattingResponseDto {
     String content;
     String image;
 
+    public static ChattingResponseDto to(ChattingRequestDto message, Timestamp parsedLastTime) {
+        return ChattingResponseDto.builder()
+                .lastTime(parsedLastTime)
+                .roomId(message.getRoomId())
+                .userId(message.getUserId())
+                .content(message.getContent())
+                .image(message.getImage())
+                .build();
+    }
 }

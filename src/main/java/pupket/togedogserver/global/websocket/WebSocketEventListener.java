@@ -36,8 +36,9 @@ public class WebSocketEventListener {
             log.info("userId={}", userId);
 
             if (userId != null) {
-                // Redis에 사용자 상태를 "online"으로 저장 (3분 만료 시간)
-                redisTemplate.opsForValue().set("user:status:" + userId, "online", 3, TimeUnit.MINUTES);
+                // Redis에 사용자 ID와 세션 ID를 매핑하여 저장
+                redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.MINUTES);
                 log.info("User {} is now online", userId);
             }
         }
@@ -51,26 +52,13 @@ public class WebSocketEventListener {
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
 
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String token = headerAccessor.getFirstNativeHeader("Authorization");
-        log.info("EventListener Token = {} " , token);
-
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);  // "Bearer " 제거
-            Long userId = jwtTokenProvider.getUserIdFromToken(token); // JWT 토큰에서 사용자 ID 추출
-
-            if (userId != null) {
-                // Redis에 사용자 상태를 "offline"으로 저장
-                redisTemplate.opsForValue().set("user:status:" + userId, "offline");
-                log.info("User {} is now offline", userId);
-            }
-        }
-
+        // 세션 ID를 기반으로 사용자 상태를 "offline"으로 저장
+        redisTemplate.opsForValue().set("session:status:" + sessionId, "offline");
         log.info("WebSocket 연결 종료됨: 세션 ID = {}", sessionId);
         connectedSessions.remove(sessionId);
     }
 
-    // 특정 세션이 접속 중인지 확인하는 메서드 (옵션)
+    // 특정 세션이 접속 중인지 확인하는 메서드
     public boolean isSessionConnected(String sessionId) {
         return connectedSessions.contains(sessionId);
     }
