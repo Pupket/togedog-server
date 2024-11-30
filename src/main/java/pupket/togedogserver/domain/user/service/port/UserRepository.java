@@ -22,4 +22,6 @@ public interface UserRepository {
     List<String> findAllNicknames();
 
     User save(User user);
+
+    Optional<User> findById(Long sender);
 }

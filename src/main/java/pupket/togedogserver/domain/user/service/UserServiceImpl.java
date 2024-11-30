@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
-import pupket.togedogserver.domain.notification.service.FcmService;
+import pupket.togedogserver.domain.notification.service.FcmServiceImpl;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final OAuth2RevokeService oAuth2RevokeService;
-    private final FcmService fcmService;
+    private final FcmServiceImpl fcmServiceImpl;
     private final RedisLoginService redisLoginService;
 
     @Override
@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
     public void logout(String refreshToken, CustomUserDetail userDetail) {
         log.info("로그아웃 시작: 사용자 ID = {}", userDetail.getUuid());
         jwtUtils.handleExpiredRefreshToken(refreshToken);
-        fcmService.deleteToken(userDetail.getUuid());
+        fcmServiceImpl.deleteToken(userDetail.getUuid());
         log.info("로그아웃 완료: 사용자 ID = {}", userDetail.getUuid());
     }
 

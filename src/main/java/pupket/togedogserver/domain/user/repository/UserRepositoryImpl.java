@@ -49,4 +49,9 @@ public class UserRepositoryImpl implements UserRepository {
     public User save(User user) {
         return userRepository.save(user);
     }
+
+    @Override
+    public Optional<User> findById(Long sender) {
+        return userRepository.findById(sender);
+    }
 }

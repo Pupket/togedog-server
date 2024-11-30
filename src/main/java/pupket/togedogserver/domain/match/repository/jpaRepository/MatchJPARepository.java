@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.match.repository;
+package pupket.togedogserver.domain.match.repository.jpaRepository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import pupket.togedogserver.domain.board.entity.Board;
@@ -9,7 +9,7 @@ import pupket.togedogserver.domain.user.entity.mate.Mate;
 import java.util.List;
 import java.util.Optional;
 
-public interface MatchRepository extends JpaRepository<Match, Long> {
+public interface MatchJPARepository extends JpaRepository<Match, Long> {
 
 
     List<Match> findByOwner(Owner owner);

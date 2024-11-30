@@ -5,8 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pupket.togedogserver.domain.notification.controller.port.FcmService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
-import pupket.togedogserver.domain.user.repository.jpaRepository.UserJPARepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.FcmException;
 
@@ -19,18 +20,21 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 @RequiredArgsConstructor
 @Transactional
-public class FcmService {
+public class FcmServiceImpl implements FcmService {
 
-    private final UserJPARepository userRepository;
+    private final UserRepository userRepository;
 
+    @Override
     public void createToken(Long uuid, String token) {
         userRepository.updateFcmTokenByUuid(token, uuid);
     }
 
+    @Override
     public void deleteToken(Long uuid) {
         userRepository.updateFcmTokenToNullByUuid(uuid);
     }
 
+    @Override
     public void sendNotification(NotificationRequestDto notification, Long roomId) throws InterruptedException, ExecutionException {
         String message = notification.getContent();
         String image = notification.getImage();

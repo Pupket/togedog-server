@@ -45,4 +45,9 @@ public class BoardRepositoryImpl implements BoardRepository {
     public void delete(Board findBoard) {
         boardJPARepository.delete(findBoard);
     }
+
+    @Override
+    public Optional<Board> findById(Long boardId) {
+        return boardJPARepository.findById(boardId);
+    }
 }

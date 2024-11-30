@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pupket.togedogserver.domain.match.controller.port.MatchService;
 import pupket.togedogserver.domain.match.service.MatchServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
@@ -17,13 +18,10 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 @RequestMapping("/api/v1/match")
 @RequiredArgsConstructor
 public class MatchController {
-    private final MatchServiceImpl matchService;
+
+    private final MatchService matchService;
+
     @Operation(summary = "매칭 요청", description = "매칭을 신청합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "매칭 신청 완료",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "매칭 신청 실패")
-    })
     @GetMapping("/{nickname}/{boardId}")
     public ResponseEntity<Void> match(
             @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -36,11 +34,6 @@ public class MatchController {
     }
 
     @Operation(summary = "매칭 수락", description = "매칭을 수락합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "매칭 수락 성공",
-                    content = {@Content(schema = @Schema(implementation = ResponseEntity.class))}),
-            @ApiResponse(responseCode = "400", description = "매칭 수락 실패")
-    })
     @GetMapping("accept/{boardId}")
     public ResponseEntity<Void> matchingSuccess(
             @AuthenticationPrincipal CustomUserDetail userDetail,

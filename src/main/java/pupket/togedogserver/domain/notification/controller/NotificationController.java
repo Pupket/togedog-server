@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pupket.togedogserver.domain.notification.controller.port.FcmService;
+import pupket.togedogserver.domain.notification.controller.port.NotificationService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
-import pupket.togedogserver.domain.notification.service.FcmService;
-import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.concurrent.ExecutionException;
@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutionException;
 @Tag(name = "fcm", description = "fcm 생성 및 활용 api")
 public class NotificationController {
 
-    private final NotificationServiceImpl notificationService;
+    private final NotificationService notificationService;
     private final FcmService fcmService;
 
     @Operation(summary = "fcm 토큰 발급", description = "fcm 토큰 발급")

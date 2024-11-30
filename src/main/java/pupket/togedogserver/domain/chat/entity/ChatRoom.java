@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -32,4 +33,16 @@ public class ChatRoom {
     private String senderImage;
 
     private String receiverImage;
+
+    public static ChatRoom to(Long receiver, Long sender, String findSenderProfileImage, String roomTitle, String findReceiverProfileImage) {
+        return ChatRoom.builder()
+                .receiver(receiver)
+                .sender(sender)
+                .senderImage(findSenderProfileImage)
+                .title(roomTitle)
+                .receiverImage(findReceiverProfileImage)
+                .lastTime(Timestamp.valueOf(LocalDateTime.now()))
+                .build();
+
+    }
 }

@@ -1,4 +1,4 @@
-package pupket.togedogserver.domain.notification.service;
+package pupket.togedogserver.domain.notification.controller.port;
 
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 

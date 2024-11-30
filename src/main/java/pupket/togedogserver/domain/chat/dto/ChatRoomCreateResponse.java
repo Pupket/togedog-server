@@ -7,6 +7,5 @@ import lombok.Data;
 @Builder
 public class ChatRoomCreateResponse {
     Long roomId;
-    String nickName;
     String roomTitle;
 }
