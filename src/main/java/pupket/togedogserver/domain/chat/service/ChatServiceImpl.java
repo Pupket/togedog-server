@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
 import pupket.togedogserver.domain.chat.controller.port.ChatService;
 import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
@@ -230,11 +231,12 @@ public class ChatServiceImpl implements ChatService {
         Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
         log.info("receiverId= {}", receiver);
 
+
         // 사용자 ID를 기반으로 세션 ID 가져오기
-        String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + receiver);
-        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
-            log.warn("User {} is offline. Sending notification.", receiver);
-            sendNotificationToDisConnectedUser(message, sessionId, findChatRoom, parsedLastTime, receiver);
+        String currentSessionId = webSocketEventListener.getCurrentSessionId();
+        if (currentSessionId == null || !webSocketEventListener.isSessionConnected(currentSessionId)) {
+            log.warn("Current user is offline. Sending notification.");
+            sendNotificationToDisConnectedUser(message, currentSessionId, findChatRoom, parsedLastTime, null);
         }
 
         ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
