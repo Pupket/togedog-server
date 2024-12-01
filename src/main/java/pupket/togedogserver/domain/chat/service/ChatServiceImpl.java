@@ -248,7 +248,7 @@ public class ChatServiceImpl implements ChatService {
 
     private void sendNotificationToDisConnectedUser(ChattingRequestDto message, String sessionId, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
         // 세션 ID를 기반으로 연결 상태 확인
-        NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime);
+        NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime,receiver);
         try {
             fcmServiceImpl.sendNotification(notificationRequestDto, receiver);
         } catch (Exception e) {
