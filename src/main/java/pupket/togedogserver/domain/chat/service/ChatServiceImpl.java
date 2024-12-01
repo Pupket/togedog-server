@@ -203,7 +203,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
-        String key = "RoomId:" + roomId;
+        String key = "chatRoomId:" + roomId;
 
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
 
