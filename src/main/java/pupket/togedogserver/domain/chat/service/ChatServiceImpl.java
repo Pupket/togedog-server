@@ -231,13 +231,12 @@ public class ChatServiceImpl implements ChatService {
         Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
         log.info("receiverId= {}", receiver);
 
-
         // 사용자 ID를 기반으로 세션 ID 가져오기
         String currentSessionId = webSocketEventListener.getCurrentSessionId();
         log.info("currentSessionId= {}", currentSessionId);
         if (currentSessionId == null || !webSocketEventListener.isSessionConnected(currentSessionId)) {
             log.warn("Current user is offline. Sending notification.");
-            sendNotificationToDisConnectedUser(message, currentSessionId, findChatRoom, parsedLastTime, null);
+            sendNotificationToDisConnectedUser(message, currentSessionId, findChatRoom, parsedLastTime, receiver);
         }
 
         ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
