@@ -29,12 +29,17 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
     @Override
     public Page<BoardFindResponse> BoardList(Pageable pageable) {
-        /*
-            쿼리에 맞춰 값 가져오기
-            게시판 테이블과 연관된 반려견 엔티티를 조인을 통해 가져옴
-         */
+        String query = "SELECT DISTINCT b, bd, d FROM Board b " +
+                "JOIN FETCH b.boardDog bd " +
+                "JOIN FETCH bd.dog d " +
+                "WHERE b.deleted = false AND d.deleted = false " +
+                "ORDER BY RAND()";
 
-        List<Object[]> results = getBoardRelatedResponse(pageable);
+        TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
+        result.setFirstResult((int) pageable.getOffset());
+        result.setMaxResults(pageable.getPageSize());
+
+        List<Object[]> results = result.getResultList();
 
         List<BoardFindResponse> boardResponses = results.stream()
                 .collect(Collectors.groupingBy(row -> (Board) row[0])) // Board 기준으로 그룹화
@@ -55,26 +60,29 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
         return new PageImpl<>(boardResponses, pageable, count);
     }
 
-    private List<Object[]> getBoardRelatedResponse(Pageable pageable) {
-        String query = "SELECT b, bd, d FROM Board b " +
-                "JOIN b.boardDog bd " +
-                "JOIN bd.dog d " +
-                "WHERE b.deleted = false AND d.deleted = false ORDER BY RAND()";
-
-        TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
-        return result.getResultList();
-    }
-
     @Override
     public Page<BoardFindResponse> findMyBoardList(Long uuid, Pageable pageable) {
-        //쿼리에 맞춰 값 가져오기
-        TypedQuery<Object[]> result = getBoardRelatedResponse(uuid, pageable);
-
-        List<Object[]> results = result.getResultList();
-
-        // Board 기준으로 그룹화하여 각 Board에 대해 여러 개의 Dog를 처리
+        // 1. 먼저 Board ID만 페이징해서 조회
+        String boardIdQuery = "SELECT b.boardId FROM Board b " +
+                "WHERE b.user.uuid = :uuid AND b.deleted = false";
+        
+        TypedQuery<Long> boardIdResult = em.createQuery(boardIdQuery, Long.class)
+                .setParameter("uuid", uuid)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize());
+        
+        List<Long> boardIds = boardIdResult.getResultList();
+        
+        // 2. 조회된 ID로 실제 데이터를 FetchJoin으로 조회
+        String detailQuery = "SELECT DISTINCT b, bd, d FROM Board b " +
+                "JOIN FETCH b.boardDog bd " +
+                "JOIN FETCH bd.dog d " +
+                "WHERE b.boardId IN :boardIds";
+        
+        List<Object[]> results = em.createQuery(detailQuery, Object[].class)
+                .setParameter("boardIds", boardIds)
+                .getResultList();
+        
         List<BoardFindResponse> boardResponses = results.stream()
                 .collect(Collectors.groupingBy(row -> (Board) row[0])) // Board 기준으로 그룹화
                 .entrySet().stream()
@@ -88,7 +96,6 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                 })
                 .collect(Collectors.toList());
 
-        //쿼리 결과 카운트 가져오기
         Long count = getCount(uuid);
 
         return new PageImpl<>(boardResponses, pageable, count);
@@ -138,21 +145,5 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
         return em.createQuery(countQuery, Long.class)
                 .setParameter("uuid", uuid)
                 .getSingleResult();
-    }
-
-    private TypedQuery<Object[]> getBoardRelatedResponse(Long uuid, Pageable pageable) {
-        String query = "SELECT b, bd, d FROM Board b " +
-                "JOIN fetch b.boardDog bd " +
-                "JOIN fetch bd.dog d " +
-                "WHERE b.deleted = false " +
-                "AND " +
-                "bd.deleted = false  And d.deleted = false And " +
-                "b.user.uuid = :uuid";
-
-        TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
-        result.setParameter("uuid", uuid);
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
-        return result;
     }
 }
