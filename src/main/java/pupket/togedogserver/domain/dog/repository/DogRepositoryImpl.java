@@ -22,7 +22,7 @@ public class DogRepositoryImpl implements DogRepository {
     }
 
     @Override
-    public Collection<Dog> findAllByUser(User user) {
+    public List<Dog> findAllByUser(User user) {
         return dogJPARepository.findAllByUser(user);
     }
 

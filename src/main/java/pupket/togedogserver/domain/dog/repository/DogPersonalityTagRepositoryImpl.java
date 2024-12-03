@@ -7,6 +7,7 @@ import pupket.togedogserver.domain.dog.entity.DogPersonalityTag;
 import pupket.togedogserver.domain.dog.repository.jpaRepository.DogPersonalityTagJPARepository;
 import pupket.togedogserver.domain.dog.service.port.DogPersonalityTagRepository;
 
+import java.util.List;
 import java.util.Set;
 
 @Repository
@@ -30,7 +31,13 @@ public class DogPersonalityTagRepositoryImpl implements DogPersonalityTagReposit
     }
 
     @Override
-    public void saveAll(Set<DogPersonalityTag> tags) {
-        dogPersonalityTagJPARepository.saveAll(tags);
+    public List<DogPersonalityTag> saveAll(Set<DogPersonalityTag> tags) {
+
+        return dogPersonalityTagJPARepository.saveAll(tags);
+    }
+
+    @Override
+    public void deleteAll(Set<DogPersonalityTag> tags) {
+        dogPersonalityTagJPARepository.deleteAll(tags);
     }
 }
