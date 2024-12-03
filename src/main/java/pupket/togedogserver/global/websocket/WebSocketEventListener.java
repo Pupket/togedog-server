@@ -23,39 +23,57 @@ import java.util.concurrent.TimeUnit;
 public class WebSocketEventListener {
 
     private final Set<String> connectedSessions = new HashSet<>();
-    private static final ThreadLocal<String> currentSessionIdHolder = new ThreadLocal<>();
-
+    private final RedisTemplate<String, String> redisTemplate;
+    private final JwtService jwtTokenProvider;  // JWT 토큰 파싱을 위한 JwtTokenProvider
 
     // WebSocket 연결 시 세션 ID 저장 및 사용자 상태를 "online"으로 설정
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = headerAccessor.getSessionId();
+        String token = headerAccessor.getFirstNativeHeader("Authorization");
+
+        // SecurityContext에서 인증 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+
+            // UserDetails 또는 사용자 ID 추출
+            String userId;
+            if (principal instanceof CustomUserDetail) {
+                userId = ((CustomUserDetail) principal).getUuid().toString();
+            } else {
+                userId = 0L+"";
+            }
+
+            log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
+
+            // Redis에 사용자와 세션 매핑
+            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:user:" + sessionId, userId, 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
+        } else {
+            log.warn("WebSocket 연결 실패: 인증되지 않은 사용자입니다.");
+        }
 
         log.info("WebSocket 연결됨: 세션 ID = {}", sessionId);
-
-        // ThreadLocal에 현재 세션 ID 저장
-        currentSessionIdHolder.set(sessionId);
         connectedSessions.add(sessionId);
-
     }
 
     // WebSocket 연결 종료 시 세션 ID 제거 및 사용자 상태를 "offline"으로 설정
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        log.info("WebSocket 연결 종료: 세션 ID = {}", sessionId);
+        String userId = redisTemplate.opsForValue().get("session:user:" + sessionId);
 
-        // ThreadLocal에서 세션 ID 제거
-        if (sessionId.equals(currentSessionIdHolder.get())) {
-            currentSessionIdHolder.remove();
+        if (userId != null) {
+            redisTemplate.opsForValue().set("user:status:" + userId, "offline");
+            redisTemplate.delete("user:session:" + userId);
         }
 
-        connectedSessions.remove(sessionId);
-    }
-    // 현재 세션 ID 가져오기
-    public String getCurrentSessionId() {
-        return currentSessionIdHolder.get(); // ThreadLocal에서 현재 세션 ID 반환
+        redisTemplate.delete("session:user:" + sessionId);
+        redisTemplate.delete("session:status:" + sessionId);
+        log.info("WebSocket 연결 종료: Session ID = {}", sessionId);
     }
 
     // 특정 세션이 접속 중인지 확인하는 메서드
