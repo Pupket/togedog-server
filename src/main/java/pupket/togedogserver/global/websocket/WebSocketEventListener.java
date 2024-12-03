@@ -25,6 +25,7 @@ public class WebSocketEventListener {
     private final Set<String> connectedSessions = new HashSet<>();
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtService jwtTokenProvider;  // JWT 토큰 파싱을 위한 JwtTokenProvider
+    private final JwtService jwtService;
 
     // WebSocket 연결 시 세션 ID 저장 및 사용자 상태를 "online"으로 설정
     @EventListener
@@ -36,30 +37,16 @@ public class WebSocketEventListener {
 
         // SecurityContext에서 인증 정보 가져오기
         try{
+            Long userId = jwtService.getUserIdFromToken(token);
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated()) {
-                Object principal = authentication.getPrincipal();
-
-                // UserDetails 또는 사용자 ID 추출
-                String userId;
-                if (principal instanceof CustomUserDetail) {
-                    userId = ((CustomUserDetail) principal).getUuid().toString();
-                } else {
-                    userId = 0L+"";
-                }
-
-                log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
+            log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
 
                 // Redis에 사용자와 세션 매핑
                 redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
-                redisTemplate.opsForValue().set("session:user:" + sessionId, userId, 3, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 3, TimeUnit.DAYS);
                 redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
                 log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
-            }
-            else {
-                log.warn("WebSocket 연결 실패: 인증되지 않은 사용자입니다. Session ID = {}", sessionId);
-            }
+
         }catch (Exception e){
             log.error("WebSocket 연결 처리 중 예외 발생: Session ID = {}, Error = {}", sessionId, e.getMessage(), e);
         }
