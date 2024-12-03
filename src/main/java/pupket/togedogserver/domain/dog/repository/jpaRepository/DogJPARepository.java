@@ -13,7 +13,7 @@ public interface DogJPARepository extends JpaRepository<Dog, Long> {
 
     Optional<List<Dog>> findByUser(User findUser);
 
-    Collection<Dog> findAllByUser(User user);
+    List<Dog> findAllByUser(User user);
 
     Optional<Dog> findByUserAndDogId(User findUser, Long id);
 

@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.board.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 import pupket.togedogserver.domain.board.constant.FeeType;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@Builder(toBuilder = true)
 @Schema(description = "산책 게시판 글 수정 요청")
 public class BoardUpdateRequest {
 

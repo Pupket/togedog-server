@@ -22,6 +22,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity(name = "users")
 @Getter
+@Setter
 @ToString
 @Builder(toBuilder = true)
 @NoArgsConstructor

@@ -13,6 +13,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity(name = "matching")
 @Getter
+@Setter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
