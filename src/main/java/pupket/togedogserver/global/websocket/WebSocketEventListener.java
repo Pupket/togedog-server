@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import pupket.togedogserver.global.jwt.service.JwtService;
+import pupket.togedogserver.global.jwt.util.JwtUtils;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.HashSet;
@@ -26,6 +27,7 @@ public class WebSocketEventListener {
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtService jwtTokenProvider;  // JWT 토큰 파싱을 위한 JwtTokenProvider
     private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     // WebSocket 연결 시 세션 ID 저장 및 사용자 상태를 "online"으로 설정
     @EventListener
@@ -33,6 +35,10 @@ public class WebSocketEventListener {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = headerAccessor.getSessionId();
         String token = headerAccessor.getFirstNativeHeader("Authorization");
+
+        if(token!=null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
         log.info("WebSocket 연결 이벤트 수신: Session ID = {}, Authorization 헤더 = {}", sessionId, token);
         Long userId=0L;
         // SecurityContext에서 인증 정보 가져오기
