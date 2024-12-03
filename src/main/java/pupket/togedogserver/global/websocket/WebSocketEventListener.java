@@ -34,18 +34,21 @@ public class WebSocketEventListener {
         String sessionId = headerAccessor.getSessionId();
         String token = headerAccessor.getFirstNativeHeader("Authorization");
         log.info("WebSocket 연결 이벤트 수신: Session ID = {}, Authorization 헤더 = {}", sessionId, token);
-
+        Long userId=0L;
         // SecurityContext에서 인증 정보 가져오기
+       try{
+            userId = jwtService.getUserIdFromToken(token);
+           log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
+       }catch (Exception e){
+           log.warn("잘못된 형식  = {} " , e.getMessage());
+       }
+
         try{
-            Long userId = jwtService.getUserIdFromToken(token);
-
-            log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
-
-                // Redis에 사용자와 세션 매핑
-                redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
-                redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 3, TimeUnit.DAYS);
-                redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
-                log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
+            // Redis에 사용자와 세션 매핑
+            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
+            log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
 
         }catch (Exception e){
             log.error("WebSocket 연결 처리 중 예외 발생: Session ID = {}, Error = {}", sessionId, e.getMessage(), e);
