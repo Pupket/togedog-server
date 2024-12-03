@@ -32,28 +32,36 @@ public class WebSocketEventListener {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = headerAccessor.getSessionId();
         String token = headerAccessor.getFirstNativeHeader("Authorization");
+        log.info("WebSocket 연결 이벤트 수신: Session ID = {}, Authorization 헤더 = {}", sessionId, token);
 
         // SecurityContext에서 인증 정보 가져오기
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            Object principal = authentication.getPrincipal();
+        try{
 
-            // UserDetails 또는 사용자 ID 추출
-            String userId;
-            if (principal instanceof CustomUserDetail) {
-                userId = ((CustomUserDetail) principal).getUuid().toString();
-            } else {
-                userId = 0L+"";
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+
+                // UserDetails 또는 사용자 ID 추출
+                String userId;
+                if (principal instanceof CustomUserDetail) {
+                    userId = ((CustomUserDetail) principal).getUuid().toString();
+                } else {
+                    userId = 0L+"";
+                }
+
+                log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
+
+                // Redis에 사용자와 세션 매핑
+                redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("session:user:" + sessionId, userId, 3, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
+                log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
             }
-
-            log.info("WebSocket 연결: User ID = {}, Session ID = {}", userId, sessionId);
-
-            // Redis에 사용자와 세션 매핑
-            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
-            redisTemplate.opsForValue().set("session:user:" + sessionId, userId, 3, TimeUnit.DAYS);
-            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
-        } else {
-            log.warn("WebSocket 연결 실패: 인증되지 않은 사용자입니다.");
+            else {
+                log.warn("WebSocket 연결 실패: 인증되지 않은 사용자입니다. Session ID = {}", sessionId);
+            }
+        }catch (Exception e){
+            log.error("WebSocket 연결 처리 중 예외 발생: Session ID = {}, Error = {}", sessionId, e.getMessage(), e);
         }
 
         log.info("WebSocket 연결됨: 세션 ID = {}", sessionId);
