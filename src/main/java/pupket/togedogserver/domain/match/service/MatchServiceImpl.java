@@ -136,18 +136,33 @@ public class MatchServiceImpl implements MatchService {
     public void matchSuccess(CustomUserDetail userDetail, Long boardId) {
         log.info("매칭 성공 처리 시작: 사용자={}, 게시판ID={}", userDetail.getUsername(), boardId);
 
-        //유저 ,게시판 찾기
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
-
-        //게시판에서 가져올 수 있는 것 -> boardDog
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
+        // 매칭된 건인지 확인
+        if (findBoard.getMatch() == null) {
+            log.warn("매칭을 찾을 수 없습니다.");
+            throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
+        }
+
+        validateMatchStatus(findBoard, findUser);  // null 체크 이후에 다른 검증 수행
+
         Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
-
-        validateMatchStatus(findBoard, findUser);
-
         updateMatchAndBoardMatchStatusToMacthed(findMatch, findBoard);
         log.info("매칭 성공 처리 완료: 매칭ID={}", findMatch.getMatchId());
+    }
+
+    private static void validateMatchStatus(Board findBoard, User findUser) {
+        // null 체크는 이미 수행되었으므로 제거
+        if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
+            log.warn("수락은 수신자가 시도해야 합니다.");
+            throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
+        }
+
+        if (findBoard.getMatched().equals(MatchStatus.MATCHED)) {
+            log.warn("이미 수락된 상태입니다.");
+            throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
+        }
     }
 
     private void updateMatchAndBoardMatchStatusToMacthed(Match findMatch, Board findBoard) {
@@ -162,24 +177,6 @@ public class MatchServiceImpl implements MatchService {
                 .build();
 
         boardRepository.save(board);
-    }
-
-    private static void validateMatchStatus(Board findBoard, User findUser) {
-        //매칭된 건인지 확인
-        if (findBoard.getMatch() == null) {
-            log.warn("매칭을 찾을 수 없습니다.");
-            throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
-        }
-
-        if (findBoard.getUser().getUuid().equals(findUser.getUuid())) {
-            log.warn("수락은 수신자가 시도해야 합니다.");
-            throw new MatchingException(ExceptionCode.ACCEPT_SHOULD_TRY_RECIEVER);
-        }
-
-        if (findBoard.getMatched().equals(MatchStatus.MATCHED)) {
-            log.warn("이미 수락된 상태입니다.");
-            throw new MatchingException(ExceptionCode.ALREADY_ACCEPTED);
-        }
     }
 
     private Match getMatch(Optional<Match> matchRepository) {
