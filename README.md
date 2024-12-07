@@ -28,10 +28,7 @@
 
 ---
 
-<div style="text-align: center;">
-<img width="624" alt="image" src="https://github.com/user-attachments/assets/798d9494-8ac3-479d-a178-43fac259f585
-">
-</div>
+![2](https://github.com/user-attachments/assets/d52d2605-5024-4456-9fec-4a99f92a937b)
 
 
 [//]: # ([![stackticon]&#40;https://firebasestorage.googleapis.com/v0/b/stackticon-81399.appspot.com/o/images%2F1732620980855?alt=media&token=0aa05b9b-ea57-49d5-88ca-63142b98bb70&#41;]&#40;https://github.com/msdio/stackticon&#41;)
