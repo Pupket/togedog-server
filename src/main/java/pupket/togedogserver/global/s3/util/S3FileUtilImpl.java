@@ -127,9 +127,7 @@ public class S3FileUtilImpl implements S3FileUtil {
 
     @Override
     public String getS3(String fileName) {
-
         return amazonS3.getUrl(bucket, fileName).toString();
-
     }
 
 }
