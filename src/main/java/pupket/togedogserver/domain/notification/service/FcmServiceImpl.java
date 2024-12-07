@@ -1,8 +1,12 @@
 package pupket.togedogserver.domain.notification.service;
 
-import com.google.firebase.messaging.*;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.notification.controller.port.FcmService;
@@ -10,10 +14,13 @@ import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.FcmException;
+import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -21,6 +28,9 @@ import java.util.concurrent.ExecutionException;
 public class FcmServiceImpl implements FcmService {
 
     private final UserRepository userRepository;
+    private final RedisTemplate<String, String> redisTemplateForUserStatus;
+    private final WebSocketEventListener webSocketEventListener;
+
 
     @Override
     public void createToken(Long uuid, String token) {
@@ -41,6 +51,19 @@ public class FcmServiceImpl implements FcmService {
         log.info("Preparing to send notification for roomId: {}, userId: {}", roomId, notification.getUserId());
         log.debug("Notification details: content={}, image={}, lastTime={}",
                 notification.getContent(), notification.getImage(), notification.getLastTime());
+
+        String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + notification.getUserId());
+        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
+            log.warn("User {} is offline. Sending notification.", notification.getUserId());
+            String key = "offline:notifications:" + notification.getUserId();
+            if (notification.getContent().isEmpty() && !notification.getImage().isEmpty()) {
+                redisTemplateForUserStatus.opsForValue().set(key, "사진");
+            }else{
+                redisTemplateForUserStatus.opsForValue().set(key, notification.getContent());
+            }
+            redisTemplateForUserStatus.expire(key,14, TimeUnit.DAYS); //14일 유지
+            return;
+        }
 
         String token = userRepository.findByUuid(notification.getUserId())
                 .orElseThrow(() -> {
