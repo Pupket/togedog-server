@@ -2,6 +2,7 @@ package pupket.togedogserver.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.http.HttpStatus;
 
 import static org.springframework.http.HttpStatus.*;
@@ -75,7 +76,9 @@ public enum ExceptionCode {
     NOT_FOUND_SCHEDULE(CONFLICT, "Not Found Schedule", 403 ),
     NOT_FOUND_FCM_TOKEN(CONFLICT, "Not Found FCM Token", 403 ), 
     NOT_FOUND_ACCESS_TOKEN(CONFLICT, "Not Found Access Token", 403 ),
-    FCM_INITIALIZATION_ERROR(CONFLICT, "FCM Initialization Error" , 403 );
+    FCM_INITIALIZATION_ERROR(CONFLICT, "FCM Initialization Error" , 403 )
+    , NO_FILE_EXTENSION(CONFLICT, "No file Extention" , 403 ),
+    INVALID_FILE_EXTENSION(CONFLICT, "Invalid file Extention" , 403 ),;
 
 
     private final HttpStatus httpStatus;

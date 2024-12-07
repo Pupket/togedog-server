@@ -38,16 +38,21 @@ public class S3FileUtilImpl implements S3FileUtil {
     @Override
     public String upload(MultipartFile image) {
         if (image.isEmpty() || Objects.isNull(image.getOriginalFilename())) {
+            log.warn("Image upload failed: File is empty or has no original filename.");
             throw new S3Exception(ExceptionCode.FILE_IS_EMPTY);
         }
+        log.info("Starting image upload: {}", image.getOriginalFilename());
         return this.uploadImage(image);
     }
 
     private String uploadImage(MultipartFile image) {
-        this.validateImageFiletExtention(Objects.requireNonNull(image.getOriginalFilename()));
+        String originalFileName = Objects.requireNonNull(image.getOriginalFilename());
+        this.validateImageFileExtension(originalFileName);
         try {
+            log.info("Validated image file extension: {}", originalFileName);
             return this.uploadImageToS3(image);
         } catch (IOException e) {
+            log.error("IOException occurred during image upload: {}", e.getMessage(), e);
             throw new S3Exception(ExceptionCode.IO_EXCEPTION_ON_IMAGE_UPLOAD);
         }
     }
@@ -55,9 +60,10 @@ public class S3FileUtilImpl implements S3FileUtil {
     @Override
     public String uploadImageToS3(MultipartFile image) throws IOException {
         String originalFileName = image.getOriginalFilename();
-        String extension = Objects.requireNonNull(originalFileName).substring(originalFileName.lastIndexOf("."));
+        String extension = Objects.requireNonNull(originalFileName).substring(originalFileName.lastIndexOf(".") + 1).toLowerCase();
 
-        String s3FileName = UUID.randomUUID().toString().substring(0, 10) + originalFileName;
+        String s3FileName = UUID.randomUUID().toString().substring(0, 10) + "_" + originalFileName;
+        log.info("Generated S3 file name: {}", s3FileName);
 
         InputStream is = image.getInputStream();
         byte[] bytes = IOUtils.toByteArray(is);
@@ -65,34 +71,38 @@ public class S3FileUtilImpl implements S3FileUtil {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType("image/" + extension);
         metadata.setContentLength(bytes.length);
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
 
-        try {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes)) {
+            log.info("Uploading file to S3 bucket: {}, file name: {}", bucket, s3FileName);
             PutObjectRequest putObjectRequest =
                     new PutObjectRequest(bucket, s3FileName, byteArrayInputStream, metadata)
-                            .withCannedAcl((CannedAccessControlList.PublicRead));
+                            .withCannedAcl(CannedAccessControlList.PublicRead);
             amazonS3.putObject(putObjectRequest);
+            log.info("File successfully uploaded to S3: {}", s3FileName);
         } catch (Exception e) {
+            log.error("S3 upload failed: {}", e.getMessage(), e);
             throw new S3Exception(ExceptionCode.PUT_OBJECT_EXCEPTION);
         } finally {
-            byteArrayInputStream.close();
             is.close();
         }
 
         return amazonS3.getUrl(bucket, s3FileName).toString();
     }
 
-    private void validateImageFiletExtention(String fileName) {
+    private void validateImageFileExtension(String fileName) {
         int dotPos = fileName.lastIndexOf(".");
         if (dotPos == -1) {
-            throw new S3Exception(ExceptionCode.NO_FILE_EXTENTION);
+            log.warn("Validation failed: No file extension found in {}", fileName);
+            throw new S3Exception(ExceptionCode.NO_FILE_EXTENSION);
         }
-        String extention = fileName.substring(dotPos + 1).toLowerCase();
-        List<String> allowedExtentionList = Arrays.asList("jpg", "jpeg", "png", "gif");
+        String extension = fileName.substring(dotPos + 1).toLowerCase();
+        List<String> allowedExtensionList = Arrays.asList("jpg", "jpeg", "png", "gif");
 
-        if (!allowedExtentionList.contains(extention)) {
-            throw new S3Exception(ExceptionCode.INVALID_FILE_EXTENTION);
+        if (!allowedExtensionList.contains(extension)) {
+            log.warn("Validation failed: Invalid file extension '{}' for file {}", extension, fileName);
+            throw new S3Exception(ExceptionCode.INVALID_FILE_EXTENSION);
         }
+        log.info("File extension validated: {}", extension);
     }
 
     @Override
