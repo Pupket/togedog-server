@@ -78,6 +78,14 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getChatRoomList(userDetail.getUuid()));
     }
 
+    @GetMapping("/chatroom")
+    public ResponseEntity<ChatRoomResponseDto> getChatRoom(
+            @AuthenticationPrincipal CustomUserDetail userDetail,
+            @RequestParam  Long roomId
+    ){
+        return ResponseEntity.ok(chatService.getChatRoom(userDetail.getUuid(),roomId));
+    }
+
     @PostMapping("/leave")
     public void leaveRoom(Long roomId) {
         chatService.leaveRoom(roomId);

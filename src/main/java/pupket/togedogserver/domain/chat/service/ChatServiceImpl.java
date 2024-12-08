@@ -282,6 +282,22 @@ public class ChatServiceImpl implements ChatService {
         redisPublisher.publish(responseDto);
     }
 
+    @Override
+    public ChatRoomResponseDto getChatRoom(Long uuid, Long roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(
+                () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
+        );
+
+        log.debug("Processing chat room: {}", chatRoom.getRoomId());
+        User findSender = findSender(chatRoom.getSender());
+        User findReceiver = findReceiver(chatRoom.getReceiver());
+
+        Timestamp lastTime = chatRoom.getLastTime();
+        List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(chatRoom.getRoomId(), lastTime, uuid);
+
+        return ChatRoomResponseDto.to(chatRoom, findSender, findReceiver, unreceivedMessages);
+    }
+
     private void sendNotificationToDisConnectedUser(ChattingRequestDto message, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
         log.debug("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);

@@ -24,4 +24,6 @@ public interface ChatService {
     List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime, Long uuid);
 
     void sendMessageToPublisher(ChattingRequestDto message);
+
+    ChatRoomResponseDto getChatRoom(Long uuid, Long roomId);
 }
