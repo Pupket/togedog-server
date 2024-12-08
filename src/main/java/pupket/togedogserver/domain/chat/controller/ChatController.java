@@ -39,7 +39,6 @@ public class ChatController {
         chatService.sendMessageToPublisher(message);
     }
 
-    @CrossOrigin
     @Operation(summary = "미수신 메시지 조회", description = "주어진 lastTime 이후의 메시지들을 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "미수신 메시지 조회 성공"),
@@ -48,12 +47,13 @@ public class ChatController {
     })
     @GetMapping("/get-unreceived-messages")
     public ResponseEntity<List<ChattingResponseDto>> getUnreceivedMessages(
+            @AuthenticationPrincipal CustomUserDetail customUserDetail,
             @RequestParam Long roomId,
             @RequestParam String lastTime // 마지막으로 받은 메시지 시간
     ) {
         // 마지막으로 받은 시간 이후의 메시지를 조회하는 서비스 호출
         Timestamp parsedLastTime = chatService.getParsedLastTime(lastTime);
-        List<ChattingResponseDto> unreceivedMessages = chatService.getMessagesAfterLastTime(roomId, parsedLastTime);
+        List<ChattingResponseDto> unreceivedMessages = chatService.getMessagesAfterLastTime(roomId, parsedLastTime, customUserDetail.getUuid());
 
         return ResponseEntity.ok(unreceivedMessages);
     }

@@ -20,10 +20,10 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtil;
+import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -172,7 +172,7 @@ public class ChatServiceImpl implements ChatService {
             User findReceiver = findReceiver(room.getReceiver());
 
             Timestamp lastTime = room.getLastTime();
-            List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime);
+            List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime, uuid);
 
             ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room, findSender, findReceiver, unreceivedMessages);
 
@@ -186,11 +186,11 @@ public class ChatServiceImpl implements ChatService {
         log.debug("Saving chat to Redis. Room ID: {}, Chat: {}", roomId, chat);
         String key = "chatRoomId:" + roomId;
 
-        List<ChattingResponseDto> chatList = saveMessageInRedis(key);
-        isDuplicate(chat, chatList, key);
+        List<ChattingResponseDto> chatList = loadMessageFromRedis(key);
+        saveMessages(chat, chatList, key);
     }
 
-    private void isDuplicate(ChattingResponseDto chat, List<ChattingResponseDto> chatList, String key) {
+    private void saveMessages(ChattingResponseDto chat, List<ChattingResponseDto> chatList, String key) {
         log.debug("Checking for duplicate messages in Redis.");
         boolean isDuplicate = chatList.stream().anyMatch(savedChat ->
                 savedChat.getLastTime().equals(chat.getLastTime()) &&
@@ -206,7 +206,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    private List<ChattingResponseDto> saveMessageInRedis(String key) {
+    private List<ChattingResponseDto> loadMessageFromRedis(String key) {
         log.debug("Fetching messages from Redis. Key: {}", key);
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
         if (chatList == null) {
@@ -235,8 +235,11 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime) {
+    public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime, Long uuid) {
         log.debug("Fetching messages after last time. Room ID: {}, Last Time: {}", roomId, lastTime);
+        User findUser = userRepository.findByUuid(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
         String key = "chatRoomId:" + roomId;
 
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
@@ -248,6 +251,7 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
                 .filter(message -> message.getLastTime().after(lastTime))
+                .filter(message -> message.getUserId().equals(findUser.getUuid()))
                 .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
                 .collect(Collectors.toList());
 
