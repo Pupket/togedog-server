@@ -252,7 +252,6 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
                 .filter(message -> message.getLastTime().after(lastTime))
-                .filter(message -> !message.getUserId().equals(findUser.getUuid()))
                 .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
                 .collect(Collectors.toList());
 
