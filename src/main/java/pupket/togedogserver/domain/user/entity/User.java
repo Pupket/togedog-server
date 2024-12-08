@@ -23,7 +23,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity(name = "users")
 @Getter
 @Setter
-@ToString
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -73,23 +72,55 @@ public class User {
     @Builder.Default
     public AccountStatus accountStatus = AccountStatus.ACTIVE;
 
-    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.PERSIST)
     @JoinColumn(name = "owner_uuid")
     private Owner owner;
 
-    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.PERSIST)
     private Mate mate;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private List<Dog> dog;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private List<Board> board;
 
     private String fcmToken;
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(this.role.name()));
+    }
+
+    @PreRemove
+    public void onPreRemove() {
+        deleteOwner();
+        deleteMate();
+        deleteDogs();
+        deleteBoards();
+    }
+
+    private void deleteOwner() {
+        if (owner != null) {
+            owner.setIsDeleted(true);
+        }
+    }
+
+    private void deleteMate() {
+        if (mate != null) {
+            mate.setDeleted(true);
+        }
+    }
+
+    private void deleteDogs() {
+        if (dog != null && !dog.isEmpty()) {
+            dog.forEach(d -> d.setDeleted(true));
+        }
+    }
+
+    private void deleteBoards() {
+        if (board != null && !board.isEmpty()) {
+            board.forEach(b -> b.setDeleted(true));
+        }
     }
 
 }

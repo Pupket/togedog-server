@@ -15,8 +15,7 @@ import java.util.Set;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
-@Getter
-@ToString
+@Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -49,18 +48,28 @@ public class Mate {
     @OneToMany(mappedBy = "mate")
     private List<Match> match;
 
-    @OneToMany(mappedBy = "mate")
+    @OneToMany(mappedBy = "mate", fetch = FetchType.LAZY,  cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<MatePreferredBreed> preferredBreeds;
 
-    @OneToMany(mappedBy = "mate")
+    @OneToMany(mappedBy = "mate", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<MatePreferredTime> preferredTimes;
 
-    @OneToMany(mappedBy = "mate")
+    @OneToMany(mappedBy = "mate", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<MatePreferredWeek> preferredWeeks;
 
-    @OneToMany(mappedBy = "mate")
+    @OneToMany(mappedBy = "mate", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<MateTag> mateTags;
 
     @Enumerated(EnumType.STRING)
     private Region preferredRegion;
+
+    @PreRemove
+    public void preRemove() {
+        if(match!=null) {
+            match.forEach(
+                    m-> m.setDeleted(true)
+            );
+        }
+    }
+
 }

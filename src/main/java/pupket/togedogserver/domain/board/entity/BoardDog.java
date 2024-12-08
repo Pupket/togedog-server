@@ -8,8 +8,7 @@ import org.hibernate.annotations.SQLRestriction;
 import pupket.togedogserver.domain.dog.entity.Dog;
 
 @Entity
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder(toBuilder = true)

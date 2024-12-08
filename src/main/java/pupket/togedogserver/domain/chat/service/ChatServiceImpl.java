@@ -278,6 +278,10 @@ public class ChatServiceImpl implements ChatService {
 
         saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
 
+        findChatRoom.setLastTime(parsedLastTime);
+
+        chatRoomRepository.save(findChatRoom);
+
         redisPublisher.publish(responseDto);
     }
 

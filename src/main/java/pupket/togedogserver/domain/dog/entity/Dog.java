@@ -16,8 +16,7 @@ import java.util.Set;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
-@Getter
-@ToString
+@Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
@@ -76,5 +75,14 @@ public class Dog {
 
     @OneToMany(mappedBy = "dog")
     private List<BoardDog> boardDogs;
+
+    @PreRemove
+    public void preRemove() {
+        if(boardDogs != null) {
+            boardDogs.forEach(
+                    bd-> bd.setDeleted(true)
+            );
+        }
+    }
 
 }

@@ -80,7 +80,7 @@ public class Board {
     @JoinColumn(name = "users_uuid")
     private User user;
 
-    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<BoardDog> boardDog;
 
     @OneToMany(mappedBy = "board")
@@ -98,6 +98,18 @@ public class Board {
     @PreUpdate
     protected void onUpdate() {
         this.editedAt = LocalDateTime.now();
+    }
+
+    @PreRemove
+    public void onRemove() {
+        if(match!=null) {
+            match.setDeleted(true);
+        }
+        if(boardDog!=null) {
+            boardDog.forEach(
+                    bd->bd.setDeleted(true)
+            );
+        }
     }
 
 }
