@@ -251,7 +251,7 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
                 .filter(message -> message.getLastTime().after(lastTime))
-                .filter(message -> message.getUserId().equals(findUser.getUuid()))
+                .filter(message -> !message.getUserId().equals(findUser.getUuid()))
                 .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
                 .collect(Collectors.toList());
 
@@ -271,7 +271,7 @@ public class ChatServiceImpl implements ChatService {
         String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + receiver);
         if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
             log.warn("User {} is offline. Sending notification.", receiver);
-            sendNotificationToDisConnectedUser(message, sessionId, findChatRoom, parsedLastTime, receiver);
+            sendNotificationToDisConnectedUser(message, findChatRoom, parsedLastTime, receiver);
         }
 
         ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
@@ -281,7 +281,7 @@ public class ChatServiceImpl implements ChatService {
         redisPublisher.publish(responseDto);
     }
 
-    private void sendNotificationToDisConnectedUser(ChattingRequestDto message, String sessionId, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
+    private void sendNotificationToDisConnectedUser(ChattingRequestDto message, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
         log.debug("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);
         try {

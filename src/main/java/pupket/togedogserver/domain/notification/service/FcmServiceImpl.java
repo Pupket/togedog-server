@@ -49,8 +49,7 @@ public class FcmServiceImpl implements FcmService {
     @Override
     public void sendNotification(NotificationRequestDto notification, Long roomId) throws InterruptedException, ExecutionException {
         log.info("Preparing to send notification for roomId: {}, userId: {}", roomId, notification.getUserId());
-        log.debug("Notification details: content={}, image={}, lastTime={}",
-                notification.getContent(), notification.getImage(), notification.getLastTime());
+        log.debug("Notification details: content={}, image={}, lastTime={}", notification.getContent(), notification.getImage(), notification.getLastTime());
 
         String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + notification.getUserId());
         if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
