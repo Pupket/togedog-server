@@ -24,6 +24,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -225,10 +226,10 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public Timestamp getParsedLastTime(String lastTime) {
         log.debug("Parsing timestamp: {}", lastTime);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
-            Instant instant = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(lastTime));
-            return Timestamp.from(instant);
-        } catch (DateTimeParseException e) {
+            return new Timestamp(dateFormat.parse(lastTime).getTime());
+        } catch (Exception e) {
             log.error("Failed to parse timestamp: {}", lastTime, e);
             return new Timestamp(System.currentTimeMillis());
         }
