@@ -62,9 +62,6 @@ public class WebSocketEventListener {
             redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 1, TimeUnit.DAYS);
             log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
 
-            // 미수신 알림 처리
-//            processOfflineNotifications(userId, sessionId);
-
         } catch (Exception e) {
             log.error("WebSocket 연결 처리 중 예외 발생: Session ID = {}, Error = {}", sessionId, e.getMessage(), e);
         }
@@ -72,28 +69,6 @@ public class WebSocketEventListener {
         log.info("WebSocket 연결됨: 세션 ID = {}", sessionId);
         //session 연결
         connectedSessions.add(sessionId);
-    }
-
-    // Redis에 저장된 미수신 알림을 클라이언트로 전송하는 메서드
-    private void processOfflineNotifications(Long userId, String sessionId) throws ExecutionException, InterruptedException {
-        String key = "offline:notifications:" + userId;
-
-        // Redis에서 미수신 알림 조회
-        List<String> offlineNotifications = redisTemplate.opsForList().range(key, 0, -1);
-        if (offlineNotifications != null && !offlineNotifications.isEmpty()) {
-            log.info("미수신 알림 발견: User ID = {}, 알림 개수 = {}", userId, offlineNotifications.size());
-
-            for (String notificationJson : offlineNotifications) {
-                // 클라이언트로 알림 전송
-                sendNotificationToClient(userId, notificationJson);
-            }
-
-            // 알림 전송 후 Redis에서 삭제
-            redisTemplate.delete(key);
-            log.info("Redis에서 미수신 알림 삭제 완료: User ID = {}", userId);
-        } else {
-            log.info("미수신 알림 없음: User ID = {}", userId);
-        }
     }
 
     private void sendNotificationToClient(Long userId, String notificationJson) throws ExecutionException, InterruptedException {
@@ -113,7 +88,7 @@ public class WebSocketEventListener {
         Map<String, String> data = new HashMap<>();
         data.put("message", notificationJson);
 
-        log.debug("FCM message payload: {}", data);
+        log.info("FCM message payload: {}", data);
 
         Message firebaseMessage = Message.builder()
                 .setToken(token)
@@ -142,7 +117,6 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        String disconnectTime = String.valueOf(System.currentTimeMillis());
         String userId = redisTemplate.opsForValue().get("session:user:" + sessionId);
 
         if (userId != null) {
@@ -152,7 +126,6 @@ public class WebSocketEventListener {
 
         redisTemplate.delete("session:user:" + sessionId);
         redisTemplate.delete("session:status:" + sessionId);
-        redisTemplate.opsForValue().set("session:lastDisconnected:" + userId, disconnectTime); // 끊긴 시간 저장
         log.info("WebSocket 연결 종료: Session ID = {}", sessionId);
     }
 

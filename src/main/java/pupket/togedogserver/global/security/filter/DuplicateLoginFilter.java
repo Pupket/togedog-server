@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.TogedogException;
 import pupket.togedogserver.global.exception.customException.JwtException;
+import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.redis.RedisLoginService;
 
@@ -42,7 +43,6 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
 
         // 요청에서 JWT 토큰을 가져옴
         String token = jwtService.resolveToken(request);
-        try{
         if (token != null && jwtService.validateToken(token)) {
             Long userId = jwtService.getUserIdFromToken(token);
 
@@ -51,12 +51,10 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
 
             // Redis에 저장된 토큰과 요청의 토큰이 다르면 중복 로그인으로 간주
             if (redisToken != null && !redisToken.equals(token)) {
-                handleJwtException(response, new JwtException(ExceptionCode.DUPLICATE_LOGIN));
+                throw new MemberException(ExceptionCode.DUPLICATE_LOGIN);
             }
         }
-        }catch (JwtException e){
-            handleJwtException(response, e);
-        }
+
 
         filterChain.doFilter(request, response);
     }

@@ -51,9 +51,6 @@ public class FcmServiceImpl implements FcmService {
         log.info("Preparing to send notification for roomId: {}, userId: {}", roomId, notification.getUserId());
         log.info("Notification details: content={}, image={}, lastTime={}", notification.getContent(), notification.getImage(), notification.getLastTime());
 
-        //Session아이디 추출
-        String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + notification.getUserId());
-//        if (isSessionDisConnected(notification, sessionId)) return;
         //FcmToken값 DB에서 조회
         String token = getToken(notification);
 
@@ -66,7 +63,7 @@ public class FcmServiceImpl implements FcmService {
         setData(notification, roomId, data);
 
         //메세지 생성
-        log.debug("FCM message payload: {}", data);
+        log.info("FCM message payload: {}", data);
         Message firebaseMessage = createFireBaseMessage(notification, token, data);
 
         //메세지 전송

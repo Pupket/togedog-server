@@ -29,8 +29,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private final UserJPARepository userRepository;
 
     private static final List<String> EXCLUDE_URLS = List.of(
-            "/health-check","/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon","/ws","/websocket_test.html"
-            ,"/api/v1/member/reissue-token","/createChatRoom.html","/chatRoomList.html","/chatRoom.html"
+            "/health-check", "/swagger", "/v3/api-docs", "/swagger-resources", "/webjars", "/login", "/favicon", "/ws", "/websocket_test.html"
+            , "/api/v1/member/reissue-token", "/createChatRoom.html", "/chatRoomList.html", "/chatRoom.html"
 
     );
 
@@ -50,24 +50,18 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
         if (token == null) {
-            handleJwtException(response, new JwtException(ExceptionCode.NOT_FOUND_TOKEN));
-            return;
+            throw new JwtException(ExceptionCode.NOT_FOUND_TOKEN);
         }
 
-        try {
-            if (jwtService.validateToken(token)) {
-                Authentication authentication = jwtService.getAuthenticationFromAccessToken(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        } catch (JwtException e) {
-            log.info("JWT Exception", e);
-            handleJwtException(response, e);
+        if (jwtService.validateToken(token)) {
+            Authentication authentication = jwtService.getAuthenticationFromAccessToken(token);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetail userDetail) {
             if (userRepository.findByUuid(userDetail.getUuid()).isEmpty()) {
-                handleJwtException(response, new MemberException(ExceptionCode.NOT_FOUND_MEMBER));
+                throw new MemberException(ExceptionCode.NOT_FOUND_MEMBER);
             }
         }
         filterChain.doFilter(request, response);
@@ -91,22 +85,22 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void handleJwtException(HttpServletResponse response, TogedogException e) throws IOException {
-        response.setStatus(e.getExceptionCode().getHttpStatus().value());
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        String jsonResponse = String.format(
-                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"} ",
-                e.getExceptionCode().getHttpStatus().name(),
-                e.getExceptionCode().getCode(),
-                e.getExceptionCode().getMessage()
-        );
-
-        response.getWriter().write(jsonResponse);
-        response.getWriter().flush();
-        response.getWriter().close();
-    }
+//    private void handleJwtException(HttpServletResponse response, TogedogException e) throws IOException {
+//        response.setStatus(e.getExceptionCode().getHttpStatus().value());
+//        response.setContentType("application/json");
+//        response.setCharacterEncoding("UTF-8");
+//
+//        String jsonResponse = String.format(
+//                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"} ",
+//                e.getExceptionCode().getHttpStatus().name(),
+//                e.getExceptionCode().getCode(),
+//                e.getExceptionCode().getMessage()
+//        );
+//
+//        response.getWriter().write(jsonResponse);
+//        response.getWriter().flush();
+//        response.getWriter().close();
+//    }
 }
 
 

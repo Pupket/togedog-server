@@ -52,7 +52,7 @@ public class ChatServiceImpl implements ChatService {
         User findSender = findSender(sender);
         User findReceiver = findReceiver(receiver);
 
-        log.debug("Sender found: {}. Receiver found: {}", findSender, findReceiver);
+        log.info("Sender found: {}. Receiver found: {}", findSender, findReceiver);
 
         String findSenderProfileImage = getProfileImage(findSender);
         String findReceiverProfileImage = getProfileImage(findReceiver);
@@ -61,7 +61,7 @@ public class ChatServiceImpl implements ChatService {
 
         findChatRoom = validateChatRoom(roomTitle, findChatRoom);
 
-        log.debug("Chat room created or validated: {}", findChatRoom);
+        log.info("Chat room created or validated: {}", findChatRoom);
 
         if (findChatRoom.getSender().equals(findSender.getUuid())) {
             log.info("Returning chat room with title: {}", findChatRoom.getTitle());
@@ -79,7 +79,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
-        log.debug("Creating chat room if not exists. Sender: {}, Receiver: {}, Title: {}", sender, receiver, roomTitle);
+        log.info("Creating chat room if not exists. Sender: {}, Receiver: {}, Title: {}", sender, receiver, roomTitle);
         return chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
                     log.info("No existing chat room found. Creating a new one.");
@@ -94,13 +94,13 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void setTopicInRedisTemplate(ChatRoom newChatRoom) {
-        log.debug("Setting topic in Redis template for chat room: {}", newChatRoom.getRoomId());
+        log.info("Setting topic in Redis template for chat room: {}", newChatRoom.getRoomId());
         ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
         redisTopicTemplate.opsForValue().set("chatTopic:" + newChatRoom.getRoomId(), topic);
     }
 
     private ChatRoom validateChatRoom(String roomTitle, ChatRoom findChatRoom) {
-        log.debug("Validating chat room title.");
+        log.info("Validating chat room title.");
         if (findChatRoom.getTitle().isEmpty() && roomTitle != null) {
             log.info("Updating chat room title: {}", roomTitle);
             ChatRoom updateChatRoom = findChatRoom.toBuilder()
@@ -113,12 +113,12 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private String getProfileImage(User findSender) {
-        log.debug("Getting profile image for user: {}", findSender.getUuid());
+        log.info("Getting profile image for user: {}", findSender.getUuid());
         return findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage();
     }
 
     private User findReceiver(Long receiver) {
-        log.debug("Finding receiver by ID: {}", receiver);
+        log.info("Finding receiver by ID: {}", receiver);
         return userRepository.findById(receiver).orElseThrow(
                 () -> {
                     log.error("Receiver not found: {}", receiver);
@@ -128,7 +128,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private User findSender(Long sender) {
-        log.debug("Finding sender by ID: {}", sender);
+        log.info("Finding sender by ID: {}", sender);
         return userRepository.findById(sender).orElseThrow(
                 () -> {
                     log.error("Sender not found: {}", sender);
@@ -139,7 +139,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public String calculateTimeAgo(Timestamp lastTime) {
-        log.debug("Calculating time ago for timestamp: {}", lastTime);
+        log.info("Calculating time ago for timestamp: {}", lastTime);
         long diffInMillis = System.currentTimeMillis() - lastTime.getTime();
         long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis);
 
@@ -163,7 +163,7 @@ public class ChatServiceImpl implements ChatService {
         List<ChatRoomResponseDto> chatRoomList = new ArrayList<>();
 
         for (ChatRoom room : chatRooms) {
-            log.debug("Processing chat room: {}", room.getRoomId());
+            log.info("Processing chat room: {}", room.getRoomId());
             User findSender = findSender(room.getSender());
             User findReceiver = findReceiver(room.getReceiver());
 
@@ -179,7 +179,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
-        log.debug("Saving chat to Redis. Room ID: {}, Chat: {}", roomId, chat);
+        log.info("Saving chat to Redis. Room ID: {}, Chat: {}", roomId, chat);
         String key = "chatRoomId:" + roomId;
 
         List<ChattingResponseDto> chatList = loadMessageFromRedis(key);
@@ -187,7 +187,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void saveMessages(ChattingResponseDto chat, List<ChattingResponseDto> chatList, String key) {
-        log.debug("Checking for duplicate messages in Redis.");
+        log.info("Checking for duplicate messages in Redis.");
         boolean isDuplicate = chatList.stream().anyMatch(savedChat ->
                 savedChat.getLastTime().equals(chat.getLastTime()) &&
                         savedChat.getContent().equals(chat.getContent())
@@ -203,7 +203,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private List<ChattingResponseDto> loadMessageFromRedis(String key) {
-        log.debug("Fetching messages from Redis. Key: {}", key);
+        log.info("Fetching messages from Redis. Key: {}", key);
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
         if (chatList == null) {
             log.info("No messages found in Redis for key: {}", key);
@@ -220,7 +220,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public Timestamp getParsedLastTime(String lastTime) {
-        log.debug("Parsing timestamp: {}", lastTime);
+        log.info("Parsing timestamp: {}", lastTime);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             return new Timestamp(dateFormat.parse(lastTime).getTime());
@@ -232,7 +232,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime, Long uuid) {
-        log.debug("Fetching messages after last time. Room ID: {}, Last Time: {}", roomId, lastTime);
+        log.info("Fetching messages after last time. Room ID: {}, Last Time: {}", roomId, lastTime);
         User findUser = userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
@@ -273,6 +273,8 @@ public class ChatServiceImpl implements ChatService {
         Timestamp parsedLastTime = getParsedLastTime(message.getLastTime());
         ChatRoom findChatRoom = findChatRoom(message);
 
+        saveLastChatRecordToRedis(message, findChatRoom); // 끊긴 시간 저장
+
         Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
         log.info("Receiver determined: {}", receiver);
 
@@ -286,9 +288,12 @@ public class ChatServiceImpl implements ChatService {
 
         saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
 
-        chatRoomRepository.save(findChatRoom);
-
         redisPublisher.publish(responseDto);
+    }
+
+    private void saveLastChatRecordToRedis(ChattingRequestDto message, ChatRoom findChatRoom) {
+        String disconnectTime = String.valueOf(System.currentTimeMillis());
+        redisTemplate.opsForValue().set("session:lastDisconnected:" + (findChatRoom.getSender().equals(message.getUserId())? findChatRoom.getReceiver(): findChatRoom.getSender()), disconnectTime);
     }
 
     @Override
@@ -297,7 +302,7 @@ public class ChatServiceImpl implements ChatService {
                 () -> new ChatException(ExceptionCode.NOT_FOUND_CHATROOM)
         );
 
-        log.debug("Processing chat room: {}", chatRoom.getRoomId());
+        log.info("Processing chat room: {}", chatRoom.getRoomId());
         User findSender = findSender(chatRoom.getSender());
         User findReceiver = findReceiver(chatRoom.getReceiver());
 
@@ -308,7 +313,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void sendNotificationToDisConnectedUser(ChattingRequestDto message, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
-        log.debug("Sending notification to disconnected user: {}", receiver);
+        log.info("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);
         try {
             fcmServiceImpl.sendNotification(notificationRequestDto, findChatRoom.getRoomId());
@@ -320,7 +325,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private ChatRoom findChatRoom(ChattingRequestDto message) {
-        log.debug("Finding chat room by ID: {}", message.getRoomId());
+        log.info("Finding chat room by ID: {}", message.getRoomId());
         return chatRoomRepository.findById(message.getRoomId()).orElseThrow(
                 () -> {
                     log.error("Chat room not found: {}", message.getRoomId());
