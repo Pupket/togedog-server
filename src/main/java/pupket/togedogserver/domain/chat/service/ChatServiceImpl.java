@@ -37,7 +37,7 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
-    private final RedisTemplate<String, String> redisTemplateForUserStatus;
+    private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
     private final FcmService fcmServiceImpl;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
@@ -236,8 +236,20 @@ public class ChatServiceImpl implements ChatService {
         User findUser = userRepository.findByUuid(uuid).orElseThrow(
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
-        String key = "chatRoomId:" + roomId;
+        // Redis에서 유저의 마지막 세션 종료 시간 가져오기
+        String disconnectTimeKey = "user:lastDisconnected:" + findUser.getUuid();
+        String disconnectTimeStr = redisTemplate.opsForValue().get(disconnectTimeKey);
+        Timestamp disconnectTime;
 
+        if (disconnectTimeStr != null) {
+            disconnectTime = new Timestamp(Long.parseLong(disconnectTimeStr));
+            log.debug("User last disconnect time found: {}", disconnectTime);
+        } else {
+            log.warn("No disconnect time found for userId: {}. Using provided lastTime: {}", uuid, lastTime);
+            disconnectTime = lastTime;
+        }
+
+        String key = "chatRoomId:" + roomId;
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
 
         if (chatList == null || chatList.isEmpty()) {
@@ -246,9 +258,9 @@ public class ChatServiceImpl implements ChatService {
         }
 
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
-                .filter(message -> message.getLastTime().after(lastTime))
+                .filter(message -> message.getLastTime().after(disconnectTime)) // 세션 종료 시간을 기준으로 필터링
                 .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
-                .collect(Collectors.toList());
+                .toList();
 
         log.info("Unreceived messages fetched for roomId: {}. Count: {}", roomId, unreceivedMessages.size());
         return unreceivedMessages;
@@ -263,7 +275,7 @@ public class ChatServiceImpl implements ChatService {
         Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
         log.info("Receiver determined: {}", receiver);
 
-        String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + receiver);
+        String sessionId = redisTemplate.opsForValue().get("user:session:" + receiver);
         if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
             log.warn("User {} is offline. Sending notification.", receiver);
             sendNotificationToDisConnectedUser(message, findChatRoom, parsedLastTime, receiver);
