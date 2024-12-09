@@ -57,9 +57,9 @@ public class WebSocketEventListener {
 
         // Redis에 사용자와 세션 매핑
         try {
-            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 3, TimeUnit.DAYS);
-            redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 3, TimeUnit.DAYS);
-            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 12, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 12, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 1, TimeUnit.DAYS);
             log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
 
             // 미수신 알림 처리

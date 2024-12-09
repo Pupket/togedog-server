@@ -51,41 +51,83 @@ public class FcmServiceImpl implements FcmService {
         log.info("Preparing to send notification for roomId: {}, userId: {}", roomId, notification.getUserId());
         log.info("Notification details: content={}, image={}, lastTime={}", notification.getContent(), notification.getImage(), notification.getLastTime());
 
+        //Session아이디 추출
         String sessionId = redisTemplateForUserStatus.opsForValue().get("user:session:" + notification.getUserId());
-        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
-            log.warn("User {} is offline. Sending notification.", notification.getUserId());
-            String key = "offline:notifications:" + notification.getUserId();
-            if (notification.getContent().isEmpty() && !notification.getImage().isEmpty()) {
-                redisTemplateForUserStatus.opsForValue().set(key, "사진");
-            }else{
-                redisTemplateForUserStatus.opsForValue().set(key, notification.getContent());
-            }
-            redisTemplateForUserStatus.expire(key,14, TimeUnit.DAYS); //14일 유지
-            return;
-        }
+//        if (isSessionDisConnected(notification, sessionId)) return;
+        //FcmToken값 DB에서 조회
+        String token = getToken(notification);
 
-        String token = userRepository.findByUuid(notification.getUserId())
+        //Token이 비어있는지 검사
+        log.info("Retrieved FCM token for userId: {}", notification.getUserId());
+        validateToken(notification, token);
+
+        //전송할 데이터 설정
+        Map<String, String> data = new HashMap<>();
+        setData(notification, roomId, data);
+
+        //메세지 생성
+        log.debug("FCM message payload: {}", data);
+        Message firebaseMessage = createFireBaseMessage(notification, token, data);
+
+        //메세지 전송
+        log.info("Sending FCM message for userId: {}, roomId: {}", notification.getUserId(), roomId);
+        sendMessage(notification, roomId, firebaseMessage);
+    }
+
+    private static void sendMessage(NotificationRequestDto notification, Long roomId, Message firebaseMessage) throws InterruptedException, ExecutionException {
+        try {
+            String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
+            log.info("Successfully sent FCM message. Response: {}", response);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to send FCM message for userId: {}, roomId: {}. Error: {}",
+                    notification.getUserId(), roomId, e.getMessage());
+            throw e;
+        }
+    }
+
+    private String getToken(NotificationRequestDto notification) {
+       return userRepository.findByUuid(notification.getUserId())
                 .orElseThrow(() -> {
                     log.error("FCM token not found for userId: {}", notification.getUserId());
                     return new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
                 }).getFcmToken();
+    }
 
+    private boolean isSessionDisConnected(NotificationRequestDto notification, String sessionId) {
+        if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
+            log.warn("User {} is offline. Sending notification.", notification.getUserId());
+            String key = "offline:notifications:" + notification.getUserId();
+            validateNotificationDtoContent(notification, key);
+            redisTemplateForUserStatus.expire(key, 14, TimeUnit.DAYS); //14일 유지
+            return true;
+        }
+        return false;
+    }
+
+    private void validateNotificationDtoContent(NotificationRequestDto notification, String key) {
+        if (notification.getContent().isEmpty() && !notification.getImage().isEmpty()) {
+            redisTemplateForUserStatus.opsForValue().set(key, "사진");
+        } else {
+            redisTemplateForUserStatus.opsForValue().set(key, notification.getContent());
+        }
+    }
+
+    private static void validateToken(NotificationRequestDto notification, String token) {
         if (token == null || token.isEmpty()) {
             log.error("FCM token is null or empty for userId: {}", notification.getUserId());
             throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
         }
+    }
 
-        log.info("Retrieved FCM token for userId: {}", notification.getUserId());
-
-        Map<String, String> data = new HashMap<>();
+    private static void setData(NotificationRequestDto notification, Long roomId, Map<String, String> data) {
         data.put("roomId", String.valueOf(roomId));
         data.put("message", notification.getContent());
         data.put("image", notification.getImage() != null ? notification.getImage() : "");
         data.put("timestamp", String.valueOf(notification.getLastTime().getTime()));
+    }
 
-        log.debug("FCM message payload: {}", data);
-
-        Message firebaseMessage = Message.builder()
+    private static Message createFireBaseMessage(NotificationRequestDto notification, String token, Map<String, String> data) {
+        return  Message.builder()
                 .setToken(token)
                 .setAndroidConfig(AndroidConfig.builder()
                         .setTtl(43200000)
@@ -98,16 +140,5 @@ public class FcmServiceImpl implements FcmService {
                         .putAllData(data)
                         .build())
                 .build();
-
-        log.info("Sending FCM message for userId: {}, roomId: {}", notification.getUserId(), roomId);
-
-        try {
-            String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
-            log.info("Successfully sent FCM message. Response: {}", response);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to send FCM message for userId: {}, roomId: {}. Error: {}",
-                    notification.getUserId(), roomId, e.getMessage());
-            throw e;
-        }
     }
 }
