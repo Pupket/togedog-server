@@ -243,9 +243,9 @@ public class ChatServiceImpl implements ChatService {
 
         if (disconnectTimeStr != null) {
             disconnectTime = new Timestamp(Long.parseLong(disconnectTimeStr));
-            log.debug("User last disconnect time found: {}", disconnectTime);
+            log.info("User last disconnect time found: {}", disconnectTime);
         } else {
-            log.warn("No disconnect time found for userId: {}. Using provided lastTime: {}", uuid, lastTime);
+            log.warn("No disconnect time found for userId: {}. Using provided lastTime: {}", findUser.getUuid(), lastTime);
             disconnectTime = lastTime;
         }
 
