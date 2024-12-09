@@ -152,7 +152,7 @@ public class WebSocketEventListener {
 
         redisTemplate.delete("session:user:" + sessionId);
         redisTemplate.delete("session:status:" + sessionId);
-        redisTemplate.opsForValue().set("session:lastDisconnected:" + sessionId, disconnectTime); // 끊긴 시간 저장
+        redisTemplate.opsForValue().set("session:lastDisconnected:" + userId, disconnectTime); // 끊긴 시간 저장
         log.info("WebSocket 연결 종료: Session ID = {}", sessionId);
     }
 
