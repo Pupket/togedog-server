@@ -237,7 +237,7 @@ public class ChatServiceImpl implements ChatService {
                 () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
         );
         // Redis에서 유저의 마지막 세션 종료 시간 가져오기
-        String disconnectTimeKey = "user:lastDisconnected:" + findUser.getUuid();
+        String disconnectTimeKey = "session:lastDisconnected:" + findUser.getUuid();
         String disconnectTimeStr = redisTemplate.opsForValue().get(disconnectTimeKey);
         Timestamp disconnectTime;
 
