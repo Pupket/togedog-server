@@ -258,6 +258,7 @@ public class ChatServiceImpl implements ChatService {
         }
 
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
+                .filter(message -> !message.getUserId().equals(findUser.getUuid()))
                 .filter(message -> message.getLastTime().after(disconnectTime)) // 세션 종료 시간을 기준으로 필터링
                 .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
                 .toList();
