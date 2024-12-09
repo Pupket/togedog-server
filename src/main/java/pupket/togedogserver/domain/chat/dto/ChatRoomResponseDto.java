@@ -17,13 +17,15 @@ public class ChatRoomResponseDto {
     String sender;
     String receiver;
     String receiverImage;
-     int unreceivedMessageCount;
+    Timestamp lastTime;
+    int unreceivedMessageCount;
      String lastMessage;
 
     public static ChatRoomResponseDto to(ChatRoom room, User findSender, User findReceiver, List<ChattingResponseDto> unreceivedMessages) {
         return ChatRoomResponseDto.builder()
                 .roomId(room.getRoomId())
                 .title(room.getTitle())
+                .lastTime(unreceivedMessages.get(0).getLastTime())
                 .sender(findSender.getNickname())
                 .senderImage(findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage())
                 .receiver(findReceiver.getNickname())
