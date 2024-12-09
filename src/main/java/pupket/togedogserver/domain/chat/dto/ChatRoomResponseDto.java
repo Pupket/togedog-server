@@ -25,7 +25,7 @@ public class ChatRoomResponseDto {
         return ChatRoomResponseDto.builder()
                 .roomId(room.getRoomId())
                 .title(room.getTitle())
-                .lastTime(unreceivedMessages.get(0).getLastTime())
+                .lastTime(unreceivedMessages.isEmpty() ? null : unreceivedMessages.get(0).getLastTime())
                 .sender(findSender.getNickname())
                 .senderImage(findSender.getProfileImage().isEmpty() ? null : findSender.getProfileImage())
                 .receiver(findReceiver.getNickname())
