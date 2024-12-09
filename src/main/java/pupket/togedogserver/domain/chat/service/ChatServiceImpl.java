@@ -20,14 +20,10 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.s3.util.S3FileUtil;
-import pupket.togedogserver.global.security.CustomUserDetail;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -84,7 +80,7 @@ public class ChatServiceImpl implements ChatService {
 
     private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
         log.debug("Creating chat room if not exists. Sender: {}, Receiver: {}, Title: {}", sender, receiver, roomTitle);
-        ChatRoom findChatRoom = chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
+        return chatRoomRepository.findBySenderAndReceiverAndTitleOrReceiverAndSenderAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
                     log.info("No existing chat room found. Creating a new one.");
                     ChatRoom newChatRoom = ChatRoom.to(receiver, sender, findSenderProfileImage, roomTitle, findReceiverProfileImage);
@@ -95,7 +91,6 @@ public class ChatServiceImpl implements ChatService {
                     setTopicInRedisTemplate(newChatRoom);
                     return newChatRoom;
                 });
-        return findChatRoom;
     }
 
     private void setTopicInRedisTemplate(ChatRoom newChatRoom) {
@@ -305,7 +300,7 @@ public class ChatServiceImpl implements ChatService {
         log.debug("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);
         try {
-            fcmServiceImpl.sendNotification(notificationRequestDto, receiver);
+            fcmServiceImpl.sendNotification(notificationRequestDto, findChatRoom.getRoomId());
             log.info("Notification sent successfully to user: {}", receiver);
         } catch (Exception e) {
             log.error("Failed to send notification to user: {}", receiver, e);

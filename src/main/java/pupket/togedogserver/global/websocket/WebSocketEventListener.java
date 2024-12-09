@@ -63,7 +63,7 @@ public class WebSocketEventListener {
             log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
 
             // 미수신 알림 처리
-            processOfflineNotifications(userId, sessionId);
+//            processOfflineNotifications(userId, sessionId);
 
         } catch (Exception e) {
             log.error("WebSocket 연결 처리 중 예외 발생: Session ID = {}, Error = {}", sessionId, e.getMessage(), e);
