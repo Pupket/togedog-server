@@ -71,7 +71,6 @@ public class UserServiceImpl implements UserService {
     public void logout(String refreshToken, CustomUserDetail userDetail) {
         log.info("로그아웃 시작: 사용자 ID = {}", userDetail.getUuid());
         jwtUtils.handleExpiredRefreshToken(refreshToken);
-        fcmServiceImpl.deleteToken(userDetail.getUuid());
         log.info("로그아웃 완료: 사용자 ID = {}", userDetail.getUuid());
     }
 
