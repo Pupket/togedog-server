@@ -33,7 +33,7 @@ public class ChatRoomResponseDto {
                 .receiver(mate.getNickname())
                 .receiverImage(mate.getProfileImage().isEmpty() ? null : mate.getProfileImage())
                 .unreceivedMessageCount(unreceivedMessages.size())
-                .lastMessage(lastMessage.getContent().isEmpty() ? null : lastMessage.getContent())
+                .lastMessage(Optional.ofNullable(lastMessage).map(ChattingResponseDto::getContent).orElse(null))
                 .build();
 
     }
