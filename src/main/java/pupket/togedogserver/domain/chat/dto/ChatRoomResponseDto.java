@@ -21,17 +21,17 @@ public class ChatRoomResponseDto {
     int unreceivedMessageCount;
      String lastMessage;
 
-    public static ChatRoomResponseDto to(ChatRoom room, User owner, User mate, List<ChattingResponseDto> unreceivedMessages) {
+    public static ChatRoomResponseDto to(ChatRoom room, User owner, User mate, List<ChattingResponseDto> unreceivedMessages, ChattingResponseDto lastMessage) {
         return ChatRoomResponseDto.builder()
                 .roomId(room.getRoomId())
                 .title(room.getTitle())
-                .lastTime(unreceivedMessages.isEmpty() ? null : unreceivedMessages.get(0).getLastTime())
+                .lastTime(lastMessage.getLastTime()==null ? null : lastMessage.getLastTime())
                 .sender(owner.getNickname())
                 .senderImage(owner.getProfileImage().isEmpty() ? null : owner.getProfileImage())
                 .receiver(mate.getNickname())
                 .receiverImage(mate.getProfileImage().isEmpty() ? null : mate.getProfileImage())
                 .unreceivedMessageCount(unreceivedMessages.size())
-                .lastMessage(unreceivedMessages.isEmpty() ? null : unreceivedMessages.get(0).getContent())
+                .lastMessage(lastMessage.getContent().isEmpty() ? null : lastMessage.getContent())
                 .build();
 
     }

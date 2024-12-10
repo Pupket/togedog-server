@@ -164,10 +164,27 @@ public class ChatServiceImpl implements ChatService {
             User findSender = findSender(room.getOwner());
             User findReceiver = findReceiver(room.getMate());
 
+            //채팅 가져오기
+            String key = "chatRoomId:" + room.getRoomId();
+            List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
+
+            // 가장 최근 메시지 가져오기
+            ChattingResponseDto lastMessage = null;
+            if (chatList != null && !chatList.isEmpty()) {
+                lastMessage = chatList.get(chatList.size() - 1); // 리스트의 마지막 요소
+            }
+
+            // 로그로 확인
+            if (lastMessage != null) {
+                System.out.println("가장 최근 메시지: " + lastMessage.getContent());
+            } else {
+                System.out.println("메시지가 없습니다.");
+            }
+
             Timestamp lastTime = room.getLastTime();
             List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime, uuid);
 
-            ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room, findSender, findReceiver, unreceivedMessages);
+            ChatRoomResponseDto chatroom = ChatRoomResponseDto.to(room, findSender, findReceiver, unreceivedMessages, lastMessage);
 
             chatRoomList.add(chatroom);
         }
@@ -280,7 +297,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public void sendMessageToPublisher(ChattingRequestDto message) {
-        log.info("{} send This Message - {}", message.getUserId(),message.getContent());
+        log.info("{} send This Message - {}", message.getUserId(), message.getContent());
         log.info("message contain Image : {}", message.getImage());
 
         //1.해당 채팅방 조회
@@ -312,10 +329,10 @@ public class ChatServiceImpl implements ChatService {
 
     private static Long isMateOrOwner(ChattingRequestDto message, ChatRoom findChatRoom) {
         log.info("isMateOrOwner를 수행하여 받을 사람 지정");
-        if(findChatRoom.getMate().equals(message.getUserId())) {
+        if (findChatRoom.getMate().equals(message.getUserId())) {
             log.info("receiver id = {}", findChatRoom.getOwner());
             return findChatRoom.getOwner();
-        }else{
+        } else {
             log.info("receiver id = {}", findChatRoom.getMate());
             return findChatRoom.getMate();
         }
@@ -331,10 +348,26 @@ public class ChatServiceImpl implements ChatService {
         User findSender = findSender(chatRoom.getOwner());
         User findReceiver = findReceiver(chatRoom.getMate());
 
+        //채팅 가져오기
+        String key = "chatRoomId:" + roomId;
+        List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
+
+        // 가장 최근 메시지 가져오기
+        ChattingResponseDto lastMessage = null;
+        if (chatList != null && !chatList.isEmpty()) {
+            lastMessage = chatList.get(chatList.size() - 1); // 리스트의 마지막 요소
+        }
+
+        // 로그로 확인
+        if (lastMessage != null) {
+            System.out.println("가장 최근 메시지: " + lastMessage.getContent());
+        } else {
+            System.out.println("메시지가 없습니다.");
+        }
         Timestamp lastTime = chatRoom.getLastTime();
         List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(chatRoom.getRoomId(), lastTime, uuid);
 
-        return ChatRoomResponseDto.to(chatRoom, findSender, findReceiver, unreceivedMessages);
+        return ChatRoomResponseDto.to(chatRoom, findSender, findReceiver, unreceivedMessages, lastMessage);
     }
 
     private void sendNotificationToDisConnectedUser(ChattingRequestDto message, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
