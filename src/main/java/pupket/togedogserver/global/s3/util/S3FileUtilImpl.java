@@ -6,7 +6,6 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.util.IOUtils;
-import jakarta.xml.bind.DatatypeConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.S3Exception;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;

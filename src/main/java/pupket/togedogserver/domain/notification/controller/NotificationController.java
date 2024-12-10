@@ -60,7 +60,6 @@ public class NotificationController {
             @RequestBody NotificationRequestDto notification
     ) throws ExecutionException, InterruptedException {
         notificationService.sendNotification(
-                userDetail.getUuid(),
                 notification
         );
     }

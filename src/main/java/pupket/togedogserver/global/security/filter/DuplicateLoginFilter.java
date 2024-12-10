@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import pupket.togedogserver.global.exception.ExceptionCode;
-import pupket.togedogserver.global.exception.TogedogException;
-import pupket.togedogserver.global.exception.customException.JwtException;
 import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.redis.RedisLoginService;
@@ -62,23 +60,6 @@ public class DuplicateLoginFilter extends OncePerRequestFilter {
     // 필터 제외 경로 확인
     private boolean isExcludedUrl(String requestURI) {
         return EXCLUDE_URLS.stream().anyMatch(url -> pathMatcher.match(url, requestURI));
-    }
-
-    private void handleJwtException(HttpServletResponse response, TogedogException e) throws IOException {
-        response.setStatus(e.getExceptionCode().getHttpStatus().value());
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        String jsonResponse = String.format(
-                "{\"status\":  \"%s\", \"code\": %d, \"message\": \"%s\"} ",
-                e.getExceptionCode().getHttpStatus().name(),
-                e.getExceptionCode().getCode(),
-                e.getExceptionCode().getMessage()
-        );
-
-        response.getWriter().write(jsonResponse);
-        response.getWriter().flush();
-        response.getWriter().close();
     }
 
 }

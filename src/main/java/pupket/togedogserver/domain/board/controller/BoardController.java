@@ -18,7 +18,6 @@ import pupket.togedogserver.domain.board.controller.port.BoardService;
 import pupket.togedogserver.domain.board.dto.request.BoardCreateRequest;
 import pupket.togedogserver.domain.board.dto.request.BoardUpdateRequest;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
-import pupket.togedogserver.domain.board.service.BoardServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @RestController

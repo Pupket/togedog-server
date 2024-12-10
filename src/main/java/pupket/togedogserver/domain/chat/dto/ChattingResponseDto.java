@@ -1,12 +1,10 @@
 package pupket.togedogserver.domain.chat.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pupket.togedogserver.domain.chat.deserializer.CustomISO8601TimestampDeserializer;
 
 import java.sql.Timestamp;
 

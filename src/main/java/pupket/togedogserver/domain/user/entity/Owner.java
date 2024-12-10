@@ -1,7 +1,10 @@
 package pupket.togedogserver.domain.user.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import pupket.togedogserver.domain.match.entity.Match;
 

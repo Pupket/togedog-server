@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.match.controller.port.MatchService;
-import pupket.togedogserver.domain.match.service.MatchServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 @RestController

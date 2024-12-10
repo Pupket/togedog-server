@@ -4,7 +4,6 @@ import pupket.togedogserver.domain.chat.dto.ChatRoomCreateResponse;
 import pupket.togedogserver.domain.chat.dto.ChatRoomResponseDto;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
-import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -15,6 +14,8 @@ public interface ChatService {
     String calculateTimeAgo(Timestamp lastTime);
 
     List<ChatRoomResponseDto> getChatRoomList(Long uuid);
+
+    void saveChatToRedis(String roomId, ChattingResponseDto chat);
 
     void leaveRoom(Long roomId);
 

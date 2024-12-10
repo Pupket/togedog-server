@@ -9,5 +9,5 @@ public interface FcmService {
 
     void deleteToken(Long uuid);
 
-    void sendNotification(NotificationRequestDto notification, Long roomId) throws InterruptedException, ExecutionException;
+    void sendNotification(NotificationRequestDto notification) throws InterruptedException, ExecutionException;
 }

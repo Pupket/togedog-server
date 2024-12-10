@@ -16,7 +16,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final FcmServiceImpl fcmServiceImpl;
 
     @Override
-    public void sendNotification(Long sender, NotificationRequestDto notification) throws ExecutionException, InterruptedException {
-        fcmServiceImpl.sendNotification(notification, sender);
+    public void sendNotification(NotificationRequestDto notification) throws ExecutionException, InterruptedException {
+        fcmServiceImpl.sendNotification(notification);
     }
 }

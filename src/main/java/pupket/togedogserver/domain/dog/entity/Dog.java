@@ -1,10 +1,13 @@
 package pupket.togedogserver.domain.dog.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.dog.constant.DogType;
 import pupket.togedogserver.domain.user.constant.Region;
@@ -21,7 +24,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @AllArgsConstructor
 @NoArgsConstructor
 @SQLDelete(sql = "UPDATE dog SET deleted = true WHERE dog_id = ?")
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Dog {
 
     @Id

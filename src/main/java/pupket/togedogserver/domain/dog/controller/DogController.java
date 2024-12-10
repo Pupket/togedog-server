@@ -21,7 +21,6 @@ import pupket.togedogserver.domain.dog.controller.port.DogService;
 import pupket.togedogserver.domain.dog.dto.request.DogRegistRequest;
 import pupket.togedogserver.domain.dog.dto.request.DogUpdateRequest;
 import pupket.togedogserver.domain.dog.dto.response.DogResponse;
-import pupket.togedogserver.domain.dog.service.DogServiceImpl;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
@@ -176,7 +175,6 @@ public class DogController {
         return ResponseEntity.ok().build();
     }
 
-    //TODO:: performance 보고 Async적용 여부 결정
     @Operation(summary = "견종 이름 자동완성", description = "입력할때마다 관련 키워드 제공")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "프로필 삭제 성공",

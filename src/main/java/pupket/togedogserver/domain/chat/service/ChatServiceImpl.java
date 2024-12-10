@@ -19,7 +19,6 @@ import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.ChatException;
 import pupket.togedogserver.global.exception.customException.MemberException;
-import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.websocket.WebSocketEventListener;
 
 import java.sql.Timestamp;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +39,6 @@ public class ChatServiceImpl implements ChatService {
     private final UserRepository userRepository;
     private final FcmService fcmServiceImpl;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
-    private final S3FileUtil s3FileUtilImpl;
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
@@ -63,7 +60,7 @@ public class ChatServiceImpl implements ChatService {
 
         log.info("Chat room created or validated: {}", findChatRoom);
 
-        if (findChatRoom.getSender().equals(findSender.getUuid())) {
+        if (findChatRoom.getOwner().equals(findSender.getUuid())) {
             log.info("Returning chat room with title: {}", findChatRoom.getTitle());
             return ChatRoomCreateResponse.builder()
                     .roomTitle(findChatRoom.getTitle())
@@ -101,7 +98,7 @@ public class ChatServiceImpl implements ChatService {
 
     private ChatRoom validateChatRoom(String roomTitle, ChatRoom findChatRoom) {
         log.info("Validating chat room title.");
-        if (findChatRoom.getTitle().isEmpty() && roomTitle != null) {
+        if (findChatRoom.getTitle().isEmpty() || roomTitle != null) {
             log.info("Updating chat room title: {}", roomTitle);
             ChatRoom updateChatRoom = findChatRoom.toBuilder()
                     .title(roomTitle)
@@ -164,8 +161,8 @@ public class ChatServiceImpl implements ChatService {
 
         for (ChatRoom room : chatRooms) {
             log.info("Processing chat room: {}", room.getRoomId());
-            User findSender = findSender(room.getSender());
-            User findReceiver = findReceiver(room.getReceiver());
+            User findSender = findSender(room.getOwner());
+            User findReceiver = findReceiver(room.getMate());
 
             Timestamp lastTime = room.getLastTime();
             List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(room.getRoomId(), lastTime, uuid);
@@ -178,6 +175,7 @@ public class ChatServiceImpl implements ChatService {
         return chatRoomList;
     }
 
+    @Override
     public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
         log.info("Saving chat to Redis. Room ID: {}, Chat: {}", roomId, chat);
         String key = "chatRoomId:" + roomId;
@@ -233,22 +231,13 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime, Long uuid) {
         log.info("Fetching messages after last time. Room ID: {}, Last Time: {}", roomId, lastTime);
-        User findUser = userRepository.findByUuid(uuid).orElseThrow(
-                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
-        );
+        User findUser = getFindUser(uuid);
+
         // Redis에서 유저의 마지막 세션 종료 시간 가져오기
-        String disconnectTimeKey = "session:lastDisconnected:" + findUser.getUuid();
-        String disconnectTimeStr = redisTemplate.opsForValue().get(disconnectTimeKey);
-        Timestamp disconnectTime;
+        log.info("유저의 마지막 세션 종료 시간 추출");
+        Timestamp disconnectTime = getDisconnectTimeByUserId(lastTime, findUser);
 
-        if (disconnectTimeStr != null) {
-            disconnectTime = new Timestamp(Long.parseLong(disconnectTimeStr));
-            log.info("User last disconnect time found: {}", disconnectTime);
-        } else {
-            log.warn("No disconnect time found for userId: {}. Using provided lastTime: {}", findUser.getUuid(), lastTime);
-            disconnectTime = lastTime;
-        }
-
+        //채팅 가져오기
         String key = "chatRoomId:" + roomId;
         List<ChattingResponseDto> chatList = redisTemplateForSave.opsForList().range(key, 0, -1);
 
@@ -260,40 +249,76 @@ public class ChatServiceImpl implements ChatService {
         List<ChattingResponseDto> unreceivedMessages = chatList.stream()
                 .filter(message -> !message.getUserId().equals(findUser.getUuid()))
                 .filter(message -> message.getLastTime().after(disconnectTime)) // 세션 종료 시간을 기준으로 필터링
-                .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed())
+                .sorted(Comparator.comparing(ChattingResponseDto::getLastTime).reversed()) //가장 최근 메세지가 위에 오도록
                 .toList();
 
         log.info("Unreceived messages fetched for roomId: {}. Count: {}", roomId, unreceivedMessages.size());
         return unreceivedMessages;
     }
 
+    private Timestamp getDisconnectTimeByUserId(Timestamp lastTime, User findUser) {
+        String disconnectTimeKey = "session:lastDisconnected:" + findUser.getUuid();
+        String disconnectTimeStr = redisTemplate.opsForValue().get(disconnectTimeKey);
+        Timestamp disconnectTime;
+
+        if (disconnectTimeStr != null) {
+            disconnectTime = new Timestamp(Long.parseLong(disconnectTimeStr));
+            log.info("User last disconnect time found: {}", disconnectTime);
+        } else {
+            log.warn("No disconnect time found for userId: {}. Using provided lastTime: {}", findUser.getUuid(), lastTime);
+            disconnectTime = lastTime;
+        }
+        return disconnectTime;
+    }
+
+    private User getFindUser(Long uuid) {
+        return userRepository.findByUuid(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+
+    }
+
     @Override
     public void sendMessageToPublisher(ChattingRequestDto message) {
-        log.info("Sending message to publisher: {}", message);
-        Timestamp parsedLastTime = getParsedLastTime(message.getLastTime());
+        log.info("{} send This Message - {}", message.getUserId(),message.getContent());
+        log.info("message contain Image : {}", message.getImage());
+
+        //1.해당 채팅방 조회
         ChatRoom findChatRoom = findChatRoom(message);
 
-        saveLastChatRecordToRedis(message, findChatRoom); // 끊긴 시간 저장
+        //2.마지막 채팅 시간 추출
+        Timestamp parsedLastTime = getParsedLastTime(message.getLastTime());
 
-        Long receiver = findChatRoom.getReceiver().equals(message.getUserId()) ? findChatRoom.getSender() : findChatRoom.getReceiver();
-        log.info("Receiver determined: {}", receiver);
+        // 메세지 받을 사람 지정
+        // 오너가 보내면 메이트, 메이트가보내면 오너로 지정
+        Long receiver = isMateOrOwner(message, findChatRoom);
 
+        //유저가 세션에 참여중이지 않으면 fcm 알림을 보냄
         String sessionId = redisTemplate.opsForValue().get("user:session:" + receiver);
         if (sessionId == null || !webSocketEventListener.isSessionConnected(sessionId)) {
             log.warn("User {} is offline. Sending notification.", receiver);
             sendNotificationToDisConnectedUser(message, findChatRoom, parsedLastTime, receiver);
         }
 
+        //채팅 응답 생성
         ChattingResponseDto responseDto = ChattingResponseDto.to(message, parsedLastTime);
 
+        //응답 Redis에 저장
         saveChatToRedis(String.valueOf(message.getRoomId()), responseDto);
 
+        //Pub에 내용을 퍼블리싱
         redisPublisher.publish(responseDto);
     }
 
-    private void saveLastChatRecordToRedis(ChattingRequestDto message, ChatRoom findChatRoom) {
-        String disconnectTime = String.valueOf(System.currentTimeMillis());
-        redisTemplate.opsForValue().set("session:lastDisconnected:" + (findChatRoom.getSender().equals(message.getUserId())? findChatRoom.getReceiver(): findChatRoom.getSender()), disconnectTime);
+    private static Long isMateOrOwner(ChattingRequestDto message, ChatRoom findChatRoom) {
+        log.info("isMateOrOwner를 수행하여 받을 사람 지정");
+        if(findChatRoom.getMate().equals(message.getUserId())) {
+            log.info("receiver id = {}", findChatRoom.getOwner());
+            return findChatRoom.getOwner();
+        }else{
+            log.info("receiver id = {}", findChatRoom.getMate());
+            return findChatRoom.getMate();
+        }
     }
 
     @Override
@@ -303,8 +328,8 @@ public class ChatServiceImpl implements ChatService {
         );
 
         log.info("Processing chat room: {}", chatRoom.getRoomId());
-        User findSender = findSender(chatRoom.getSender());
-        User findReceiver = findReceiver(chatRoom.getReceiver());
+        User findSender = findSender(chatRoom.getOwner());
+        User findReceiver = findReceiver(chatRoom.getMate());
 
         Timestamp lastTime = chatRoom.getLastTime();
         List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(chatRoom.getRoomId(), lastTime, uuid);
@@ -316,7 +341,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);
         try {
-            fcmServiceImpl.sendNotification(notificationRequestDto, findChatRoom.getRoomId());
+            fcmServiceImpl.sendNotification(notificationRequestDto);
             log.info("Notification sent successfully to user: {}", receiver);
         } catch (Exception e) {
             log.error("Failed to send notification to user: {}", receiver, e);

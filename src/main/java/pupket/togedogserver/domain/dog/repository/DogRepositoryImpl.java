@@ -7,7 +7,6 @@ import pupket.togedogserver.domain.dog.repository.jpaRepository.DogJPARepository
 import pupket.togedogserver.domain.dog.service.port.DogRepository;
 import pupket.togedogserver.domain.user.entity.User;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 

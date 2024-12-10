@@ -18,10 +18,10 @@ public class NotificationRequestDto {
 
     public static NotificationRequestDto to(ChattingRequestDto message, ChatRoom findChatRoom, Timestamp parsedLastTime, Long receiver) {
         return NotificationRequestDto.builder()
-                .content(message.getContent())
-                .userId(receiver)
-                .image(message.getImage())
                 .roomId(findChatRoom.getRoomId())
+                .userId(receiver)
+                .content(message.getContent())
+                .image(message.getImage())
                 .lastTime(parsedLastTime)
                 .build();
     }

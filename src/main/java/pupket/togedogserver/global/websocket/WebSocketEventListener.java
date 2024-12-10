@@ -1,9 +1,5 @@
 package pupket.togedogserver.global.websocket;
 
-import com.google.firebase.messaging.AndroidConfig;
-import com.google.firebase.messaging.AndroidNotification;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -13,13 +9,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import pupket.togedogserver.domain.user.service.port.UserRepository;
-import pupket.togedogserver.global.exception.ExceptionCode;
-import pupket.togedogserver.global.exception.customException.FcmException;
 import pupket.togedogserver.global.jwt.service.JwtService;
 import pupket.togedogserver.global.jwt.util.JwtUtils;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -33,6 +27,7 @@ public class WebSocketEventListener {
     private final JwtService jwtService;
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
+    private static final String SESSION_USER_KEY = "session:user:";
 
     // WebSocket 연결 시 세션 ID 저장 및 사용자 상태를 "online"으로 설정
     @EventListener
@@ -58,7 +53,7 @@ public class WebSocketEventListener {
         // Redis에 사용자와 세션 매핑
         try {
             redisTemplate.opsForValue().set("user:session:" + userId, sessionId, 12, TimeUnit.DAYS);
-            redisTemplate.opsForValue().set("session:user:" + sessionId, userId.toString(), 12, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set(SESSION_USER_KEY + sessionId, userId.toString(), 12, TimeUnit.DAYS);
             redisTemplate.opsForValue().set("session:status:" + sessionId, "online", 1, TimeUnit.DAYS);
             log.info("Redis에 사용자 매핑 완료: user:session:{} -> {}, session:user:{} -> {}", userId, sessionId, sessionId, userId);
 
@@ -71,63 +66,25 @@ public class WebSocketEventListener {
         connectedSessions.add(sessionId);
     }
 
-    private void sendNotificationToClient(Long userId, String notificationJson) throws ExecutionException, InterruptedException {
-        String token = userRepository.findByUuid(userId)
-                .orElseThrow(() -> {
-                    log.error("FCM token not found for userId: {}", userId);
-                    return new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
-                }).getFcmToken();
-
-        if (token == null || token.isEmpty()) {
-            log.error("FCM token is null or empty for userId: {}", userId);
-            throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
-        }
-
-        log.info("Retrieved FCM token for userId: {}", userId);
-
-        Map<String, String> data = new HashMap<>();
-        data.put("message", notificationJson);
-
-        log.info("FCM message payload: {}", data);
-
-        Message firebaseMessage = Message.builder()
-                .setToken(token)
-                .setAndroidConfig(AndroidConfig.builder()
-                        .setTtl(43200000)
-                        .setPriority(AndroidConfig.Priority.HIGH)
-                        .setNotification(AndroidNotification.builder()
-                                .setTitle("새로운 메시지")
-                                .setBody(notificationJson)
-                                .build())
-                        .putAllData(data)
-                        .build())
-                .build();
-
-        try {
-            String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
-            log.info("Successfully sent FCM message. Response: {}", response);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to send FCM message for userId: {}. Error: {}",
-                    userId, e.getMessage());
-            throw e;
-        }
-    }
-
     // WebSocket 연결 종료 시 세션 ID 제거 및 사용자 상태를 "offline"으로 설정
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        String userId = redisTemplate.opsForValue().get("session:user:" + sessionId);
+        String disconnectTime = String.valueOf(System.currentTimeMillis());
+        String userId = redisTemplate.opsForValue().get(SESSION_USER_KEY + sessionId);
 
         if (userId != null) {
             redisTemplate.opsForValue().set("user:status:" + userId, "offline");
             redisTemplate.delete("user:session:" + userId);
         }
 
-        redisTemplate.delete("session:user:" + sessionId);
+
+        redisTemplate.delete(SESSION_USER_KEY + sessionId);
         redisTemplate.delete("session:status:" + sessionId);
+        redisTemplate.opsForValue().set("session:lastDisconnected:" + userId, disconnectTime); // 끊긴 시간 저장
         log.info("WebSocket 연결 종료: Session ID = {}", sessionId);
     }
+
 
     // 특정 세션이 접속 중인지 확인하는 메서드
     public boolean isSessionConnected(String sessionId) {
