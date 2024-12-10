@@ -7,6 +7,7 @@ import pupket.togedogserver.domain.user.entity.User;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -22,10 +23,11 @@ public class ChatRoomResponseDto {
      String lastMessage;
 
     public static ChatRoomResponseDto to(ChatRoom room, User owner, User mate, List<ChattingResponseDto> unreceivedMessages, ChattingResponseDto lastMessage) {
+
         return ChatRoomResponseDto.builder()
                 .roomId(room.getRoomId())
                 .title(room.getTitle())
-                .lastTime(lastMessage.getLastTime()==null ? null : lastMessage.getLastTime())
+                .lastTime(Optional.ofNullable(lastMessage).map(ChattingResponseDto::getLastTime).orElse(null))
                 .sender(owner.getNickname())
                 .senderImage(owner.getProfileImage().isEmpty() ? null : owner.getProfileImage())
                 .receiver(mate.getNickname())
