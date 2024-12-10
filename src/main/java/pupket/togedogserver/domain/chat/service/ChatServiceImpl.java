@@ -77,7 +77,7 @@ public class ChatServiceImpl implements ChatService {
 
     private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
         log.info("Creating chat room if not exists. Sender: {}, Receiver: {}, Title: {}", sender, receiver, roomTitle);
-        return chatRoomRepository.findByOwnerOrMateOrTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
+        return chatRoomRepository.findByOwnerAndMateAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
                 .orElseGet(() -> {
                     log.info("No existing chat room found. Creating a new one.");
                     ChatRoom newChatRoom = ChatRoom.to(receiver, sender, findSenderProfileImage, roomTitle, findReceiverProfileImage);

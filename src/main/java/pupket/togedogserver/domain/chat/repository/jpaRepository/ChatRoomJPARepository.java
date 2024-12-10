@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ChatRoomJPARepository extends JpaRepository<ChatRoom, Long> {
 
 
-    Optional<ChatRoom> findByOwnerOrMateOrTitle(Long sender, Long receiver, String title);
+    Optional<ChatRoom> findByOwnerAndMateAndTitle(Long sender, Long receiver, String title);
 
 
     List<ChatRoom> findByOwnerOrMate(Long uuid, Long uuid1);

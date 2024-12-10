@@ -9,7 +9,7 @@ import java.util.Optional;
 @Repository
 public interface ChatRoomRepository {
 
-    Optional<ChatRoom> findByOwnerOrMateOrTitle(Long sender, Long receiver, String roomTitle, Long receiver1, Long sender1, String roomTitle1);
+    Optional<ChatRoom> findByOwnerAndMateAndTitle(Long sender, Long receiver, String roomTitle, Long receiver1, Long sender1, String roomTitle1);
 
     List<ChatRoom> findByOwnerOrMate(Long uuid, Long uuid1);
 

@@ -15,8 +15,8 @@ public class ChatRoomRepositoryImpl implements ChatRoomRepository {
     private final ChatRoomJPARepository chatRoomJPARepository;
 
     @Override
-    public Optional<ChatRoom> findByOwnerOrMateOrTitle(Long sender, Long receiver, String roomTitle, Long receiver1, Long sender1, String roomTitle1) {
-        return chatRoomJPARepository.findByOwnerOrMateOrTitle(sender, receiver, roomTitle);
+    public Optional<ChatRoom> findByOwnerAndMateAndTitle(Long sender, Long receiver, String roomTitle, Long receiver1, Long sender1, String roomTitle1) {
+        return chatRoomJPARepository.findByOwnerAndMateAndTitle(sender, receiver, roomTitle);
     }
 
     @Override
