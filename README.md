@@ -13,19 +13,25 @@
 
 ---
 
-"반려견이 유일한 내 가족" 이라는 펫미(Pet = Me)족이 증가하고 있는 요즘 직장인이나 학생들은 낮에 혼자 있을 반려동물을 걱정하면서 반려견 양육비를 월 15만원 이상 투자하고 있습니다. 낮에 강아지를 돌봐주거나 호텔에 맡기면서 발생하는 비용을 최소화하고 색다른 일자리로 반려 동물을 산책해주는 사람을 빠르게 구할 수 없을까 하는 요구사항을 해소시키고자 이렇게 반려동물을 위한 산책 메이트 매칭 플랫폼을 기획하게 되었습니다.
-
+>최근 직장인이나 학생들 사이에서 "펫미(Pet = Me)족", 즉 반려견을 가족처럼 여기는 문화가 확산되고 있습니다. 하지만 낮 시간 동안 반려견을 혼자 두는 것에 대한 걱정과 더불어, 돌봄 서비스나 호텔 이용에 따른 높은 비용 부담이 문제가 되고 있습니다. 이러한 문제를 해결하기 위해 반려동물과 산책 메이트를 연결하는 매칭 플랫폼 "같이걷개"를 기획하게 되었습니다. 이 플랫폼은 사용자들에게 새로운 일자리를 제공함과 동시에, 반려동물의 복지를 향상시키는 것을 목표로 합니다.
 ## Tech Stack
 
 ---
 
-- Java , Spring Boot, Spring Security, OAuth2, JPA, JWT, Redis, WebSocket  
-- AWS EC2, S3, RDS(MySQL), ACM, Router53, ALB, FCM
-- Git Actions, Docker
+Backend: Java, Spring Boot, Spring Security, OAuth2, JPA, JWT, Redis, WebSocket
+
+Frontend: Flutter
+
+Database: MySQL (AWS RDS)
+
+Cloud Services: AWS EC2, S3, ACM, Route53, ALB, FCM
+
+CI/CD: Git Actions, Docker
 
 
 ## System Architecture
 
+>본 시스템은 클라이언트와 서버 간의 실시간 데이터 송수신을 위해 WebSocket 기반의 통신 구조를 채택하였으며, Redis를 활용하여 세션 관리를 최적화하였습니다. AWS EC2와 Docker를 이용해 안정적이고 확장 가능한 배포 환경을 구축하였습니다.
 ---
 
 ![2](https://github.com/user-attachments/assets/d52d2605-5024-4456-9fec-4a99f92a937b)
@@ -45,13 +51,12 @@
 
 # :mag: 서비스 기능
 
----
+## 공통 기능
 
 ## 계정
 - 소셜로그인만 가능
 - 중복 로그인 시 가장 최근 로그인 유저만 유지
 
-## 공통 기능
 ### 알림함
 - 생성일 기준 14일 동안 유지 후 자동 삭제.
 - 주요 알림:
@@ -63,7 +68,7 @@
 - 등록된 산책 메이트 또는 반려견의 프로필을 랜덤으로 노출.
 - 선택하여 세부 정보를 확인하거나 매칭 진행 가능.
 
----
+
 
 ## 채팅
 
@@ -88,7 +93,7 @@
 - **카메라 접근 및 사용**:
     - 채팅방에서 카메라 아이콘 클릭으로 사진 촬영 및 전송 가능.
 
----
+
 
 ## 보호자 모드
 ### 홈
@@ -108,7 +113,7 @@
 - **프로필 등록/수정**: 반려견의 이름, 나이, 품종, 특이사항 등을 입력/수정.
 - **사진 업로드**: 반려견 사진 추가로 프로필 완성 가능.
 
----
+
 
 ## 산책 메이트 모드
 ### 홈
@@ -150,24 +155,27 @@
 
 ## 개발 과정
 
-- 레이어 아키텍처의 강한 의존성 문제 개선([개선과정 블로그 기록](https://sunro1994.tistory.com/255))
-  - 어댑터 패턴을 사용하여 각 레이어의 의존성 약화
+- 레이어 아키텍처의 **강한 의존성 문제** 개선
+  - 어댑터 패턴을 사용하여 각 레이어의 의존성 약화([개선 과정 기록](https://sunro1994.tistory.com/255))
+- JPA를 사용한 영속성 엔티티 관리
+  - SoftDelete방식의 데이터 삭제 관리([CallBackCycle을 사용한 연관 엔티티 삭제](https://sunro1994.tistory.com/260))
 - 예외 응답을 처리할 수 있는 클래스 구현, ExceptionHandler를 사용하여 예외처리 로직 공통 처리
 - Spring Security와 Jwt를 사용한 인증 방식 구현
 - AOP를 사용한 각 컨트롤러 및 서비스 레이어의 로깅 공통 로직 중복 제거
 - OAuth2를 사용한 소셜 로그인 구현
 - 중복 로그인을 처리할 수 있는 Filter와 인증을 거칠 수 있는 Filter를 OncePerRequestFilter를 상속받아 구현
-- Redis의 ZSet과 트라이 구조를 사용한 실시간 초성 검색 자동완성 기능 개발
+- Redis의 **ZSet** **트라이 구조**를 사용한 실시간 초성 검색 자동완성 기능 개발
   - 견종과 유저 닉네임 검색을 위한 음절 분리 및 저장 과정을 RDB에서 Redis의 ZSet을 사용하여 저장 속도 개선(15초->2초) 
   - Redis Read Through 패턴과 Write Around 조합을 사용하여 정합성 문제 해결
 - STOMP와 Websocket을 사용한 실시간 채팅 기능 개발
   - 유저의 마지막 접속 시간을 체크하여 미수신 메시지 반환 
-  - EventListener와 JWT를 사용하여 유저 로그인 상태 실시간 확인
+  - EventListener, JWT Token을 사용하여 유저 로그인 세션 접속유무 실시간 업데이트
   - 미접속 유저는 FCM을 사용한 실시간 알림
 
 ## 배포 과정
 
-- AWS EC2와 Docker를 사용한 CI 파이프라인 구성
-- Git Actions를 사용한 CD 파이프라인 구성
-- AWS Router 53을 사용한 도메인 네임 서버 구성
-- AWS ACM, AWS ALB를 사용한 DNS Verification 수행 및 포트 리다이렉트
+- CI/CD 파이프라인: Git Actions와 Docker를 이용해 코드 변경 시 자동 빌드 및 배포.
+- AWS 설정:
+  - Route53으로 도메인 네임 관리.
+  - ACM 및 ALB를 활용한 SSL 인증 및 포트 리다이렉션 구성.
+  - EC2와 RDS(MySQL) 기반의 안정적인 서버 환경 구축.
