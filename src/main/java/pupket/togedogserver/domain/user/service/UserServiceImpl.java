@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pupket.togedogserver.domain.dog.repository.CustomDogRepositoryImpl;
-import pupket.togedogserver.domain.notification.service.FcmServiceImpl;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.token.entity.RefreshToken;
 import pupket.togedogserver.domain.token.repository.RefreshTokenRepository;
 import pupket.togedogserver.domain.token.repository.SocialAccessTokenRepository;
@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final OAuth2RevokeService oAuth2RevokeService;
-    private final FcmServiceImpl fcmServiceImpl;
+    private final NotificationServiceImpl notificationServiceImpl;
     private final RedisLoginService redisLoginService;
 
     @Override
