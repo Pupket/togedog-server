@@ -98,13 +98,9 @@ public class MatchServiceImpl implements MatchService {
                 ).toString() + "의 보호자가 산책 매칭을 요청하였습니다.")
                 .build();
 
-        try {
             //알림 전송
             notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, match.getMate().getUser());
-        } catch (Exception e) {
-            log.error("Matching Fail notification Message Error 발생");
-            log.error(e.getMessage());
-        }
+
     }
 
     private static void validateMatcing(List<Match> matches) {

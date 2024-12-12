@@ -87,7 +87,8 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notificationEntity);
     }
 
-    public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User user) throws ExecutionException, InterruptedException {
+    public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User user) {
+
         Long userId = notificationRequestDtoForMatching.getUserId();
         Long boardId = notificationRequestDtoForMatching.getBoardId();
         String token = getToken(userId);
@@ -122,14 +123,23 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
-    private static void sendFirebaseMessageFromMatching(Message firebaseMessage, Long userId, Long boardId) throws InterruptedException, ExecutionException {
+    private static void sendFirebaseMessageFromMatching(Message firebaseMessage, Long userId, Long boardId) {
         try {
             String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
             log.info("Successfully sent FCM message. Response: {}", response);
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            // InterruptedException 처리
+            Thread.currentThread().interrupt(); // 현재 스레드의 interrupt 상태 복구
+            log.error("FCM message sending interrupted for userId: {}, boardId: {}. Error: {}",
+                    userId, boardId, e.getMessage());
+        } catch (ExecutionException e) {
+            // ExecutionException 처리
             log.error("Failed to send FCM message for userId: {}, boardId: {}. Error: {}",
                     userId, boardId, e.getMessage());
-            throw e;
+        } catch (Exception e) {
+            // 기타 예외 처리
+            log.error("Unexpected error while sending FCM message for userId: {}, boardId: {}. Error: {}",
+                    userId, boardId, e.getMessage());
         }
     }
 
