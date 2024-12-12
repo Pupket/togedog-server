@@ -64,8 +64,13 @@ public class MatchServiceImpl implements MatchService {
 
         //이미 매칭된 조회라면 예외 던지기
         List<Match> conflictMatches = matchRepository.findConflictMatches(findMate.getMateUuid(), findBoard.getStartTime(), findBoard.getEndTime(), findBoard.getPickUpDay());
-        if(conflictMatches.isEmpty()) {
+        if(!conflictMatches.isEmpty()) {
             log.warn("겹치는 일정이 존재합니다.");
+            conflictMatches.forEach(
+                    match -> {
+                        log.info("matchInfo ",match.getBoard().getStartTime(), match.getBoard().getEndTime(),match.getBoard().getPickUpDay());
+                    }
+            );
             throw new MatchingException(ExceptionCode.SCHDULE_CONFICT);
         }
 
