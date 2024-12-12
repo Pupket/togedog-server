@@ -25,7 +25,6 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +40,7 @@ public class MatchServiceImpl implements MatchService {
     private final NotificationServiceImpl notificationServiceImpl;
 
     @Override
+    @Transactional
     public void match(CustomUserDetail userDetail, String nickname, Long boardId) {
         log.info("매칭 시작: 사용자={}, 닉네임={}, 게시판ID={}", userDetail.getUsername(), nickname, boardId);
 
@@ -64,13 +64,12 @@ public class MatchServiceImpl implements MatchService {
 
         //이미 매칭된 조회라면 예외 던지기
         List<Match> conflictMatches = matchRepository.findConflictMatches(findMate.getMateUuid(), findBoard.getStartTime(), findBoard.getEndTime(), findBoard.getPickUpDay());
-        if(!conflictMatches.isEmpty()) {
-            log.warn("겹치는 일정이 존재합니다.");
-            conflictMatches.forEach(
-                    match -> {
-                        log.info("matchInfo ",match.getBoard().getStartTime(), match.getBoard().getEndTime(),match.getBoard().getPickUpDay());
-                    }
-            );
+
+        if (!conflictMatches.isEmpty()) {
+            conflictMatches.forEach(match -> log.info("겹치는 일정: startTime={}, endTime={}, pickUpDay={}",
+                    match.getBoard().getStartTime(),
+                    match.getBoard().getEndTime(),
+                    match.getBoard().getPickUpDay()));
             throw new MatchingException(ExceptionCode.SCHDULE_CONFICT);
         }
 
@@ -84,13 +83,18 @@ public class MatchServiceImpl implements MatchService {
         matchRepository.save(match);
         log.info("매칭 저장 완료: 매칭ID={}", match.getMatchId());
 
+        sendMatchingNotification(findBoard, match);
+
+    }
+
+    private void sendMatchingNotification(Board findBoard, Match match) {
         //알림생성
         NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
                 .boardId(findBoard.getBoardId())
                 .title("산책 매칭 요청")
                 .userId(match.getMate().getUser().getUuid())
                 .message(findBoard.getBoardDog().stream().map(
-                        dog->  dog.getDog().getName()
+                        dog -> dog.getDog().getName()
                 ).toString() + "의 보호자가 산책 매칭을 요청하였습니다.")
                 .build();
 
@@ -101,8 +105,6 @@ public class MatchServiceImpl implements MatchService {
             log.error("Matching Fail notification Message Error 발생");
             log.error(e.getMessage());
         }
-
-
     }
 
     private static void validateMatcing(List<Match> matches) {
@@ -318,10 +320,10 @@ public class MatchServiceImpl implements MatchService {
         Match completedMatch = updateMatchToComplete(findMatch);
 
         //각 유저 매치 카운트 증가
-        findMate.setMatchCount(findMate.getMatchCount()+1);
+        findMate.setMatchCount(findMate.getMatchCount() + 1);
         Owner owner = findUser.getOwner();
 
-        owner.setMatchCount(owner.getMatchCount()+1);
+        owner.setMatchCount(owner.getMatchCount() + 1);
 
         mateRepository.save(findMate);
         ownerRepository.save(owner);
