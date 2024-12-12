@@ -111,21 +111,6 @@ public class MatchServiceImpl implements MatchService {
 
     }
 
-    private static void validateMatcing(List<Match> matches) {
-        if (!matches.isEmpty()) {
-            boolean isMatched = matches.stream().anyMatch(
-                    match ->
-                            match.getMatched().equals(MatchStatus.MATCHED)
-                                    || match.getCompleteStatus().equals(CompleteStatus.COMPLETE)
-            );
-
-            if (isMatched) {
-                log.warn("이미 매칭된 상태입니다.");
-                throw new MatchingException(ExceptionCode.ALREADY_MATCHED);
-            }
-        }
-    }
-
     private Board getBoard(Optional<Board> boardRepository) {
         //Board
         return boardRepository.orElseThrow(
@@ -204,13 +189,9 @@ public class MatchServiceImpl implements MatchService {
                 .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 수락했어요.")
                 .build();
 
-        try {
+
             //알림 전송
             notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
-        } catch (Exception e) {
-            log.error("Matching Fail notification Message Error 발생");
-            log.error(e.getMessage());
-        }
     }
 
     private static void validateMatchStatus(Board findBoard, User findUser) {
@@ -281,13 +262,9 @@ public class MatchServiceImpl implements MatchService {
                 .userId(findMatch.getOwner().getUser().getUuid())
                 .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 거절했어요.")
                 .build();
-        try {
-            //알림 전송
+
             notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
-        } catch (Exception e) {
-            log.error("Matching Fail notification Message Error 발생");
-            log.error(e.getMessage());
-        }
+
     }
 
     private void updateMatchAndBoardToUnmatched(Match match, Board findBoard) {

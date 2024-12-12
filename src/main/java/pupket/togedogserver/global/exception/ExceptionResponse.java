@@ -2,11 +2,13 @@ package pupket.togedogserver.global.exception;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import org.springframework.http.HttpStatus;
 
 import static pupket.togedogserver.global.exception.ExceptionCode.NOT_HANDLED_EXCEPTION;
 
 @JsonInclude
+@Builder
 public record ExceptionResponse(String status, @JsonIgnore HttpStatus httpStatus, Integer code, String message) {
 
     public static ExceptionResponse fromException(ExceptionCode errorCode) {
