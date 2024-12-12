@@ -187,6 +187,7 @@ public class MatchServiceImpl implements MatchService {
                 .title("산책 매칭 수락")
                 .userId(findMatch.getOwner().getUser().getUuid())
                 .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 수락했어요.")
+                .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
 
@@ -261,6 +262,7 @@ public class MatchServiceImpl implements MatchService {
                 .title("산책 매칭 거절")
                 .userId(findMatch.getOwner().getUser().getUuid())
                 .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 거절했어요.")
+                .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
             notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
@@ -318,6 +320,7 @@ public class MatchServiceImpl implements MatchService {
                 .title("산책 진행 현")
                 .userId(findMatch.getOwner().getUser().getUuid())
                 .message(findMatch.getMate().getUser().getNickname() + "님이 산책을 완료하셨습니다!")
+                .timestamp(Timestamp.from(Instant.now()))
                 .build();
         try {
             //알림 전송
