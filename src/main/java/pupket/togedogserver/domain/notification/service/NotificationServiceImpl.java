@@ -185,6 +185,7 @@ public class NotificationServiceImpl implements NotificationService {
                                 .type(NotificationType.MATCH)
                                 .image(null)
                                 .lastTime(notification.getSendTime())
+                                .content(notification.getContent())
                                 .build();
                     }else{
                         return NotificationResponseDto.builder()
