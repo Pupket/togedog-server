@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.board.service.port.BoardRepository;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
@@ -91,14 +92,17 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private void sendMatchingNotification(Board findBoard, Match match) {
+        String message ="";
+        List<BoardDog> boardDog = match.getBoard().getBoardDog();
+        for(BoardDog boarddogEntity : boardDog){
+            message += boarddogEntity.getDog().getName()+ " ";
+        }
         //알림생성
         NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
                 .boardId(findBoard.getBoardId())
                 .title("산책 매칭 요청")
                 .userId(match.getMate().getUser().getUuid())
-                .message(findBoard.getBoardDog().stream().map(
-                        dog -> dog.getDog().getName()
-                ).toString() + "의 보호자가 산책 매칭을 요청하였습니다.")
+                .message(message+"의 보호자가 산책 매칭을 요청하였습니다.")
                 .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
