@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
+import pupket.togedogserver.domain.notification.constant.NotificationType;
 
 import java.sql.Timestamp;
 
@@ -17,7 +18,10 @@ import java.sql.Timestamp;
 public class NotificationResponseDto {
 
     Long roomId;
+    Long boardId;
+    NotificationType type;
     Long userId;
+    String title;
     String content;
     String image;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSX", timezone = "UTC") // ISO 8601 형식

@@ -87,7 +87,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notificationEntity);
     }
 
-    public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User owner) throws ExecutionException, InterruptedException {
+    public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User user) throws ExecutionException, InterruptedException {
         Long userId = notificationRequestDtoForMatching.getUserId();
         Long boardId = notificationRequestDtoForMatching.getBoardId();
         String token = getToken(userId);
@@ -104,7 +104,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         sendFirebaseMessageFromMatching(firebaseMessage, userId, boardId);
 
-        createAndSaveNotificationEntity(notificationRequestDtoForMatching, owner, boardId);
+        createAndSaveNotificationEntity(notificationRequestDtoForMatching, user, boardId);
 
     }
 
@@ -165,13 +165,30 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationList.stream().filter(
                 notification -> notification.getSendTime().after(parsedLastTime)
         ).map(
-                notification -> NotificationResponseDto.builder()
-                        .userId(notification.getUser().getUuid())
-                        .roomId(notification.getRoomId())
-                        .image(Optional.of(notification.getImage()).orElse(null))
-                        .content(Optional.of(notification.getContent()).orElse(null))
-                        .lastTime(Optional.of(parsedLastTime).orElse(null))
-                        .build()
+                notification -> {
+                    if(notification.getType().equals(NotificationType.MATCH)) {
+                        return NotificationResponseDto.builder()
+                                .roomId(null)
+                                .boardId(notification.getBoardId())
+                                .title(notification.getTitle())
+                                .userId(notification.getUser().getUuid())
+                                .type(NotificationType.MATCH)
+                                .image(null)
+                                .lastTime(notification.getSendTime())
+                                .build();
+                    }else{
+                        return NotificationResponseDto.builder()
+                                .userId(notification.getUser().getUuid())
+                                .roomId(notification.getRoomId())
+                                .boardId(null)
+                                .type(NotificationType.CHAT)
+                                .title(notification.getTitle())
+                                .image(Optional.of(notification.getImage()).orElse(null))
+                                .content(Optional.of(notification.getContent()).orElse(null))
+                                .lastTime(notification.getSendTime())
+                                .build();
+                    }
+                }
         ).toList();
     }
 

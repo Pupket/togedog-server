@@ -57,10 +57,10 @@ public class MatchServiceImpl implements MatchService {
         User findUserByNickname = getUser(userRepository.findByNickname(nickname));
 
         //유저의 메이트 조회
-        Mate mate = getMate(findUserByNickname);
+        Mate findMate = getMate(findUserByNickname);
 
         //매칭할 게시판 조회
-        Board findBoardById = getBoard(boardRepository.findByBoardId(boardId));
+        Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
         //이미 매칭된 조회라면 예외 던지기
         List<Match> matches = matchRepository.findByOwner(owner);
@@ -68,12 +68,32 @@ public class MatchServiceImpl implements MatchService {
         //Owner 와 Mate를 연결시켜줘야함
         Match match = Match.builder()
                 .owner(owner)
-                .mate(mate)
-                .board(findBoardById)
+                .mate(findMate)
+                .board(findBoard)
                 .build();
 
         matchRepository.save(match);
         log.info("매칭 저장 완료: 매칭ID={}", match.getMatchId());
+
+        //알림생성
+        NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
+                .boardId(findBoard.getBoardId())
+                .title("산책 매칭 요청")
+                .userId(match.getMate().getUser().getUuid())
+                .message(findBoard.getBoardDog().stream().map(
+                        dog->  dog.getDog().getName()
+                ).toString() + "의 보호자가 산책 매칭을 요청하였습니다.")
+                .build();
+
+        try {
+            //알림 전송
+            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, match.getMate().getUser());
+        } catch (Exception e) {
+            log.error("Matching Fail notification Message Error 발생");
+            log.error(e.getMessage());
+        }
+
+
     }
 
     private static void validateMatcing(List<Match> matches) {
@@ -175,7 +195,8 @@ public class MatchServiceImpl implements MatchService {
         } catch (Exception e) {
             log.error("Matching Fail notification Message Error 발생");
             log.error(e.getMessage());
-        }    }
+        }
+    }
 
     private static void validateMatchStatus(Board findBoard, User findUser) {
         // null 체크는 이미 수행되었으므로 제거
