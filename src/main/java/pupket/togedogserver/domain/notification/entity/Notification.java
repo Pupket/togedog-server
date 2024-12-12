@@ -33,6 +33,9 @@ public class Notification extends BaseEntity {
     @Column(name="send_Time")
     private Timestamp sendTime;
 
+    @Column(name="room_id")
+    private long roomId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uuid")
     private User user;
