@@ -22,8 +22,8 @@ public interface MatchJPARepository extends JpaRepository<Match, Long> {
     @Query("SELECT m from matching  m join m.board b" +
             " WHERE m.mate.mateUuid = :mateUuid" +
             " AND m.completeStatus = 'INCOMPLETE' " +
-            "AND b.startTime < :startTime " +
-            "AND b.endTime > :endTime " +
+            "AND b.startTime < :endTime " +
+            "AND b.endTime > :startTime " +
             "AND b.pickUpDay = :pickupDay")
     List<Match> findConflictMatches(Long mateUuid, LocalTime startTime, LocalTime endTime, LocalDate pickupDay);
 }
