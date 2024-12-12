@@ -1,5 +1,6 @@
 package pupket.togedogserver.domain.match.service;
 
+import com.amazonaws.auth.SdkClock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.*;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,6 +99,7 @@ public class MatchServiceImpl implements MatchService {
                 .message(findBoard.getBoardDog().stream().map(
                         dog -> dog.getDog().getName()
                 ).toString() + "의 보호자가 산책 매칭을 요청하였습니다.")
+                .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
             //알림 전송
