@@ -8,6 +8,7 @@ import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
+import pupket.togedogserver.global.baseEntity.BaseEntity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -18,7 +19,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Match {
+public class Match extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)

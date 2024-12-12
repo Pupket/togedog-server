@@ -6,6 +6,7 @@ import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +18,6 @@ public interface MatchRepository {
     Match save(Match match);
 
     Optional<Match> findById(Long matchId);
+
+    List<Match> findConflictMatches(Long mateUuid, LocalTime startTime, LocalTime endTime);
 }

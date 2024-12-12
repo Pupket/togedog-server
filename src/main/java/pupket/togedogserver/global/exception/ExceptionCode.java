@@ -77,7 +77,8 @@ public enum ExceptionCode {
     NOT_FOUND_ACCESS_TOKEN(CONFLICT, "Not Found Access Token", 403 ),
     FCM_INITIALIZATION_ERROR(CONFLICT, "FCM Initialization Error" , 403 )
     , NO_FILE_EXTENSION(CONFLICT, "No file Extention" , 403 ),
-    INVALID_FILE_EXTENSION(CONFLICT, "Invalid file Extention" , 403 ),;
+    INVALID_FILE_EXTENSION(CONFLICT, "Invalid file Extention" , 403 )
+    , SCHDULE_CONFICT(CONFLICT,"Schedule is duplacated" ,403 );
 
 
     private final HttpStatus httpStatus;
