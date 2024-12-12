@@ -12,7 +12,7 @@ import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.service.port.ChatRoomRepository;
-import pupket.togedogserver.domain.notification.controller.port.FcmService;
+import pupket.togedogserver.domain.notification.controller.port.NotificationService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.service.port.UserRepository;
@@ -37,7 +37,7 @@ public class ChatServiceImpl implements ChatService {
     private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
     private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
-    private final FcmService fcmServiceImpl;
+    private final NotificationService notificationServiceImpl;
     private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
@@ -360,9 +360,9 @@ public class ChatServiceImpl implements ChatService {
 
         // 로그로 확인
         if (lastMessage != null) {
-            System.out.println("가장 최근 메시지: " + lastMessage.getContent());
+            log.info("가장 최근 메시지: " + lastMessage.getContent());
         } else {
-            System.out.println("메시지가 없습니다.");
+            log.info("메시지가 없습니다.");
         }
         Timestamp lastTime = chatRoom.getLastTime();
         List<ChattingResponseDto> unreceivedMessages = getMessagesAfterLastTime(chatRoom.getRoomId(), lastTime, uuid);
@@ -374,7 +374,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("Sending notification to disconnected user: {}", receiver);
         NotificationRequestDto notificationRequestDto = NotificationRequestDto.to(message, findChatRoom, parsedLastTime, receiver);
         try {
-            fcmServiceImpl.sendNotification(notificationRequestDto);
+            notificationServiceImpl.sendNotification(notificationRequestDto);
             log.info("Notification sent successfully to user: {}", receiver);
         } catch (Exception e) {
             log.error("Failed to send notification to user: {}", receiver, e);

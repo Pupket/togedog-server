@@ -8,16 +8,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import pupket.togedogserver.domain.notification.controller.port.FcmService;
+import org.springframework.web.bind.annotation.*;
 import pupket.togedogserver.domain.notification.controller.port.NotificationService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
+import pupket.togedogserver.domain.notification.dto.NotificationResponseDto;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -28,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final FcmService fcmService;
 
     @Operation(summary = "fcm 토큰 발급", description = "fcm 토큰 발급")
     @ApiResponses(value = {
@@ -42,7 +40,7 @@ public class NotificationController {
             @RequestBody String token
     ) {
         log.info("fcm token: {}", token);
-        fcmService.createToken(
+        notificationService.createToken(
                 userDetail.getUuid(),
                 token
         );
@@ -62,6 +60,16 @@ public class NotificationController {
         notificationService.sendNotification(
                 notification
         );
+    }
+
+    @GetMapping("/get-unreceived-notification")
+    public ResponseEntity<List<NotificationResponseDto>> getNotificationList(
+            @AuthenticationPrincipal CustomUserDetail userDetail,
+            @RequestParam String lastTime
+            ){
+        List<NotificationResponseDto> notificationList =  notificationService.getUnreceivedNotificationList(userDetail,lastTime);
+
+        return ResponseEntity.ok(notificationList);
     }
 
 }

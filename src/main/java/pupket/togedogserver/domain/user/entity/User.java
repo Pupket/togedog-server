@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.domain.notification.entity.Notification;
 import pupket.togedogserver.domain.user.constant.AccountStatus;
 import pupket.togedogserver.domain.user.constant.RoleType;
 import pupket.togedogserver.domain.user.constant.UserGender;
@@ -84,6 +85,9 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private List<Board> board;
+
+    @OneToMany(mappedBy = "user",cascade = CascadeType.PERSIST)
+    private List<Notification> notification ;
 
     private String fcmToken;
 
