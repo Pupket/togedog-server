@@ -79,7 +79,7 @@ public class NotificationServiceImpl implements NotificationService {
         sendMessage(notification, roomId, firebaseMessage);
 
         //Notification Entity 생성
-        Notification notificationEntity = createNotificationEntity(notification);
+        Notification notificationEntity = createNotificationEntity(notification, roomId);
 
         //메세지 전송 성공 후 유저의 알림 리스트 저장
         notificationRepository.save(notificationEntity);
@@ -97,6 +97,7 @@ public class NotificationServiceImpl implements NotificationService {
         ).map(
                 notification -> NotificationResponseDto.builder()
                         .userId(notification.getUser().getUuid())
+                        .roomId(notification.getRoomId())
                         .image(Optional.of(notification.getImage()).orElse(null))
                         .content(Optional.of(notification.getContent()).orElse(null))
                         .lastTime(Optional.of(parsedLastTime).orElse(null))
@@ -116,7 +117,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private Notification createNotificationEntity(NotificationRequestDto notification) {
+    private Notification createNotificationEntity(NotificationRequestDto notification, Long roomId) {
         String content = getContent(notification);
         String image = getImage(notification);
         String title = getTitle(image, content);
@@ -124,6 +125,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<Notification> notificationList = findUser.getNotification();
         Notification notificationEntity = notificationRepository.save(Notification.builder()
                 .title(title)
+                .roomId(roomId)
                 .content(content)
                 .image(image)
                 .sendTime(Timestamp.from(Instant.now()))
