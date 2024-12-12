@@ -11,6 +11,8 @@ import pupket.togedogserver.domain.match.constant.MatchStatus;
 import pupket.togedogserver.domain.match.controller.port.MatchService;
 import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.match.service.port.MatchRepository;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDtoForMatching;
+import pupket.togedogserver.domain.notification.service.NotificationServiceImpl;
 import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
@@ -23,6 +25,7 @@ import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ public class MatchServiceImpl implements MatchService {
     private final OwnerRepository ownerRepository;
     private final MateRepository mateRepository;
     private final BoardRepository boardRepository;
+    private final NotificationServiceImpl notificationServiceImpl;
 
     @Override
     public void match(CustomUserDetail userDetail, String nickname, Long boardId) {
@@ -136,7 +140,9 @@ public class MatchServiceImpl implements MatchService {
     public void matchSuccess(CustomUserDetail userDetail, Long boardId) {
         log.info("매칭 성공 처리 시작: 사용자={}, 게시판ID={}", userDetail.getUsername(), boardId);
 
+        // 메이트 유저 조회
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
+        //해당 게시판 조회
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
         // 매칭된 건인지 확인
@@ -145,12 +151,31 @@ public class MatchServiceImpl implements MatchService {
             throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
         }
 
-        validateMatchStatus(findBoard, findUser);  // null 체크 이후에 다른 검증 수행
+        //수락자가 자신이 아닌지, 이미 매칭된 게시글인지 체크
+        validateMatchStatus(findBoard, findUser);
 
+        //Match 조회
         Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
+
+        //매칭 성공으로 업데이트
         updateMatchAndBoardMatchStatusToMacthed(findMatch, findBoard);
         log.info("매칭 성공 처리 완료: 매칭ID={}", findMatch.getMatchId());
-    }
+
+        //알림생성
+        NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
+                .boardId(findBoard.getBoardId())
+                .title("산책 매칭 수락")
+                .userId(findMatch.getOwner().getUser().getUuid())
+                .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 수락했어요.")
+                .build();
+
+        try {
+            //알림 전송
+            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
+        } catch (Exception e) {
+            log.error("Matching Fail notification Message Error 발생");
+            log.error(e.getMessage());
+        }    }
 
     private static void validateMatchStatus(Board findBoard, User findUser) {
         // null 체크는 이미 수행되었으므로 제거
@@ -170,7 +195,7 @@ public class MatchServiceImpl implements MatchService {
                 .matched(MatchStatus.MATCHED)
                 .build();
 
-        updatedMatch= matchRepository.save(updatedMatch);
+        updatedMatch = matchRepository.save(updatedMatch);
 
         Board board = findBoard.toBuilder()
                 .matched(MatchStatus.MATCHED)
@@ -192,20 +217,41 @@ public class MatchServiceImpl implements MatchService {
     public void matchFail(CustomUserDetail userDetail, Long boardId) {
         log.info("매칭 실패 처리 시작: 사용자={}, 게시판ID={}", userDetail.getUsername(), boardId);
 
+        //유저 조회
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
 
+        //해당 게시판 조회
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
+        //메이트 조회
         Mate findMate = findUser.getMate();
         if (findMate == null) {
             log.warn("메이트를 찾을 수 없습니다.");
             throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
         }
 
-        Match match = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
+        //매칭 조회
+        Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
 
-        updateMatchAndBoardToUnmatched(match, findBoard);
-        log.info("매칭 실패 처리 완료: 매칭ID={}", match.getMatchId());
+
+        // 해당 매칭 거절 처리
+        updateMatchAndBoardToUnmatched(findMatch, findBoard);
+        log.info("매칭 실패 처리 완료: 매칭ID={}", findMatch.getMatchId());
+
+        //알림 생성
+        NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
+                .boardId(findBoard.getBoardId())
+                .title("산책 매칭 거절")
+                .userId(findMatch.getOwner().getUser().getUuid())
+                .message(findMatch.getMate().getUser().getNickname() + "님이 산책 매칭을 거절했어요.")
+                .build();
+        try {
+            //알림 전송
+            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
+        } catch (Exception e) {
+            log.error("Matching Fail notification Message Error 발생");
+            log.error(e.getMessage());
+        }
     }
 
     private void updateMatchAndBoardToUnmatched(Match match, Board findBoard) {
@@ -226,36 +272,47 @@ public class MatchServiceImpl implements MatchService {
     public void completeWalking(Long boardId, CustomUserDetail userDetail) {
         log.info("산책 완료 처리 시작: 사용자={}, 게시판ID={}", userDetail.getUsername(), boardId);
 
+        //유저 조회
         User findUser = getUser(userRepository.findByUuid(userDetail.getUuid()));
 
-        Mate findMate = mateRepository.findByUser(findUser).orElseThrow(
-                () -> {
-                    log.error("메이트를 찾을 수 없습니다.");
-                    return new MemberException(ExceptionCode.NOT_FOUND_MEMBER);
-                }
-        );
+        //메이트 조회
+        Mate findMate = getMate(findUser);
 
+        //게시판 조회
         Board findBoard = getBoard(boardRepository.findById(boardId));
 
+        //매칭조회
         Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
 
+        //매칭 완료로 업데이트
         Match completedMatch = updateMatchToComplete(findMatch);
 
-        Mate updatedMate = findMate.toBuilder()
-                .matchCount(findMate.getMatchCount() + 1)
-                .build();
-
+        //각 유저 매치 카운트 증가
+        findMate.setMatchCount(findMate.getMatchCount()+1);
         Owner owner = findUser.getOwner();
 
-        Owner updatedOwner = owner.toBuilder()
-                .matchCount(owner.getMatchCount() + 1)
-                .build();
+        owner.setMatchCount(owner.getMatchCount()+1);
 
-        mateRepository.save(updatedMate);
-        ownerRepository.save(updatedOwner);
+        mateRepository.save(findMate);
+        ownerRepository.save(owner);
         matchRepository.save(completedMatch);
 
         log.info("산책 완료 처리 완료: 매칭ID={}", completedMatch.getMatchId());
+
+        //알림 생성
+        NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
+                .boardId(findBoard.getBoardId())
+                .title("산책 진행 현")
+                .userId(findMatch.getOwner().getUser().getUuid())
+                .message(findMatch.getMate().getUser().getNickname() + "님이 산책을 완료하셨습니다!")
+                .build();
+        try {
+            //알림 전송
+            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
+        } catch (Exception e) {
+            log.error("Matching Fail notification Message Error 발생");
+            log.error(e.getMessage());
+        }
     }
 
     private static Match updateMatchToComplete(Match findMatch) {

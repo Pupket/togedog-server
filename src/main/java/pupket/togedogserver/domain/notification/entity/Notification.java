@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.notification.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+import pupket.togedogserver.domain.notification.constant.NotificationType;
 import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.baseEntity.BaseEntity;
 
@@ -34,7 +35,14 @@ public class Notification extends BaseEntity {
     private Timestamp sendTime;
 
     @Column(name="room_id")
-    private long roomId;
+    private Long roomId;
+
+    @Column(name="board_id")
+    private Long boardId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private NotificationType type;  // 알람 유형: CHAT 또는 MATCH
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uuid")

@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pupket.togedogserver.domain.notification.constant.NotificationType;
 import pupket.togedogserver.domain.notification.controller.port.NotificationService;
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDtoForMatching;
 import pupket.togedogserver.domain.notification.dto.NotificationResponseDto;
 import pupket.togedogserver.domain.notification.entity.Notification;
 import pupket.togedogserver.domain.notification.service.port.NotificationRepository;
@@ -60,11 +62,11 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Notification details: content={}, image={}, lastTime={}", notification.getContent(), notification.getImage(), notification.getLastTime());
 
         //FcmToken값 DB에서 조회
-        String token = getToken(notification);
+        String token = getToken(notification.getUserId());
 
         //Token이 비어있는지 검사
         log.info("Retrieved FCM token for userId: {}", notification.getUserId());
-        validateToken(notification, token);
+        validateToken(notification.getUserId(), token);
 
         //전송할 데이터 설정
         Map<String, String> data = new HashMap<>();
@@ -83,6 +85,74 @@ public class NotificationServiceImpl implements NotificationService {
 
         //메세지 전송 성공 후 유저의 알림 리스트 저장
         notificationRepository.save(notificationEntity);
+    }
+
+    public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User owner) throws ExecutionException, InterruptedException {
+        Long userId = notificationRequestDtoForMatching.getUserId();
+        Long boardId = notificationRequestDtoForMatching.getBoardId();
+        String token = getToken(userId);
+
+        validateToken(userId, token);
+
+        //전송할 데이터 설정
+        Map<String, String> data = new HashMap<>();
+        setDataFromMatching(notificationRequestDtoForMatching, data);
+        log.info("FCM message payload: {}", data);
+
+        log.info("Sending FCM message for userId: {}, roomId: {}", userId, boardId);
+        Message firebaseMessage = createMessageForMatching(notificationRequestDtoForMatching, token, data);
+
+        sendFirebaseMessageFromMatching(firebaseMessage, userId, boardId);
+
+        createAndSaveNotificationEntity(notificationRequestDtoForMatching, owner, boardId);
+
+    }
+
+    private void createAndSaveNotificationEntity(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User owner, Long boardId) {
+        Notification notification = Notification.builder()
+                .title(notificationRequestDtoForMatching.getTitle())
+                .type(NotificationType.MATCH)
+                .boardId(boardId)
+                .image(null)
+                .sendTime(Timestamp.from(Instant.now()))
+                .user(owner)
+                .content(notificationRequestDtoForMatching.getMessage())
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
+    private static void sendFirebaseMessageFromMatching(Message firebaseMessage, Long userId, Long boardId) throws InterruptedException, ExecutionException {
+        try {
+            String response = FirebaseMessaging.getInstance().sendAsync(firebaseMessage).get();
+            log.info("Successfully sent FCM message. Response: {}", response);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to send FCM message for userId: {}, boardId: {}. Error: {}",
+                    userId, boardId, e.getMessage());
+            throw e;
+        }
+    }
+
+    private static Message createMessageForMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, String token, Map<String, String> data) {
+        return Message.builder()
+                .setToken(token)
+                .setAndroidConfig(AndroidConfig.builder()
+                        .setTtl(43200000)
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .setNotification(AndroidNotification.builder()
+                                .setTitle(notificationRequestDtoForMatching.getTitle())
+                                .setBody(notificationRequestDtoForMatching.getMessage())
+                                .setImage(null)
+                                .build())
+                        .putAllData(data)
+                        .build())
+                .build();
+    }
+
+    private static void setDataFromMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, Map<String, String> data) {
+        data.put("boardId", String.valueOf(notificationRequestDtoForMatching.getBoardId()));
+        data.put("message", notificationRequestDtoForMatching.getMessage());
+        data.put("sendTime", notificationRequestDtoForMatching.getTimestamp().toString());
     }
 
     @Override
@@ -125,7 +195,9 @@ public class NotificationServiceImpl implements NotificationService {
         List<Notification> notificationList = findUser.getNotification();
         Notification notificationEntity = notificationRepository.save(Notification.builder()
                 .title(title)
+                .type(NotificationType.CHAT)
                 .roomId(roomId)
+                .boardId(null)
                 .content(content)
                 .image(image)
                 .sendTime(Timestamp.from(Instant.now()))
@@ -154,17 +226,17 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private String getToken(NotificationRequestDto notification) {
-        return userRepository.findByUuid(notification.getUserId())
+    private String getToken(Long userId) {
+        return userRepository.findByUuid(userId)
                 .orElseThrow(() -> {
-                    log.error("FCM token not found for userId: {}", notification.getUserId());
+                    log.error("FCM token not found for userId: {}", userId);
                     return new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
                 }).getFcmToken();
     }
 
-    private static void validateToken(NotificationRequestDto notification, String token) {
+    private static void validateToken(Long userId, String token) {
         if (token == null || token.isEmpty()) {
-            log.error("FCM token is null or empty for userId: {}", notification.getUserId());
+            log.error("FCM token is null or empty for userId: {}", userId);
             throw new FcmException(ExceptionCode.NOT_FOUND_FCM_TOKEN);
         }
     }
