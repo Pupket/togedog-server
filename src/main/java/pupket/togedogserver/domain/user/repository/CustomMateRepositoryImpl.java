@@ -52,7 +52,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         Long count = getCount(); //Count쿼리로 결과수 가져오기
 
         // 엔티티를 DTO로 변환
-        List<FindMateResponse> MateResponse = mateList.stream()
+        List<FindMateResponse> mateResponse = mateList.stream()
                 .map(mate -> {
                     PreferredDetailsResponse preferred = getPreferredDetailsResponse(mate);
 
@@ -80,9 +80,9 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                             .career(mate.getCareer())
                             .preferred(preferred)
                             .build();
-                }).collect(Collectors.toList());
+                }).toList();
 
-        return new PageImpl<>(MateResponse, pageable, count);
+        return new PageImpl<>(mateResponse, pageable, count);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                 String endTime = String.valueOf(board.getEndTime());
                 List<String> walkingPlaceTags = board.getWalkingPlaceTag().stream()
                         .map(WalkingPlaceTag::getPlaceName)
-                        .collect(Collectors.toList());
+                        .toList();
 
                 return BoardFindResponse.builder()
                         .boardId(board.getBoardId())
@@ -146,14 +146,14 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                     .build());
         });
 
-        log.info("정보={}",boardResponseMap);
+        log.info("정보={}", boardResponseMap);
 
         List<BoardFindResponse> boardResponses = new ArrayList<>(boardResponseMap.values());
 
         Long count;
         LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX);
-        try{
+        try {
             // 카운트 쿼리
             String countQuery = "SELECT COUNT(b) FROM Board b " +
                     "JOIN b.boardDog bd " +
@@ -167,7 +167,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                     .setParameter("startOfMonth", startOfMonth)
                     .setParameter("endOfMonth", endOfMonth)
                     .getSingleResult();
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new MateException(ExceptionCode.NOT_FOUND_SCHEDULE);
         }
 
@@ -206,14 +206,14 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         log.info("{}", results.size());
         results.forEach(
                 i -> {
-                    LocalTime startTime = i.getStartTime();
-                    LocalTime endTime = i.getEndTime();
+                    LocalDateTime startTime = i.getStartTime();
+                    LocalDateTime endTime = i.getEndTime();
 
                     // 시작 시간과 종료 시간 사이의 차이를 계산
                     Duration duration = Duration.between(startTime, endTime);
                     long durationMinutes = duration.toHours();
                     log.info("hours={}", durationMinutes);
-                    long minutes = duration.toMinutes()%60;
+                    long minutes = duration.toMinutes() % 60;
                     log.info("minute= {}", minutes);
 
                     totalHours.addAndGet(durationMinutes);
@@ -251,8 +251,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
     private Long getCount() {
         // JPQL로 전체 개수 쿼리 작성
         String countJpql = "SELECT COUNT(b) FROM Mate b WHERE b.deleted = false";
-        Long count = em.createQuery(countJpql, Long.class).getSingleResult();
-        return count;
+        return em.createQuery(countJpql, Long.class).getSingleResult();
     }
 
     private List<Mate> getMates(Pageable pageable) {
@@ -261,8 +260,8 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
         result.setFirstResult((int) pageable.getOffset());
         result.setMaxResults(pageable.getPageSize());
-        List<Mate> mateList = result.getResultList();
-        return mateList;
+
+        return result.getResultList();
     }
 }
 

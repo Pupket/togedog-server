@@ -89,9 +89,9 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
         return result.getResultList();
     }
 
-    public DogActiveResponse findDogActions(Long Uuid) {
+    public DogActiveResponse findDogActions(Long uuid) {
 
-        List<Board> resultList = getBoardList(Uuid);
+        List<Board> resultList = getBoardList(uuid);
         if(resultList.isEmpty()) {
             return null;
         }
@@ -99,13 +99,19 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
         //산책 시간 결과 반환
         String durationSum = getDurationSum(resultList);
 
-        int randomBoardNumber = new Random().nextInt(resultList.size());
-        int randomDogNumber = new Random().nextInt(resultList.get(randomBoardNumber).getBoardDog().size());
+        Random randomBoardNumber = new Random();
+        Random randomDogNumber = new Random();
 
         //연관 반려견중 대표로 한 마리 출력
-        String dogName = resultList.get(randomBoardNumber).getBoardDog().get(randomDogNumber).getDog().getName();
+        int randomBoardIdx = randomBoardNumber.nextInt(resultList.size());
+        String dogName = resultList
+                .get(randomBoardIdx)
+                .getBoardDog()
+                .get(randomDogNumber.nextInt(resultList.get(randomBoardIdx).getBoardDog().size()))
+                .getDog()
+                .getName();
 
-        Long count = getCount(Uuid);
+        Long count = getCount(uuid);
 
         return DogActiveResponse.builder()
                 .name(dogName)
@@ -122,8 +128,8 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
 
         resultList.forEach(
                 i -> {
-                    LocalTime startTime = i.getStartTime();
-                    LocalTime endTime = i.getEndTime();
+                    LocalDateTime startTime = i.getStartTime();
+                    LocalDateTime endTime = i.getEndTime();
 
                     log.info("startTime={}", startTime);
                     log.info("endTime={}", endTime);
@@ -148,7 +154,7 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
 
     }
 
-    private Long getCount(Long Uuid) {
+    private Long getCount(Long uuid) {
         String countQuery = "select count(b) from Board b " +
                 " join BoardDog bd" +
                 "        on b.boardId = bd.board.boardId" +
@@ -162,13 +168,13 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
         LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).with(LocalTime.MAX);
 
         return em.createQuery(countQuery, Long.class)
-                .setParameter("Uuid", Uuid)
+                .setParameter("Uuid", uuid)
                 .setParameter("startOfMonth", startOfMonth)
                 .setParameter("endOfMonth", endOfMonth)
                 .getSingleResult();
     }
 
-    private List<Board> getBoardList(Long Uuid) {
+    private List<Board> getBoardList(Long uuid) {
         String query = "select b from Board b " +
                 " join BoardDog bd" +
                 "        on b.boardId = bd.board.boardId" +
@@ -183,10 +189,10 @@ public class CustomDogRepositoryImpl implements CustomDogRepository {
         LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
         LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).with(LocalTime.MAX);
 
-        result.setParameter("Uuid", Uuid);
+        result.setParameter("Uuid", uuid);
         result.setParameter("startOfMonth", startOfMonth);
         result.setParameter("endOfMonth", endOfMonth);
-        result.setParameter("Uuid", Uuid);
+        result.setParameter("Uuid", uuid);
 
         return result.getResultList();
     }
