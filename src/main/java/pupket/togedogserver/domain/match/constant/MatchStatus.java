@@ -10,7 +10,7 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @JsonDeserialize(using = MatchStatusDeserializer.class)
 public enum MatchStatus {
-    MATCHED("매칭 성사"), UNMATCHED("매칭 미성사");
+    MATCHED("매칭 성사"), UNMATCHED("매칭 미성사"), REJECT("매칭 거부");
 
     private final String status;
     MatchStatus(String status) {
