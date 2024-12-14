@@ -34,7 +34,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class MatchServiceImpl implements MatchService {
+public class
+MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
@@ -66,14 +67,27 @@ public class MatchServiceImpl implements MatchService {
         //매칭할 게시판 조회
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
-        //이미 매칭된 조회라면 예외 던지기
-        List<Match> conflictMatches = matchRepository.findConflictMatches(findMate.getMateUuid(), findBoard.getStartTime(), findBoard.getEndTime(), findBoard.getPickUpDay());
+        //이미 메이트의 매칭된 조회라면 예외 던지기
+        List<Match> conflictMateMatches = matchRepository.findConflictMatches(findMate.getMateUuid(), findBoard.getStartTime(), findBoard.getEndTime(), findBoard.getPickUpDay(),findBoard.getBoardId());
 
-        if (!conflictMatches.isEmpty()) {
-            conflictMatches.forEach(match -> log.info("겹치는 일정: startTime={}, endTime={}, pickUpDay={}",
+        List<Long> dogIdList = findBoard.getBoardDog().stream().map(
+                bd ->
+                        bd.getDog().getDogId()
+        ).toList();
+
+        List<Board> conflictOwnerMatches = boardRepository.findConflictOwnerMatches(dogIdList,findBoard.getStartTime(),findBoard.getEndTime(),findBoard.getPickUpDay(),findBoard.getBoardId());
+
+        if (!conflictMateMatches.isEmpty()) {
+            conflictMateMatches.forEach(match -> log.info("겹치는 일정: startTime={}, endTime={}, pickUpDay={}",
                     match.getBoard().getStartTime(),
                     match.getBoard().getEndTime(),
                     match.getBoard().getPickUpDay()));
+            throw new MatchingException(ExceptionCode.SCHDULE_CONFICT);
+        } else if (!conflictOwnerMatches.isEmpty()) {
+            conflictOwnerMatches.forEach((board -> log.info("겹치는 일정: startTime={}, endTime={}, pickUpDay={}",
+                    board.getStartTime(),
+                    board.getEndTime(),
+                    board.getPickUpDay())));
             throw new MatchingException(ExceptionCode.SCHDULE_CONFICT);
         }
 
@@ -92,22 +106,22 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private void sendMatchingNotification(Board findBoard, Match match) {
-        String message ="";
+        StringBuilder message = new StringBuilder();
         List<BoardDog> boardDog = match.getBoard().getBoardDog();
-        for(BoardDog boarddogEntity : boardDog){
-            message += boarddogEntity.getDog().getName()+ " ";
+        for (BoardDog boarddogEntity : boardDog) {
+            message.append(boarddogEntity.getDog().getName() + " ");
         }
         //알림생성
         NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
                 .boardId(findBoard.getBoardId())
                 .title("산책 매칭 요청")
                 .userId(match.getMate().getUser().getUuid())
-                .message(message+"의 보호자가 산책 매칭을 요청하였습니다.")
+                .message(message + "의 보호자가 산책 매칭을 요청하였습니다.")
                 .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
-            //알림 전송
-            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, match.getMate().getUser());
+        //알림 전송
+        notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, match.getMate().getUser());
 
     }
 
@@ -191,8 +205,8 @@ public class MatchServiceImpl implements MatchService {
                 .build();
 
 
-            //알림 전송
-            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
+        //알림 전송
+        notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
     }
 
     private static void validateMatchStatus(Board findBoard, User findUser) {
@@ -213,7 +227,7 @@ public class MatchServiceImpl implements MatchService {
                 .matched(MatchStatus.MATCHED)
                 .build();
 
-        updatedMatch = matchRepository.save(updatedMatch);
+        matchRepository.save(updatedMatch);
 
         Board board = findBoard.toBuilder()
                 .matched(MatchStatus.MATCHED)
@@ -265,13 +279,13 @@ public class MatchServiceImpl implements MatchService {
                 .timestamp(Timestamp.from(Instant.now()))
                 .build();
 
-            notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
+        notificationServiceImpl.sendNotificationAboutMatching(notificationRequestDtoForMatching, findMatch.getOwner().getUser());
 
     }
 
     private void updateMatchAndBoardToUnmatched(Match match, Board findBoard) {
         Match updatedMatch = match.toBuilder()
-                .matched(MatchStatus.UNMATCHED)
+                .matched(MatchStatus.REJECT)
                 .build();
 
         matchRepository.save(updatedMatch);
@@ -299,12 +313,16 @@ public class MatchServiceImpl implements MatchService {
         //매칭조회
         Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
 
+        if(findMatch.getMatched().equals(MatchStatus.UNMATCHED)) {
+            throw new MatchingException(ExceptionCode.NOT_ACCEPTED);
+        }
+
         //매칭 완료로 업데이트
         Match completedMatch = updateMatchToComplete(findMatch);
 
         //각 유저 매치 카운트 증가
         findMate.setMatchCount(findMate.getMatchCount() + 1);
-        Owner owner = findUser.getOwner();
+        Owner owner = findBoard.getUser().getOwner();
 
         owner.setMatchCount(owner.getMatchCount() + 1);
 
@@ -314,7 +332,7 @@ public class MatchServiceImpl implements MatchService {
 
         log.info("산책 완료 처리 완료: 매칭ID={}", completedMatch.getMatchId());
 
-        //알림 생성
+//        알림 생성
         NotificationRequestDtoForMatching notificationRequestDtoForMatching = NotificationRequestDtoForMatching.builder()
                 .boardId(findBoard.getBoardId())
                 .title("산책 진행 현")

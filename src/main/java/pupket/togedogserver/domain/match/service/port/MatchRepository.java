@@ -7,7 +7,7 @@ import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,5 +20,6 @@ public interface MatchRepository {
 
     Optional<Match> findById(Long matchId);
 
-    List<Match> findConflictMatches(Long mateUuid, LocalTime startTime, LocalTime endTime, LocalDate pickUpDay);
+    List<Match> findConflictMatches(Long mateUuid, LocalDateTime startTime, LocalDateTime endTime, LocalDate pickUpDay, Long boardId);
+
 }
