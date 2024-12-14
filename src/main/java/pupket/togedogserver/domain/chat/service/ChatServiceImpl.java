@@ -34,11 +34,11 @@ import java.util.concurrent.TimeUnit;
 public class ChatServiceImpl implements ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
-    private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, ChattingResponseDto> redisTemplateForSave;
+    private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final UserRepository userRepository;
     private final NotificationService notificationServiceImpl;
-    private final RedisTemplate<String, ChannelTopic> redisTopicTemplate;
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
@@ -176,9 +176,9 @@ public class ChatServiceImpl implements ChatService {
 
             // 로그로 확인
             if (lastMessage != null) {
-                System.out.println("가장 최근 메시지: " + lastMessage.getContent());
+               log.info("가장 최근 메시지: {}", lastMessage.getContent());
             } else {
-                System.out.println("메시지가 없습니다.");
+                log.info("메시지가 없습니다.");
             }
 
             Timestamp lastTime = room.getLastTime();
@@ -376,9 +376,11 @@ public class ChatServiceImpl implements ChatService {
         try {
             notificationServiceImpl.sendNotification(notificationRequestDto);
             log.info("Notification sent successfully to user: {}", receiver);
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             log.error("Failed to send notification to user: {}", receiver, e);
             throw new ChatException(ExceptionCode.INTERRUPTION_OR_EXECUTION_ERR);
+        }catch (Exception e) {
+            log.error("Failed to send notification to user: {}", receiver, e);
         }
     }
 

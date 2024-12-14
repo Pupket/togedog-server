@@ -12,7 +12,7 @@ import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
 @Slf4j
 public class RedisPublisher {
     private final ChannelTopic topic;
-    private final RedisTemplate redisTemplate;
+    private final RedisTemplate<String,Object> redisTemplate;
 
 
     public void publish(ChattingResponseDto message){
