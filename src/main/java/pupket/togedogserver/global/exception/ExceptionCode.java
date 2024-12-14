@@ -69,7 +69,7 @@ public enum ExceptionCode {
     NOT_FOUND_BOARDDOG(CONFLICT, "Can't find BoardDog", 409),
     ALREADY_COMPLETED(CONFLICT, "Matching Already Completed", 409),
     MATE_NOT_REGIST(CONFLICT, "Mate Not Register", 409),
-    DUPLICATE_LOGIN(CONFLICT, "Duplicate Login", 409),
+    DUPLICATE_LOGIN(UNAUTHORIZED, "Duplicate Login", 401),
     INVALID_TIME_FORMAT(CONFLICT, "Invalid Time Format", 409),
     INTERRUPTION_OR_EXECUTION_ERR(CONFLICT, "Interruption or Execution Error", 409),
     NOT_FOUND_SCHEDULE(CONFLICT, "Not Found Schedule", 409 ),
@@ -78,7 +78,8 @@ public enum ExceptionCode {
     FCM_INITIALIZATION_ERROR(CONFLICT, "FCM Initialization Error" , 409 )
     , NO_FILE_EXTENSION(CONFLICT, "No file Extention" , 409 ),
     INVALID_FILE_EXTENSION(CONFLICT, "Invalid file Extention" , 409 )
-    , SCHDULE_CONFICT(CONFLICT,"Schedule is duplacated" ,409 );
+    , SCHDULE_CONFICT(CONFLICT,"Schedule is duplacated" ,409 ),
+    NOT_ACCEPTED(CONFLICT, "Not Accepted" , 409 ),;
 
 
     private final HttpStatus httpStatus;

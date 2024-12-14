@@ -9,18 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pupket.togedogserver.global.exception.customException.MemberException;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    Logger defaultLogger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-    Logger exceptionLogger = LoggerFactory.getLogger("ExceptionLogger");
 
     @ExceptionHandler(TogedogException.class)
     public ResponseEntity<ExceptionResponse> handleAlleException(TogedogException ex) {
-        defaultLogger.warn(ex.getMessage());
-        exceptionLogger.warn(ex.getMessage(), ex);
+        log.warn(ex.getMessage());
+        log.warn(ex.getMessage(), ex);
 
         ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
 
@@ -31,10 +30,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
     }
 
+    @ExceptionHandler(MemberException.class)
+    public ResponseEntity<ExceptionResponse> handleMemberException(MemberException ex) {
+        log.warn(ex.getMessage());
+        log.warn(ex.getMessage(), ex);
+        ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
+        if (exceptionResponse.httpStatus().equals(HttpStatus.CONFLICT)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
+        }
+        return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
+    }
+
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<ExceptionResponse> handleDefaultException(Exception ex) {
-        defaultLogger.error(ex.getMessage(), ex);
-        exceptionLogger.error(ex.getMessage(), ex);
+        log.error(ex.getMessage(), ex);
+        log.error(ex.getMessage(), ex);
 
         ExceptionResponse exceptionResponse = ExceptionResponse.fromError(ex);
         return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);

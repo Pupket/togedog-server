@@ -90,7 +90,7 @@ public class JwtService {
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
                 .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+                .toList();
 
         CustomUserDetail userDetail = new CustomUserDetail(claims.getSubject(), "",
                 Long.parseLong(String.valueOf(claims.get("id"))), authorities);
@@ -218,7 +218,7 @@ public class JwtService {
         } else if (e instanceof IllegalArgumentException) {
             return new JwtException(ExceptionCode.NOT_FOUND_TOKEN);
         } else {
-            return new JwtException();
+            return new JwtException(ExceptionCode.INVALID_TOKEN);
         }
     }
 
