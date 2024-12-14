@@ -37,7 +37,6 @@ CI/CD: Git Actions, Docker
 
 ## System Architecture
 
->본 시스템은 클라이언트와 서버 간의 실시간 데이터 송수신을 위해 WebSocket 기반의 통신 구조를 채택하였으며, Redis를 활용하여 세션 관리를 최적화하였습니다. AWS EC2와 Docker를 이용해 안정적이고 확장 가능한 배포 환경을 구축하였습니다.
 ---
 
 ![2](https://github.com/user-attachments/assets/d52d2605-5024-4456-9fec-4a99f92a937b)
@@ -119,8 +118,6 @@ CI/CD: Git Actions, Docker
 - **프로필 등록/수정**: 반려견의 이름, 나이, 품종, 특이사항 등을 입력/수정.
 - **사진 업로드**: 반려견 사진 추가로 프로필 완성 가능.
 
-
-
 ## 산책 메이트 모드
 ### 홈
 - **홈 배너**: 산책 메이트의 산책 활동을 슬라이드 배너로 시각적으로 확인.
@@ -138,8 +135,6 @@ CI/CD: Git Actions, Docker
 ### 프로필 관리
 - **프로필 설정**: 이름, 활동 가능 시간, 지역 등의 정보를 등록/수정.
 - **사진 업로드**: 자신의 사진 추가로 프로필 완성 가능.
-
-
 
 
 # 주요과정
@@ -174,7 +169,16 @@ CI/CD: Git Actions, Docker
   - EventListener, JWT Token을 사용하여 유저 로그인 세션 접속유무 실시간 Redis에 캐싱처리
   - 미접속 유저는 FCM을 사용한 실시간 알림 전송
 
-## 내가 개선한 부분
+## 배포 과정
+
+- CI/CD 파이프라인: Git Actions와 Docker를 이용해 코드 변경 시 자동 빌드 및 배포.
+- AWS 설정:
+  - Route53으로 도메인 네임 관리.
+  - ACM 및 ALB를 활용한 SSL 인증 및 포트 리다이렉션 구성.
+  - EC2와 RDS(MySQL) 기반의 안정적인 서버 환경 구축.
+
+
+## 프로젝트 개선점
 
 ### 아키텍처
 - 어댑터 패턴을 사용하여 각 레이어의 의존성 약화([개선 과정 기록](https://sunro1994.tistory.com/255))
@@ -183,13 +187,36 @@ CI/CD: Git Actions, Docker
 - SoftDelete방식의 데이터 삭제 관리 개선([CallBackCycle을 사용한 연관 엔티티 삭제](https://sunro1994.tistory.com/260))
 
 ### 실시간 초성 검색 자동완성 기능 개발
-- 견종과 유저 닉네임 검색을 위한 음절 분리 및 저장 과정을 **RDB**에서 **Redis**의 **ZSet**방식으로 수정하여 저장 속도 개선(15초->2초)
+- 견종과 유저 닉네임 검색을 위한 음절 분리 및 저장,조회 과정을 **RDB**에서 **Redis**의 **ZSet**방식으로 수정하여 저장 속도 개선(15초->2초)
 - Redis Read Through 패턴과 Write Around 조합을 사용하여 정합성 문제 해결
 
-## 배포 과정
 
-- CI/CD 파이프라인: Git Actions와 Docker를 이용해 코드 변경 시 자동 빌드 및 배포.
-- AWS 설정:
-  - Route53으로 도메인 네임 관리.
-  - ACM 및 ALB를 활용한 SSL 인증 및 포트 리다이렉션 구성.
-  - EC2와 RDS(MySQL) 기반의 안정적인 서버 환경 구축.
+## 프로젝트 진행 과정 중 어려웠던 부분
+1. Matching요청 시 상세 조건 검증
+   - Matching 요청 시 견주(Owner)의 반려견(Dog)이 해당 매칭 요청 시간에 동일한 다른 매칭이 성사되어 있는지 확인하는 쿼리와 산책메이트(Mate)의 일정이 해당 매칭 요청시간대와 중복되는 일정이 있는지 두 가지의 검증이 필요했습니다.
+   - 우선 Mate의 일정 중복을 체크하기 위해 Mate와 Board테이블을 조인하고 Where절에 게시판의 산책 요청 시작시간부터 종료시간이 기존 일정에 중복되는 것을 조건으로 가져오도록 설정하였습니다. 이 쿼리를 통해 하나라도 데이터가 들어있다면 매칭 요청에 대해 예외를 발생시키고 클라이언트에서 메세지를 반환하도록 설정하였습니다.
+### 해결 쿼리
+```sql
+-- Mate의 매칭 중복 여부 판단 쿼리
+ @Query("SELECT m FROM matching m JOIN m.board b " +
+            "WHERE m.mate.mateUuid = :mateUuid " +
+            "AND m.completeStatus = 'INCOMPLETE'  " +
+            "AND b.startTime < :endTime " +
+            "AND b.endTime > :startTime " +
+            "AND b.pickUpDay = :pickupDay " +
+            "AND b.boardId != :boardId")
+
+ -- 반려견 산책 일정 중복 판단 쿼리
+@Query("SELECT DISTINCT b FROM Board b " +
+            "JOIN b.boardDog bd " +
+            "WHERE bd.dog.dogId IN :dogIdList " +
+            "AND (b.match.completeStatus = 'INCOMPLETE' AND b.match.matched != 'REJECTED') " +
+            "AND b.pickUpDay = :pickUpDay " +
+            "AND ((b.startTime <= :endTime AND b.endTime >= :startTime)) " +
+            "AND b.deleted = false " +
+            "AND b.boardId != :boardId")
+```
+
+2. 채팅 미접속 유저 체크 및 알람 전송
+처음 Websocket과 STOMP, Redis의 Sub/Pub, Firebase를 사용하여 구현하는데 많은 경험을 할 수 있었습니다. HTTP통신이 아닌 Websocket통신을 구현하면서 가장 어려웠던 부분은 유저의 접속 유무 판단 및 미접속시 FCM을 전송하고 접속시에는 채팅메세지만 보내야 하는 요구사항 이었습니다.
+@EventListenr를 사용하여 유저의 접속및 해제를 감지하였고, Session 정보를 유저의 헤더 토큰에서 추출한 유저 Id, 유저의 접속상태("online","offline)값을 함께 Redis에 저장하였습니다. 이를 이용하여 채팅 전송 비즈니스 로직에서 유저의 접속 유무를 판단하여 온라인일 경우 채팅을 전송하고 오프라인일 경우 FCM을 통해 알람을 보내는 방식을 구성하였습니다.
