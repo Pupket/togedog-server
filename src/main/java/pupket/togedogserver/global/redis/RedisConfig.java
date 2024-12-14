@@ -10,15 +10,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import pupket.togedogserver.domain.chat.dto.ChattingRequestDto;
 import pupket.togedogserver.domain.chat.dto.ChattingResponseDto;
-import pupket.togedogserver.domain.chat.entity.ChatRoom;
 import pupket.togedogserver.domain.chat.service.RedisSubscriber;
-
-import java.util.List;
 
 @Configuration
 public class RedisConfig {
@@ -37,6 +34,7 @@ public class RedisConfig {
     public ChannelTopic channelTopic() {
         return new ChannelTopic("chatroom");
     }
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
@@ -45,95 +43,39 @@ public class RedisConfig {
         return new LettuceConnectionFactory(redisStandaloneConfiguration);
     }
 
-    @Bean
-    public RedisTemplate<Object, Object> redisTemplate() {
-        RedisTemplate<Object,Object> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        //키를 위한 직렬화 설정
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        //값을 위한 직렬화 설정
-        Jackson2JsonRedisSerializer<ChatRoom> serializer = new Jackson2JsonRedisSerializer<>(ChatRoom.class);
-        redisTemplate.setValueSerializer(serializer);  // Value를 JSON 형태로 직렬화
-        redisTemplate.setHashValueSerializer(serializer);
+    private <K, V> RedisTemplate<K, V> createRedisTemplate(RedisConnectionFactory factory,
+                                                           RedisSerializer<K> keySerializer,
+                                                           RedisSerializer<V> valueSerializer) {
+        RedisTemplate<K, V> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(factory);
+        redisTemplate.setKeySerializer(keySerializer);
+        redisTemplate.setValueSerializer(valueSerializer);
+        redisTemplate.setHashKeySerializer(keySerializer);
+        redisTemplate.setHashValueSerializer(valueSerializer);
         return redisTemplate;
+    }
+    public RedisTemplate<String, String> customStringRedisTemplate(RedisConnectionFactory factory) {
+        return createRedisTemplate(factory, new StringRedisSerializer(), new StringRedisSerializer());
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplateForToken() {
-        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer()); // Key를 String으로 처리
-        redisTemplate.setValueSerializer(new StringRedisSerializer()); // Value를 String으로 처리
-        return redisTemplate;
+    public RedisTemplate<String, Object> objectRedisTemplate(RedisConnectionFactory factory) {
+        return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(Object.class));
     }
 
     @Bean
-    public RedisTemplate<String, ChattingResponseDto> redisTemplateForSave() {
-        RedisTemplate<String,ChattingResponseDto> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        //키를 위한 직렬화 설정
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        //값을 위한 직렬화 설정
-        Jackson2JsonRedisSerializer<ChattingResponseDto> serializer = new Jackson2JsonRedisSerializer<>(ChattingResponseDto.class);
-        redisTemplate.setValueSerializer(serializer);  // Value를 JSON 형태로 직렬화
-        redisTemplate.setHashValueSerializer(serializer);
-        return redisTemplate;
+    public RedisTemplate<String, ChattingResponseDto> chattingResponseRedisTemplate(RedisConnectionFactory factory) {
+        return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChattingResponseDto.class));
     }
 
     @Bean
-    public RedisTemplate<String, ChattingResponseDto> redisTemplateForResponse() {
-        RedisTemplate<String,ChattingResponseDto> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        //키를 위한 직렬화 설정
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        //값을 위한 직렬화 설정
-        Jackson2JsonRedisSerializer<ChattingResponseDto> serializer = new Jackson2JsonRedisSerializer<>(ChattingResponseDto.class);
-        redisTemplate.setValueSerializer(serializer);  // Value를 JSON 형태로 직렬화
-        redisTemplate.setHashValueSerializer(serializer);
-        return redisTemplate;
+    public RedisTemplate<String, ChattingRequestDto> chattingRequestRedisTemplate(RedisConnectionFactory factory) {
+        return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChattingRequestDto.class));
     }
 
     @Bean
-    public RedisTemplate<String, ChannelTopic> redisTopicTemplate() {
-        RedisTemplate<String, ChannelTopic> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericToStringSerializer<>(ChannelTopic.class)); // ChannelTopic 직렬화
-        return redisTemplate;
-    }
-
-
-    // ChattingResponseDto용 RedisTemplate
-    @Bean
-    public RedisTemplate<String, List<ChattingResponseDto>> redisChattingTemplate() {
-        RedisTemplate<String, List<ChattingResponseDto>> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        //키를 위한 직렬화 설정
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        //값을 위한 직렬화 설정
-        Jackson2JsonRedisSerializer<ChattingResponseDto> serializer = new Jackson2JsonRedisSerializer<>(ChattingResponseDto.class);
-        redisTemplate.setValueSerializer(serializer);  // Value를 JSON 형태로 직렬화
-        redisTemplate.setHashValueSerializer(serializer);
-        return redisTemplate;
-    }
-
-    // ChattingRequestDto용 RedisTemplate
-    @Bean
-    public RedisTemplate<String, List<ChattingRequestDto>> redisChattingRequestTemplate() {
-        RedisTemplate<String, List<ChattingRequestDto>> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        //키를 위한 직렬화 설정
-        redisTemplate.setKeySerializer(new GenericToStringSerializer<>(Long.class)); // Key를 Long 타입으로 처리
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        //값을 위한 직렬화 설정
-        Jackson2JsonRedisSerializer<ChattingRequestDto> serializer = new Jackson2JsonRedisSerializer<>(ChattingRequestDto.class);
-        redisTemplate.setValueSerializer(serializer);  // Value를 JSON 형태로 직렬화
-        redisTemplate.setHashValueSerializer(serializer);
-        return redisTemplate;
+    public RedisTemplate<String, ChannelTopic> channelTopicRedisTemplate(RedisConnectionFactory factory) {
+        return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChannelTopic.class));
     }
 
     @Bean
@@ -145,7 +87,7 @@ public class RedisConfig {
      * redis 에 발행(publish)된 메시지 처리를 위한 리스너 설정
      */
     @Bean
-    public RedisMessageListenerContainer redisMessageListener (
+    public RedisMessageListenerContainer redisMessageListener(
             MessageListenerAdapter listenerAdapterChatMessage,
             ChannelTopic channelTopic
     ) {
