@@ -12,7 +12,6 @@ import pupket.togedogserver.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
@@ -43,10 +42,10 @@ public class Board {
     private LocalDateTime editedAt;
 
     @Column(nullable = false)
-    private LocalTime startTime;
+    private LocalDateTime startTime;
 
     @Column(nullable = false)
-    private LocalTime endTime;
+    private LocalDateTime endTime;
 
     @Column(nullable = false)
     private LocalDate pickUpDay;

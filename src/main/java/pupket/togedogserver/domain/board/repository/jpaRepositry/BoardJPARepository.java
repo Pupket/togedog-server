@@ -4,10 +4,13 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.user.entity.User;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +29,18 @@ public interface BoardJPARepository extends JpaRepository<Board, Long> {
     Optional<List<Board>> findByUser(User findUser);
 
     Optional<List<Board>> findAllByUserAndBoardId(User findUser, Long id);
+
+    @Query("SELECT DISTINCT b FROM Board b " +
+            "JOIN b.boardDog bd " +
+            "WHERE bd.dog.dogId IN :dogIdList " +
+            "AND (b.match.completeStatus = 'INCOMPLETE' AND b.match.matched != 'REJECTED') " +
+            "AND b.pickUpDay = :pickUpDay " +
+            "AND ((b.startTime <= :endTime AND b.endTime >= :startTime)) " +
+            "AND b.deleted = false " +
+            "AND b.boardId != :boardId")
+    List<Board> findConflictOwnerMatches(@Param("dogIdList") List<Long> dogIdList,
+                                         @Param("startTime") LocalDateTime startTime,
+                                         @Param("endTime") LocalDateTime endTime,
+                                         @Param("pickUpDay") LocalDate pickUpDay,
+                                         @Param("boardId") Long boardId);
 }

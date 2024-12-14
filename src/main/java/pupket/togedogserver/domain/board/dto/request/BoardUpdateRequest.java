@@ -8,7 +8,7 @@ import lombok.Data;
 import pupket.togedogserver.domain.board.constant.FeeType;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -43,10 +43,10 @@ public class BoardUpdateRequest {
     private LocalDate pickUpDay;
 
     @Schema(description = "시작 시간", example = "12:20:00", type = "string", format = "time")
-    private LocalTime startTime;
+    private LocalDateTime startTime;
 
     @Schema(description = "종료 시간", example = "20:00:00", type = "string", format = "time")
-    private LocalTime endTime;
+    private LocalDateTime endTime;
 
     @Schema(description = "요금 종류(시급,건별)", example = "시급")
     private FeeType feeType;
