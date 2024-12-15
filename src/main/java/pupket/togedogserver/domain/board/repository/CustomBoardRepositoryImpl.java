@@ -52,7 +52,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
                     return createBoardFindResponse(dogs, board);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         String countQuery = "SELECT COUNT(b) FROM Board b JOIN b.boardDog bd JOIN bd.dog d WHERE b.deleted = false AND d.deleted = false";
         Long count = em.createQuery(countQuery, Long.class).getSingleResult();

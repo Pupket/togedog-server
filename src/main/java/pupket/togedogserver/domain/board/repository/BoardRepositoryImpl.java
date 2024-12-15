@@ -36,11 +36,6 @@ public class BoardRepositoryImpl implements BoardRepository {
     }
 
     @Override
-    public Optional<List<Board>> findAllByUserAndBoardId(User findUser, Long id) {
-        return boardJPARepository.findAllByUserAndBoardId(findUser, id);
-    }
-
-    @Override
     public Board save(Board board) {
         return boardJPARepository.save(board);
     }
