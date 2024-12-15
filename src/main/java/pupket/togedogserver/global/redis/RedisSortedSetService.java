@@ -46,4 +46,11 @@ public class RedisSortedSetService {    //검색어 자동 완성을 구현할 �
         redisTemplate.opsForZSet().remove(keyUsedByMate, value);
     }
 
+    public boolean isinitializedDogBrreds() {
+        return redisTemplate.hasKey(keyUsedByDog);
+    }
+
+    public boolean isInitializedUserNickname() {
+        return redisTemplate.hasKey(keyUsedByMate);
+    }
 }
