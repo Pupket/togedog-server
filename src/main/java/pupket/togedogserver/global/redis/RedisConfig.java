@@ -23,77 +23,104 @@ public class RedisConfig {
     @Value("${spring.data.redis.host}")
     private String host;
 
-
     @Value("${spring.data.redis.port}")
-    private String port;
+    private int port;
 
-    //RedisConnectionFactory 빈을 생성하는 메서드
-    //Redis서버와의 연결을 설정하고 관리하는데 사용
+    /**
+     * Redis 서버 연결 설정
+     */
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(host);
+        config.setPort(port);
+        return new LettuceConnectionFactory(config);
+    }
 
+    /**
+     * Redis Topic 설정
+     */
     @Bean
     public ChannelTopic channelTopic() {
         return new ChannelTopic("chatroom");
     }
 
-    @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
-        redisStandaloneConfiguration.setHostName(host);
-        redisStandaloneConfiguration.setPort(Integer.parseInt(port));
-        return new LettuceConnectionFactory(redisStandaloneConfiguration);
-    }
-
-    private <K, V> RedisTemplate<K, V> createRedisTemplate(RedisConnectionFactory factory,
-                                                           RedisSerializer<K> keySerializer,
-                                                           RedisSerializer<V> valueSerializer) {
+    /**
+     * RedisTemplate 생성 메서드
+     */
+    private <K, V> RedisTemplate<K, V> createRedisTemplate(
+            RedisConnectionFactory factory,
+            RedisSerializer<K> keySerializer,
+            RedisSerializer<V> valueSerializer) {
         RedisTemplate<K, V> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(factory);
         redisTemplate.setKeySerializer(keySerializer);
         redisTemplate.setValueSerializer(valueSerializer);
         redisTemplate.setHashKeySerializer(keySerializer);
         redisTemplate.setHashValueSerializer(valueSerializer);
+        redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
-    public RedisTemplate<String, String> customStringRedisTemplate(RedisConnectionFactory factory) {
+
+    /**
+     * RedisTemplate - String, String
+     */
+    @Bean
+    public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory factory) {
         return createRedisTemplate(factory, new StringRedisSerializer(), new StringRedisSerializer());
     }
 
+    /**
+     * RedisTemplate - String, Object
+     */
     @Bean
     public RedisTemplate<String, Object> objectRedisTemplate(RedisConnectionFactory factory) {
         return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(Object.class));
     }
 
+    /**
+     * RedisTemplate - String, ChattingResponseDto
+     */
     @Bean
     public RedisTemplate<String, ChattingResponseDto> chattingResponseRedisTemplate(RedisConnectionFactory factory) {
         return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChattingResponseDto.class));
     }
 
+    /**
+     * RedisTemplate - String, ChattingRequestDto
+     */
     @Bean
     public RedisTemplate<String, ChattingRequestDto> chattingRequestRedisTemplate(RedisConnectionFactory factory) {
         return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChattingRequestDto.class));
     }
 
+    /**
+     * RedisTemplate - String, ChannelTopic
+     */
     @Bean
     public RedisTemplate<String, ChannelTopic> channelTopicRedisTemplate(RedisConnectionFactory factory) {
         return createRedisTemplate(factory, new StringRedisSerializer(), new Jackson2JsonRedisSerializer<>(ChannelTopic.class));
     }
 
+    /**
+     * Redis Message Listener 설정
+     */
     @Bean
     public MessageListenerAdapter messageListenerAdapter(RedisSubscriber subscriber) {
         return new MessageListenerAdapter(subscriber, "sendMessage");
     }
 
     /**
-     * redis 에 발행(publish)된 메시지 처리를 위한 리스너 설정
+     * Redis Message Listener Container 설정
      */
     @Bean
-    public RedisMessageListenerContainer redisMessageListener(
-            MessageListenerAdapter listenerAdapterChatMessage,
-            ChannelTopic channelTopic
-    ) {
+    public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory factory,
+            MessageListenerAdapter listenerAdapter,
+            ChannelTopic channelTopic) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(redisConnectionFactory());
-        container.addMessageListener(listenerAdapterChatMessage, channelTopic);
+        container.setConnectionFactory(factory);
+        container.addMessageListener(listenerAdapter, channelTopic);
         return container;
     }
 }
