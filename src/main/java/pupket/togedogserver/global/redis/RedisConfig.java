@@ -63,14 +63,6 @@ public class RedisConfig {
     }
 
     /**
-     * RedisTemplate - String, String
-     */
-    @Bean
-    public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory factory) {
-        return createRedisTemplate(factory, new StringRedisSerializer(), new StringRedisSerializer());
-    }
-
-    /**
      * RedisTemplate - String, Object
      */
     @Bean
