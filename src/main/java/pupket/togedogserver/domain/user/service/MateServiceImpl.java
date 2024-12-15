@@ -62,6 +62,10 @@ public class MateServiceImpl implements MateService {
 
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
+        if (redisSortedSetService.isInitializedUserNickname()) {
+            log.info("Redis already contains autocomplete data. Skipping initialization.");
+            return;
+        }
         List<String> nicknames = userRepository.findAllNicknames();
         log.info("size={}", nicknames.size());
         saveAllSubstring(nicknames); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
@@ -121,7 +125,7 @@ public class MateServiceImpl implements MateService {
 
         createdMate = userMapper.mapPreferredDetails(request.getPreferredDetails(), createdMate); //customMapper로 preferred엔티티 맵핑
 
-        Mate savedMate = TwoWayMappingUserAndMate(createdMate, findUser); //양방향 맵핑(유저, 메이트)
+        Mate savedMate = twoWayMappingUserAndMate(createdMate, findUser); //양방향 맵핑(유저, 메이트)
 
         saveMatePreferences(savedMate, request); //각 태그 영속성 저장
 
@@ -129,14 +133,14 @@ public class MateServiceImpl implements MateService {
         log.info("메이트 생성 완료: 사용자 ID = {}", userDetail.getUuid());
     }
 
-    private Mate TwoWayMappingUserAndMate(Mate createdMate, User findUser) {
+    private Mate twoWayMappingUserAndMate(Mate createdMate, User findUser) {
         Mate updatedMate = connectWithUser(createdMate, findUser);
 
         updatedMate= mateRepository.save(updatedMate);
 
         User connectedUser = connectWithMate(findUser, updatedMate);
 
-        connectedUser=userRepository.save(connectedUser);
+        userRepository.save(connectedUser);
 
         return updatedMate;
     }

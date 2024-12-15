@@ -57,10 +57,14 @@ public class DogServiceImpl implements DogService {
     private final String suffix = "*";
 
     @PostConstruct
-    public void init() {    // 이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
+    public void init() {
+        if (redisSortedSetService.isinitializedDogBrreds()) {
+            log.info("Redis already contains autocomplete data. Skipping initialization.");
+            return;
+        }
         List<String> dogBreedList = dogRepository.findAllBreedData();
         log.info("Breed data size: {}", dogBreedList.size());
-        saveAllSubstring(dogBreedList); // MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
+        saveAllSubstring(dogBreedList); // MySQL DB에 저장된 모든 견종을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
     }
 
     private void saveAllSubstring(List<String> userNickName) { // MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
@@ -220,7 +224,7 @@ public class DogServiceImpl implements DogService {
                     dogMapper.afterMapping(dogResponse, dog);
                     return dogResponse;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
@@ -248,6 +252,7 @@ public class DogServiceImpl implements DogService {
 
     @Override
     public List<String> autoCompleteKeyword(String keyword) {
+
         Long index = redisSortedSetService.findFromSortedSetFromDog(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
         if (index == null) {
             log.info("index가 비어있음");
