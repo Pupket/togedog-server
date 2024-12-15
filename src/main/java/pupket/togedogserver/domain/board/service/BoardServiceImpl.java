@@ -84,7 +84,7 @@ public class BoardServiceImpl implements BoardService {
                 throw new DogException(ExceptionCode.NOT_YOUR_DOG);
             }
             return findDog;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -112,7 +112,7 @@ public class BoardServiceImpl implements BoardService {
     private static List<Dog> getDogListByBoard(Board findBoard) {
         return findBoard.getBoardDog().stream()
                 .map(BoardDog::getDog)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static boolean isPresent(Board findBoard) {
@@ -123,10 +123,9 @@ public class BoardServiceImpl implements BoardService {
     }
 
     private Board findBoard(Long boardId) {
-        Board findBoard = boardRepository.findByBoardId(boardId).orElseThrow(
+        return boardRepository.findByBoardId(boardId).orElseThrow(
                 () -> new BoardException(ExceptionCode.NOT_FOUND_BOARD)
         );
-        return findBoard;
     }
 
     private static List<BoardDogResponse> getBoardDogResponses(List<Dog> findDogs) {
@@ -139,7 +138,7 @@ public class BoardServiceImpl implements BoardService {
                         .dogGender(dog.getDogGender() ? "수컷" : "암컷")
                         .dogProfileImage(dog.getDogImage())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -187,7 +186,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     private static Board updateBoard(BoardUpdateRequest boardUpdateRequest, Board findBoard, List<BoardDog> boardDogList) {
-        Board newBoard = findBoard.toBuilder()
+       return findBoard.toBuilder()
                 .title(boardUpdateRequest.getTitle())
                 .mapX(boardUpdateRequest.getMapX())
                 .mapY(boardUpdateRequest.getMapY())
@@ -200,7 +199,6 @@ public class BoardServiceImpl implements BoardService {
                 .fee(boardUpdateRequest.getFee())
                 .phoneNumber(boardUpdateRequest.getPhoneNumber())
                 .build();
-        return newBoard;
     }
 
     private List<BoardDog> mapDogsToBoard(List<Dog> dogList, Board board) {
