@@ -1,5 +1,6 @@
 package pupket.togedogserver.domain.user.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,7 @@ import pupket.togedogserver.global.security.util.PasswordUtil;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserJPARepository userRepository;
@@ -70,6 +72,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void logout(String refreshToken, CustomUserDetail userDetail) {
         log.info("로그아웃 시작: 사용자 ID = {}", userDetail.getUuid());
+        redisLoginService.deleteAccessToken(userDetail.getUuid());
         jwtUtils.handleExpiredRefreshToken(refreshToken);
         log.info("로그아웃 완료: 사용자 ID = {}", userDetail.getUuid());
     }

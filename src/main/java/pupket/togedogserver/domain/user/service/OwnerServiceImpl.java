@@ -38,11 +38,12 @@ public class OwnerServiceImpl implements OwnerService {
         // 가격
         // Mate 사진 URL
         return findBoards.stream()
-                .filter(board -> board.getMatched().equals(MatchStatus.MATCHED))
-                .map(board -> {
-                    Mate mate = board.getMatch().getMate();
-                    return FindMatchedScheduleResponse.from(board, mate);
-                })
+                .flatMap(board -> board.getMatch().stream()
+                        // MatchStatus.MATCHED 필터링
+                        .filter(match -> match.getMatched().equals(MatchStatus.MATCHED))
+                        // FindMatchedScheduleResponse 생성
+                        .map(match -> FindMatchedScheduleResponse.from(board, match.getMate(),match))
+                )
                 .toList();
     }
 

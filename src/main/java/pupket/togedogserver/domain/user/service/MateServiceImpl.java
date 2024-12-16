@@ -154,7 +154,8 @@ public class MateServiceImpl implements MateService {
     private User updateUser(RegistMateRequest request, User findUser, String uploadedProfileImage) {
         log.info("유저 정보 업데이트 시작: 사용자 ID = {}", findUser.getUuid());
 
-        if (findUser.getRole().equals(RoleType.MEMBER_GOOGLE) && !request.getBirthday().isEmpty()) {
+
+        if (findUser.getRole().equals(RoleType.MEMBER_GOOGLE) && request.getBirthday() != null  &&  !request.getBirthday().isEmpty()) {
             String[] splitBirthArr = request.getBirthday().split("\\.");
             int birthyear = Integer.parseInt(splitBirthArr[0]);
             int birthday = Integer.parseInt(splitBirthArr[1] + splitBirthArr[2]);

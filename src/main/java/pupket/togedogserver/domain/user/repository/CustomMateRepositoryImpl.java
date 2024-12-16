@@ -11,8 +11,12 @@ import org.springframework.stereotype.Repository;
 import pupket.togedogserver.domain.board.dto.response.BoardDogResponse;
 import pupket.togedogserver.domain.board.dto.response.BoardFindResponse;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.board.entity.BoardDog;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
+import pupket.togedogserver.domain.match.constant.CompleteStatus;
+import pupket.togedogserver.domain.match.constant.MatchStatus;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
@@ -87,89 +91,81 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
     @Override
     public Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable) {
-        // 여러 마리의 개를 처리할 수 있도록 Board와 Dog 테이블을 JOIN
-        String query = "SELECT b, d FROM Board b " +
-                "JOIN fetch b.boardDog bd " +  // BoardDog 테이블도 추가로 JOIN
-                "JOIN fetch bd.dog d " +  // BoardDog과 Dog을 JOIN
-                "WHERE b.deleted = false AND d.deleted = false " +
-                "AND b.match.mate.mateUuid = :mateId";
+        // 1. Board 조회 (조건: Match의 mateId와 매칭된 Board)
+        String boardQuery = "SELECT DISTINCT b FROM Board b " +
+                "JOIN b.match m " +
+                "WHERE b.deleted = false AND m.mate.mateUuid = :mateId " +
+                "AND m.matched = :matchedStatus";
 
-        TypedQuery<Object[]> result = em.createQuery(query, Object[].class);
-        result.setParameter("mateId", mateId); // mateId 파라미터 설정
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
+        List<Board> boards = em.createQuery(boardQuery, Board.class)
+                .setParameter("mateId", mateId)
+                .setParameter("matchedStatus", MatchStatus.MATCHED) // MATCHED 상태만 가져옴
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
 
-        List<Object[]> results = result.getResultList();
-
-        Map<Long, BoardFindResponse> boardResponseMap = new HashMap<>();
-
-        // 각 Board에 여러 마리의 Dog 정보를 추가
-        results.forEach(row -> {
-            Board board = (Board) row[0];
-            Dog dog = (Dog) row[1];
-
-            // 이미 Board가 추가되었는지 확인하고 없다면 새로 추가
-            boardResponseMap.computeIfAbsent(board.getBoardId(), boardId -> {
-                String fee = EnumMapper.enumToKorean(board.getFee());
-                String feeType = EnumMapper.enumToKorean(board.getFeeType());
-                String startTime = String.valueOf(board.getStartTime());
-                String endTime = String.valueOf(board.getEndTime());
-                List<String> walkingPlaceTags = board.getWalkingPlaceTag().stream()
-                        .map(WalkingPlaceTag::getPlaceName)
-                        .toList();
-
-                return BoardFindResponse.builder()
-                        .boardId(board.getBoardId())
-                        .userId(board.getUser().getUuid())
-                        .title(board.getTitle())
-                        .pickUpDay(board.getPickUpDay())
-                        .fee(fee)
-                        .feeType(feeType)
-                        .startTime(startTime)
-                        .endTime(endTime)
-                        .pickupLocation1(board.getPickupLocation1())
-                        .walkingPlaceTag(walkingPlaceTags)
-                        .dogs(new ArrayList<>())  // Dog 정보를 담을 리스트 초기화
-                        .completeStatus(board.getMatch().getCompleteStatus().getStatus())
-                        .build();
-            });
-
-            // Dog 정보를 DogResponse로 변환하여 추가
-            BoardFindResponse response = boardResponseMap.get(board.getBoardId());
-            response.getDogs().add(BoardDogResponse.builder()
-                    .name(dog.getName())
-                    .age(dog.getAge())
-                    .breed(EnumMapper.enumToKorean(dog.getBreed()))
-                    .dogType(EnumMapper.enumToKorean(dog.getDogType()))
-                    .dogGender(dog.getDogGender() ? "수컷" : "암컷")
-                    .dogProfileImage(dog.getDogImage())
-                    .build());
-        });
-
-        log.info("정보={}", boardResponseMap);
-
-        List<BoardFindResponse> boardResponses = new ArrayList<>(boardResponseMap.values());
-
-        Long count;
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX);
-        try {
-            // 카운트 쿼리
-            String countQuery = "SELECT COUNT(b) FROM Board b " +
-                    "JOIN b.boardDog bd " +
-                    "JOIN bd.dog d " +
-                    "WHERE b.deleted = false AND d.deleted = false " +
-                    "AND b.match.mate.mateUuid = :mateId" +
-                    "   and b.createdAt between :startOfMonth and :endOfMonth";
-
-            count = em.createQuery(countQuery, Long.class)
-                    .setParameter("mateId", mateId)
-                    .setParameter("startOfMonth", startOfMonth)
-                    .setParameter("endOfMonth", endOfMonth)
-                    .getSingleResult();
-        } catch (Exception e) {
-            throw new MateException(ExceptionCode.NOT_FOUND_SCHEDULE);
+        if (boards.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
         }
+
+        // 2. BoardDog 조회
+        String boardDogQuery = "SELECT bd FROM BoardDog bd " +
+                "JOIN FETCH bd.dog d " +
+                "WHERE bd.board IN :boards";
+
+        List<BoardDog> boardDogs = em.createQuery(boardDogQuery, BoardDog.class)
+                .setParameter("boards", boards)
+                .getResultList();
+
+        // 3. 데이터 매핑
+        Map<Long, List<BoardDog>> boardDogMap = boardDogs.stream()
+                .collect(Collectors.groupingBy(bd -> bd.getBoard().getBoardId()));
+
+        List<BoardFindResponse> boardResponses = boards.stream()
+                .map(board -> {
+                    List<BoardDog> boardDogList = boardDogMap.getOrDefault(board.getBoardId(), List.of());
+                    List<Dog> dogs = boardDogList.stream()
+                            .map(BoardDog::getDog)
+                            .toList();
+
+                    return BoardFindResponse.builder()
+                            .boardId(board.getBoardId())
+                            .userId(board.getUser().getUuid())
+                            .title(board.getTitle())
+                            .pickUpDay(board.getPickUpDay())
+                            .fee(EnumMapper.enumToKorean(board.getFee()))
+                            .feeType(EnumMapper.enumToKorean(board.getFeeType()))
+                            .startTime(String.valueOf(board.getStartTime()))
+                            .endTime(String.valueOf(board.getEndTime()))
+                            .pickupLocation1(board.getPickupLocation1())
+                            .walkingPlaceTag(board.getWalkingPlaceTag().stream()
+                                    .map(WalkingPlaceTag::getPlaceName)
+                                    .toList())
+                            .dogs(dogs.stream()
+                                    .map(dog -> BoardDogResponse.builder()
+                                            .name(dog.getName())
+                                            .age(dog.getAge())
+                                            .breed(EnumMapper.enumToKorean(dog.getBreed()))
+                                            .dogType(EnumMapper.enumToKorean(dog.getDogType()))
+                                            .dogGender(dog.getDogGender() ? "수컷" : "암컷")
+                                            .dogProfileImage(dog.getDogImage())
+                                            .build())
+                                    .toList())
+                            .completeStatus(CompleteStatus.INCOMPLETE.getStatus()) // INCOMPLETE 상태 처리
+                            .build();
+                })
+                .toList();
+
+        // 4. 전체 Board 수 조회
+        String countQuery = "SELECT COUNT(DISTINCT b) FROM Board b " +
+                "JOIN b.match m " +
+                "WHERE b.deleted = false AND m.mate.mateUuid = :mateId " +
+                "AND m.matched = :matchedStatus";
+
+        Long count = em.createQuery(countQuery, Long.class)
+                .setParameter("mateId", mateId)
+                .setParameter("matchedStatus", MatchStatus.MATCHED) // MATCHED 상태만 카운트
+                .getSingleResult();
 
         return new PageImpl<>(boardResponses, pageable, count);
     }

@@ -3,6 +3,7 @@ package pupket.togedogserver.domain.user.dto.response;
 import lombok.Builder;
 import lombok.Data;
 import pupket.togedogserver.domain.board.entity.Board;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 
 @Data
@@ -22,7 +23,7 @@ public class FindMatchedScheduleResponse {
     private String completeStatus;
 
 
-    public static FindMatchedScheduleResponse from(Board board, Mate mate) {
+    public static FindMatchedScheduleResponse from(Board board, Mate mate, Match match) {
         return  FindMatchedScheduleResponse.builder()
                 .boardId(board.getBoardId())
                 .pickUpDay(board.getPickUpDay().toString()) // 요일
@@ -33,8 +34,8 @@ public class FindMatchedScheduleResponse {
                 .mateNickname(mate.getUser().getNickname())
                 .matePhotoUrl(mate.getUser().getProfileImage()) // Mate 사진 URL
                 .mateId(mate.getMateUuid())
-                .matchStatus(board.getMatch().getMatched().getStatus())
-                .completeStatus(board.getMatch().getCompleteStatus().getStatus())
+                .matchStatus(match.getMatched().getStatus())
+                .completeStatus(match.getCompleteStatus().getStatus())
                 .build();
     }
 }
