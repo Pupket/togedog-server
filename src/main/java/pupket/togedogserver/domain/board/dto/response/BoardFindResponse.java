@@ -63,9 +63,12 @@ public class BoardFindResponse {
             return CompleteStatus.INCOMPLETE.getStatus();
         }
 
+        log.info("match Size = {} " , board.getMatch().size());
         // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
         for (Match match : board.getMatch()) {
+            log.info("산책 상태 = {}",match.getCompleteStatus().getStatus());
             if (match.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
+
                 return CompleteStatus.INCOMPLETE.getStatus();
             }
         }
