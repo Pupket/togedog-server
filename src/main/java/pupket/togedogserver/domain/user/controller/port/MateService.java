@@ -21,7 +21,7 @@ public interface MateService {
 
      FindMateResponse find(CustomUserDetail userDetail);
 
-     Page<FindMateResponse> findRandom(Pageable pageable);
+     Page<FindMateResponse> findRandom(Pageable pageable, CustomUserDetail userDetail);
 
      void update(CustomUserDetail userDetail, UpdateMateRequest request, MultipartFile profileImages);
 

@@ -16,7 +16,6 @@ import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
-import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
@@ -25,17 +24,15 @@ import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.domain.user.entity.mate.MateTag;
 import pupket.togedogserver.domain.user.repository.jpaRepository.MateJPARepository;
 import pupket.togedogserver.domain.user.service.port.CustomMateRepository;
+import pupket.togedogserver.domain.user.service.port.UserRepository;
 import pupket.togedogserver.global.exception.ExceptionCode;
 import pupket.togedogserver.global.exception.customException.MateException;
+import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,10 +45,19 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
 
     private final EntityManager em;
     private final MateJPARepository mateRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public Page<FindMateResponse> MateList(Pageable pageable) {
-        List<Mate> mateList = getMates(pageable); //query로 mate결과값 가져오기
+    public Page<FindMateResponse> MateList(Pageable pageable, Long uuid) {
+        User user = userRepository.findByUuid(uuid).orElseThrow(
+                () -> new MemberException(ExceptionCode.NOT_FOUND_MEMBER)
+        );
+        List<Mate> mateList = null;
+        if (user.getMate() != null) {
+            mateList = getMates(pageable,user.getMate().getMateUuid()); //query로 mate결과값 가져오기
+        }else{
+            mateList = getMates(pageable,null);
+        }
 
         Long count = getCount(); //Count쿼리로 결과수 가져오기
 
@@ -250,12 +256,22 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
         return em.createQuery(countJpql, Long.class).getSingleResult();
     }
 
-    private List<Mate> getMates(Pageable pageable) {
-        String query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
-        TypedQuery<Mate> result = em.createQuery(query, Mate.class);
+    private List<Mate> getMates(Pageable pageable, Long uuid) {
+        String query= null;
+        TypedQuery<Mate> result=null;
+        if (uuid == null) {
+            query = "SELECT b FROM Mate b WHERE b.deleted = false order by rand()";
 
-        result.setFirstResult((int) pageable.getOffset());
-        result.setMaxResults(pageable.getPageSize());
+            result = em.createQuery(query, Mate.class);
+            result.setFirstResult((int) pageable.getOffset());
+            result.setMaxResults(pageable.getPageSize());
+        }else{
+            query = "SELECT b FROM Mate b WHERE b.mateUuid!=:uuid AND b.deleted = false order by rand()";
+            result = em.createQuery(query, Mate.class);
+            result.setFirstResult((int) pageable.getOffset());
+            result.setParameter("uuid", uuid);
+            result.setMaxResults(pageable.getPageSize());
+        }
 
         return result.getResultList();
     }

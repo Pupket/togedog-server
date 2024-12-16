@@ -10,7 +10,7 @@ import pupket.togedogserver.domain.user.entity.User;
 
 @Repository
 public interface CustomMateRepository {
-    Page<FindMateResponse> MateList(Pageable pageable);
+    Page<FindMateResponse> MateList(Pageable pageable, Long uuid);
 
     Page<BoardFindResponse> findMyScheduleList(Long mateId, Pageable pageable);
 

@@ -219,9 +219,9 @@ public class MateServiceImpl implements MateService {
     }
 
     @Override
-    public Page<FindMateResponse> findRandom(Pageable pageable) {
+    public Page<FindMateResponse> findRandom(Pageable pageable, CustomUserDetail userDetail) {
         log.info("랜덤 메이트 조회 시작");
-        Page<FindMateResponse> result = customMateRepository.MateList(pageable);
+        Page<FindMateResponse> result = customMateRepository.MateList(pageable,userDetail.getUuid());
         log.info("랜덤 메이트 조회 완료");
         return result;
     }

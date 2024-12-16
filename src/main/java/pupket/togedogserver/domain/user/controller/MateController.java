@@ -147,13 +147,14 @@ public class MateController {
 
     @GetMapping("/random")
     public ResponseEntity<Page<FindMateResponse>> findRandom(
+            @AuthenticationPrincipal CustomUserDetail userDetail,
             @Parameter(description = "페이지 시작 번호(0부터 시작)")
             @RequestParam(name = "page", defaultValue = "0") int page,
             @Parameter(description = "페이지 사이즈(4부터 시작)")
             @RequestParam(name = "size", defaultValue = "4") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<FindMateResponse> mateList = mateService.findRandom(pageable);
+        Page<FindMateResponse> mateList = mateService.findRandom(pageable,userDetail);
 
         return ResponseEntity.ok().body(mateList);
     }
