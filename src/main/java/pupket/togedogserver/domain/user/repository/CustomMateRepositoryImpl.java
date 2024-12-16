@@ -16,6 +16,7 @@ import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
 import pupket.togedogserver.domain.match.constant.MatchStatus;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.domain.user.dto.response.FindMateResponse;
 import pupket.togedogserver.domain.user.dto.response.MateActiveResponse;
 import pupket.togedogserver.domain.user.dto.response.PreferredDetailsResponse;
@@ -133,6 +134,10 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                     List<Dog> dogs = boardDogList.stream()
                             .map(BoardDog::getDog)
                             .toList();
+                    String completeStatus = board.getMatch().stream()
+                            .anyMatch(match -> match.getCompleteStatus().equals(CompleteStatus.COMPLETE))
+                            ? CompleteStatus.COMPLETE.getStatus()
+                            : CompleteStatus.INCOMPLETE.getStatus();
 
                     return BoardFindResponse.builder()
                             .boardId(board.getBoardId())
@@ -157,7 +162,7 @@ public class CustomMateRepositoryImpl implements CustomMateRepository {
                                             .dogProfileImage(dog.getDogImage())
                                             .build())
                                     .toList())
-                            .completeStatus(CompleteStatus.INCOMPLETE.getStatus()) // INCOMPLETE 상태 처리
+                            .completeStatus(completeStatus) // INCOMPLETE 상태 처리
                             .build();
                 })
                 .toList();

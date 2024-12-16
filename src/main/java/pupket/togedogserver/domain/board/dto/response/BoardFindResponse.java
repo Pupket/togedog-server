@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import pupket.togedogserver.domain.board.entity.Board;
 import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.time.LocalDate;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class BoardFindResponse {
 
     private Long boardId;
@@ -56,13 +59,16 @@ public class BoardFindResponse {
     private static String getCompleteStatus(Board board) {
         // Null 체크 및 비어 있는 경우 처리
         if (board.getMatch() == null || board.getMatch().isEmpty()) {
+            log.info("match상태는 null입니다.");
             return CompleteStatus.INCOMPLETE.getStatus();
         }
 
         // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
-        boolean hasIncomplete = board.getMatch().stream()
-                .anyMatch(match -> !match.getCompleteStatus().equals(CompleteStatus.COMPLETE.getStatus()));
-
-        return hasIncomplete ? CompleteStatus.INCOMPLETE.getStatus() : CompleteStatus.COMPLETE.getStatus();
+        for (Match match : board.getMatch()) {
+            if (match.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
+                return CompleteStatus.INCOMPLETE.getStatus();
+            }
+        }
+        return CompleteStatus.INCOMPLETE.getStatus();
     }
 }

@@ -15,6 +15,7 @@ import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.board.service.port.CustomBoardRepository;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.domain.match.constant.CompleteStatus;
+import pupket.togedogserver.domain.match.entity.Match;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
 import java.util.List;
@@ -137,14 +138,17 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
     private static String getCompleteStatus(Board board) {
         // Null 체크 및 비어 있는 경우 처리
         if (board.getMatch() == null || board.getMatch().isEmpty()) {
+            log.info("match상태는 null입니다.");
             return CompleteStatus.INCOMPLETE.getStatus();
         }
 
         // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
-        boolean hasIncomplete = board.getMatch().stream()
-                .anyMatch(match -> !match.getCompleteStatus().equals(CompleteStatus.COMPLETE.getStatus()));
-
-        return hasIncomplete ? CompleteStatus.INCOMPLETE.getStatus() : CompleteStatus.COMPLETE.getStatus();
+        for (Match match : board.getMatch()) {
+            if (match.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
+                return CompleteStatus.INCOMPLETE.getStatus();
+            }
+        }
+        return CompleteStatus.INCOMPLETE.getStatus();
     }
 
     private Long getCount(Long uuid) {
