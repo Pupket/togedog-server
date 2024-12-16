@@ -11,8 +11,6 @@ import pupket.togedogserver.domain.board.entity.WalkingPlaceTag;
 import pupket.togedogserver.domain.dog.entity.Dog;
 import pupket.togedogserver.global.mapper.EnumMapper;
 
-import java.util.stream.Collectors;
-
 @Mapper(componentModel = "spring")
 public interface BoardMapper {
 
@@ -42,7 +40,7 @@ public interface BoardMapper {
         if (board.getWalkingPlaceTag() != null) {
             response.setWalkingPlaceTag(board.getWalkingPlaceTag().stream()
                     .map(WalkingPlaceTag::getPlaceName)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
     }
 }

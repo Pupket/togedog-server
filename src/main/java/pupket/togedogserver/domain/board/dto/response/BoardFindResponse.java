@@ -47,10 +47,22 @@ public class BoardFindResponse {
                 .pickupLocation1(findBoard.getPickupLocation1())
                 .walkingPlaceTag(findBoard.getWalkingPlaceTag().stream()
                         .map(WalkingPlaceTag::getPlaceName)
-                        .collect(Collectors.toList()))
+                        .toList())
                 .feeType(EnumMapper.enumToKorean(findBoard.getFeeType()))
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
-                .completeStatus(findBoard.getMatch()==null? CompleteStatus.INCOMPLETE.getStatus() : findBoard.getMatch().getCompleteStatus().getStatus())
-                .build();
+                .completeStatus(getCompleteStatus(findBoard)).build();
+    }
+
+    private static String getCompleteStatus(Board board) {
+        // Null 체크 및 비어 있는 경우 처리
+        if (board.getMatch() == null || board.getMatch().isEmpty()) {
+            return CompleteStatus.INCOMPLETE.getStatus();
+        }
+
+        // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
+        boolean hasIncomplete = board.getMatch().stream()
+                .anyMatch(match -> !match.getCompleteStatus().equals(CompleteStatus.COMPLETE.getStatus()));
+
+        return hasIncomplete ? CompleteStatus.INCOMPLETE.getStatus() : CompleteStatus.COMPLETE.getStatus();
     }
 }

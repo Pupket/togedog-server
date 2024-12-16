@@ -204,7 +204,7 @@ public class BoardServiceImpl implements BoardService {
     private List<BoardDog> mapDogsToBoard(List<Dog> dogList, Board board) {
         List<BoardDog> boardDogList = dogList.stream()
                 .map(dog -> BoardDog.builder().board(board).dog(dog).build())
-                .collect(Collectors.toList());
+                .toList();
         boardDogRepository.saveAll(boardDogList);
         return boardDogList;
     }
@@ -263,7 +263,7 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public Page<BoardFindResponse> findRandom(Pageable pageable) {
-        return customBoardRepository.BoardList(pageable);
+        return customBoardRepository.findRandomBoardList(pageable);
     }
 
     @Override

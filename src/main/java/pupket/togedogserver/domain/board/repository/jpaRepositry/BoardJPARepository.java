@@ -1,6 +1,7 @@
 package pupket.togedogserver.domain.board.repository.jpaRepositry;
 
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -24,16 +25,16 @@ public interface BoardJPARepository extends JpaRepository<Board, Long> {
     @Query("SELECT b FROM Board b " +
             "JOIN b.user u " +
             "JOIN u.owner o " +
-            "JOIN matching m ON m.owner.ownerUuid = o.ownerUuid " +
+            "JOIN o.match m " +
             "WHERE m.matched = 'MATCHED' AND u = :findUser")
+    @EntityGraph(attributePaths = {"match.mate.user"})
     Optional<List<Board>> findByUser(User findUser);
-
-    Optional<List<Board>> findAllByUserAndBoardId(User findUser, Long id);
 
     @Query("SELECT DISTINCT b FROM Board b " +
             "JOIN b.boardDog bd " +
+            "JOIN b.match m " +
             "WHERE bd.dog.dogId IN :dogIdList " +
-            "AND (b.match.completeStatus = 'INCOMPLETE' AND b.match.matched != 'REJECTED') " +
+            "AND (m.completeStatus = 'INCOMPLETE' AND m.matched != 'REJECTED') " +
             "AND b.pickUpDay = :pickUpDay " +
             "AND ((b.startTime <= :endTime AND b.endTime >= :startTime)) " +
             "AND b.deleted = false " +

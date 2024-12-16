@@ -82,11 +82,11 @@ public class Board {
     @OneToMany(mappedBy = "board", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<BoardDog> boardDog;
 
-    @OneToMany(mappedBy = "board")
+    @OneToMany(mappedBy = "board",fetch = FetchType.EAGER)
     private Set<WalkingPlaceTag> walkingPlaceTag;
 
-    @OneToOne(mappedBy = "board")
-    private Match match;
+    @OneToMany(mappedBy = "board",fetch = FetchType.EAGER)
+    private List<Match> match;
 
     @PrePersist
     protected void onCreate() {
@@ -102,7 +102,8 @@ public class Board {
     @PreRemove
     public void onRemove() {
         if(match!=null) {
-            match.setDeleted(true);
+            match.forEach(
+                    m -> m.setDeleted(true));
         }
         if(boardDog!=null) {
             boardDog.forEach(

@@ -28,7 +28,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
     private final EntityManager em;
 
     @Override
-    public Page<BoardFindResponse> BoardList(Pageable pageable) {
+    public Page<BoardFindResponse> findRandomBoardList(Pageable pageable) {
         String query = "SELECT DISTINCT b, bd, d FROM Board b " +
                 "JOIN FETCH b.boardDog bd " +
                 "JOIN FETCH bd.dog d " +
@@ -94,7 +94,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
                     return createBoardFindResponse(dogs, board);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         Long count = getCount(uuid);
 
@@ -113,7 +113,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                         .dogGender(dog.getDogGender() ? "수컷" : "암컷")
                         .dogProfileImage(dog.getDogImage())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         // Board 정보를 포함한 응답 빌더
         return BoardFindResponse.builder()
@@ -128,10 +128,23 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                 .pickupLocation1(board.getPickupLocation1())
                 .walkingPlaceTag(board.getWalkingPlaceTag().stream()
                         .map(WalkingPlaceTag::getPlaceName)
-                        .collect(Collectors.toList()))
+                        .toList())
                 .dogs(boardDogRespons) // 여러 마리의 개 정보 추가
-                .completeStatus(board.getMatch()==null? CompleteStatus.INCOMPLETE.getStatus() :board.getMatch().getCompleteStatus().getStatus())
+                .completeStatus(getCompleteStatus(board))
                 .build();
+    }
+
+    private static String getCompleteStatus(Board board) {
+        // Null 체크 및 비어 있는 경우 처리
+        if (board.getMatch() == null || board.getMatch().isEmpty()) {
+            return CompleteStatus.INCOMPLETE.getStatus();
+        }
+
+        // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
+        boolean hasIncomplete = board.getMatch().stream()
+                .anyMatch(match -> !match.getCompleteStatus().equals(CompleteStatus.COMPLETE.getStatus()));
+
+        return hasIncomplete ? CompleteStatus.INCOMPLETE.getStatus() : CompleteStatus.COMPLETE.getStatus();
     }
 
     private Long getCount(Long uuid) {
