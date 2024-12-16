@@ -145,7 +145,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
         // 하나라도 COMPLETE 상태가 아니라면 INCOMPLETE 반환
         for (Match match : board.getMatch()) {
             if (match.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
-                return CompleteStatus.INCOMPLETE.getStatus();
+                return CompleteStatus.COMPLETE.getStatus();
             }
         }
         return CompleteStatus.INCOMPLETE.getStatus();

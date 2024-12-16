@@ -69,7 +69,7 @@ public class BoardFindResponse {
             log.info("산책 상태 = {}",match.getCompleteStatus().getStatus());
             if (match.getCompleteStatus().equals(CompleteStatus.COMPLETE)) {
 
-                return CompleteStatus.INCOMPLETE.getStatus();
+                return CompleteStatus.COMPLETE.getStatus();
             }
         }
         return CompleteStatus.INCOMPLETE.getStatus();
