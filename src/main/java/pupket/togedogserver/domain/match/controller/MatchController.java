@@ -28,17 +28,15 @@ public class MatchController {
             @Parameter(description = "신청한 게시판 글 id") @PathVariable("boardId") Long boardId
     ) {
         matchService.match(userDetail, nickname, boardId);
-
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "매칭 수락", description = "매칭을 수락합니다.")
-    @GetMapping("accept/{boardId}")
+    @GetMapping("/accept/{boardId}")
     public ResponseEntity<Void> matchingSuccess(
             @AuthenticationPrincipal CustomUserDetail userDetail,
             @Parameter(description = "요청 수락할 게시글 id") @PathVariable("boardId") Long boardId)
     {
-
         matchService.matchSuccess(userDetail,boardId);
 
         return ResponseEntity.ok().build();

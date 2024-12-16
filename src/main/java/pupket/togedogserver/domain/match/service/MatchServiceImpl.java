@@ -71,12 +71,11 @@ MatchServiceImpl implements MatchService {
         List<Match> conflictMateMatches = matchRepository.findConflictMatches(findMate.getMateUuid(), findBoard.getStartTime(), findBoard.getEndTime(), findBoard.getPickUpDay(),findBoard.getBoardId());
 
         List<Long> dogIdList = findBoard.getBoardDog().stream().map(
-                bd ->
-                        bd.getDog().getDogId()
-        ).toList();
+                bd ->  bd.getDog().getDogId()).toList();
 
         List<Board> conflictOwnerMatches = boardRepository.findConflictOwnerMatches(dogIdList,findBoard.getStartTime(),findBoard.getEndTime(),findBoard.getPickUpDay(),findBoard.getBoardId());
 
+        //TODO 확실히 검증되면 로그 삭제
         if (!conflictMateMatches.isEmpty()) {
             conflictMateMatches.forEach(match -> log.info("겹치는 일정: startTime={}, endTime={}, pickUpDay={}",
                     match.getBoard().getStartTime(),
@@ -179,17 +178,15 @@ MatchServiceImpl implements MatchService {
         //해당 게시판 조회
         Board findBoard = getBoard(boardRepository.findByBoardId(boardId));
 
-        // 매칭된 건인지 확인
-        if (findBoard.getMatch() == null) {
-            log.warn("매칭을 찾을 수 없습니다.");
-            throw new MatchingException(ExceptionCode.NOT_FOUND_MATCH);
-        }
+        Match findMatch = findBoard.getMatch().stream().filter(
+                match -> match.getMate().getUser().getUuid().equals(findUser.getUuid())
+        ).findFirst().orElseThrow(
+                () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
+        );
 
         //수락자가 자신이 아닌지, 이미 매칭된 게시글인지 체크
         validateMatchStatus(findBoard, findUser);
 
-        //Match 조회
-        Match findMatch = getMatch(matchRepository.findById(findBoard.getMatch().getMatchId()));
 
         //매칭 성공으로 업데이트
         updateMatchAndBoardMatchStatusToMacthed(findMatch, findBoard);
@@ -263,8 +260,11 @@ MatchServiceImpl implements MatchService {
         }
 
         //매칭 조회
-        Match findMatch = getMatch(matchRepository.findByBoardAndMate(findBoard, findMate));
-
+        Match findMatch = findBoard.getMatch().stream().filter(
+                match -> match.getMate().getUser().getUuid().equals(findUser.getUuid())
+        ).findFirst().orElseThrow(
+                () -> new MatchingException(ExceptionCode.NOT_FOUND_MATCH)
+        );
 
         // 해당 매칭 거절 처리
         updateMatchAndBoardToUnmatched(findMatch, findBoard);

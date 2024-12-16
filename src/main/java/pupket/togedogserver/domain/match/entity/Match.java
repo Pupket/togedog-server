@@ -10,6 +10,8 @@ import pupket.togedogserver.domain.user.entity.Owner;
 import pupket.togedogserver.domain.user.entity.mate.Mate;
 import pupket.togedogserver.global.baseEntity.BaseEntity;
 
+import java.util.List;
+
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity(name = "matching")
@@ -51,6 +53,6 @@ public class Match extends BaseEntity {
     @JoinColumn(name = "mate_uuid")
     private Mate mate;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     private Board board;
 }
