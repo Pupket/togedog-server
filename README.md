@@ -49,9 +49,8 @@ CI/CD: Git Actions, Docker
 
 ---
 
-<div style="text-align: center;">
-<img width="600" alt="image" src="https://github.com/user-attachments/assets/6e7903a5-78ed-4bc6-8726-90bb85769e65">
-</div>
+<img src="document/ERDDiagram.png" alt="erd diagram" width="400">
+
 
 
 # :mag: 서비스 기능
@@ -180,43 +179,33 @@ CI/CD: Git Actions, Docker
 
 ## 프로젝트 개선점
 
-### 아키텍처
-- 어댑터 패턴을 사용하여 각 레이어의 의존성 약화([개선 과정 기록](https://sunro1994.tistory.com/255))
+### 실시간 초성 검색 자동완성 기능 개발
+- MySQL의 LIKE 함수를 사용한 키워드 검색 방식에서 성능 개선을위해 Redis ZSet을 사용하였습니다. 
+- 이 과정에서 애플리케이션 초기화단계에 @PostConstruct를 사용한Init()메서드에서 모든 유저와 반려견 견종 데이터를 음절로 쪼개어 저장해야 하는 로직이 수행되었고 이로 인해 애플리케이션 작동 시간이 지연된다는 단점이 있었습니다. 
+- 해당 로직을 개선하기 위해 Trie 알고리즘을 적용하여 초기에 한 번 모든 데이터를 조회한 이후에는 저장소의 조회 없이 Trie내 노드를 사용한 조회를 수행할 수 있도록 개선하였고 결과적으로 1만번의 요청이 들어왔을때 9만개의 더미데이터에서 18.85초에서 7.02초로 약 11초 시간을 단축시키는 성능 개선의 결과를 보였습니다.
+- [키워드 초성 검색 기능 개선 과정](https://sunro1994.tistory.com/267)을 블로그에 기록해두고 꾸준히 개선사항을 업데이트 하였습니다.
+
+### 아키텍처 개선
+- 무분별하게 생성하고 상속받아 사용하는 인터페이스를 제대로 공부하고 어댑터 패턴으로 개선하였습니다.
+- 프로젝트를 확장가능하도록 의존성을 약화시키고 각 레이어의 연결 인터페이스를 port패키지로 모아 의존성 관계를 명확히 볼 수 있도록 구조를 정리했습니다.[레이어 아키텍처 구조 개선하기](https://sunro1994.tistory.com/255)
 
 ### JPA 영속성 관리
-- SoftDelete방식의 데이터 삭제 관리 개선([CallBackCycle을 사용한 연관 엔티티 삭제](https://sunro1994.tistory.com/260))
+- JPA에서 무분별하게 사용하던 SoftDelete방식의 데이터 삭제 관리와 Cascade설정의 관계를 명확히 알고 잘못된 엔티티 설정들을 개선해 나갔습니다.([CallBackCycle을 사용한 연관 엔티티 삭제](https://sunro1994.tistory.com/260))
 
-### 실시간 초성 검색 자동완성 기능 개발
-- 견종과 유저 닉네임 검색을 위한 음절 분리 및 저장,조회 과정을 **RDB**에서 **Redis**의 **ZSet**방식으로 수정하여 저장 속도 개선(15초->2초)
-- Redis Read Through 패턴과 Write Around 조합을 사용하여 정합성 문제 해결
 
 
 ## 프로젝트 진행 과정 중 어려웠던 부분
 1. Matching요청 시 상세 조건 검증
-   - Matching 요청 시 견주(Owner)의 반려견(Dog)이 해당 매칭 요청 시간에 동일한 다른 매칭이 성사되어 있는지 확인하는 쿼리와 산책메이트(Mate)의 일정이 해당 매칭 요청시간대와 중복되는 일정이 있는지 두 가지의 검증이 필요했습니다.
-   - 우선 Mate의 일정 중복을 체크하기 위해 Mate와 Board테이블을 조인하고 Where절에 게시판의 산책 요청 시작시간부터 종료시간이 기존 일정에 중복되는 것을 조건으로 가져오도록 설정하였습니다. 이 쿼리를 통해 하나라도 데이터가 들어있다면 매칭 요청에 대해 예외를 발생시키고 클라이언트에서 메세지를 반환하도록 설정하였습니다.
-### 해결 쿼리
-```sql
--- Mate의 매칭 중복 여부 판단 쿼리
- @Query("SELECT m FROM matching m JOIN m.board b " +
-            "WHERE m.mate.mateUuid = :mateUuid " +
-            "AND m.completeStatus = 'INCOMPLETE'  " +
-            "AND b.startTime < :endTime " +
-            "AND b.endTime > :startTime " +
-            "AND b.pickUpDay = :pickupDay " +
-            "AND b.boardId != :boardId")
+   <img src="document/matching%20ERD.png" alt="">
+  - Matching 요청 시 견주(Owner)의 반려견(Dog)이 해당 매칭 요청 시간에 동일한 다른 매칭이 성사되어 있는지 확인과 산책메이트(Mate)의 일정이 해당 매칭 요청시간대와 중복되는 일정이 있는지 두 가지의 검증이 필요했습니다.
+   - Mate의 일정 중복을 체크하기 위해 Mate와 Board테이블을 조인하고 Where절에 게시판의 산책 요청 시작시간부터 종료시간이 기존 일정에 중복되는 것을 조건으로 가져오도록 설정하였습니다. 이 쿼리를 통해 하나라도 데이터가 들어있다면 매칭 요청에 대해 예외를 발생시키고 클라이언트에서 메세지를 반환하도록 설정하였습니다.
+   - Owner의 Dog엔티티또한 Board와 BoardDog, Match테이블을 Join하고 Where 조건절에서 다른 게시판과 시간대가 중복되는 것을 조건으로 가져오도록 수행하였습니다.
+   - 위 두개의 쿼리에서 하나라도 중복되는 부분이 있다면 예외처리를 하여 유저들이 매칭하는데 혼동을 빚는 일이 없도록 비즈니스 로직을 만들었습니다.
 
- -- 반려견 산책 일정 중복 판단 쿼리
-@Query("SELECT DISTINCT b FROM Board b " +
-            "JOIN b.boardDog bd " +
-            "WHERE bd.dog.dogId IN :dogIdList " +
-            "AND (b.match.completeStatus = 'INCOMPLETE' AND b.match.matched != 'REJECTED') " +
-            "AND b.pickUpDay = :pickUpDay " +
-            "AND ((b.startTime <= :endTime AND b.endTime >= :startTime)) " +
-            "AND b.deleted = false " +
-            "AND b.boardId != :boardId")
-```
 
 2. 채팅 미접속 유저 체크 및 알람 전송
-처음 Websocket과 STOMP, Redis의 Sub/Pub, Firebase를 사용하여 구현하는데 많은 경험을 할 수 있었습니다. HTTP통신이 아닌 Websocket통신을 구현하면서 가장 어려웠던 부분은 유저의 접속 유무 판단 및 미접속시 FCM을 전송하고 접속시에는 채팅메세지만 보내야 하는 요구사항 이었습니다.
-@EventListenr를 사용하여 유저의 접속및 해제를 감지하였고, Session 정보를 유저의 헤더 토큰에서 추출한 유저 Id, 유저의 접속상태("online","offline)값을 함께 Redis에 저장하였습니다. 이를 이용하여 채팅 전송 비즈니스 로직에서 유저의 접속 유무를 판단하여 온라인일 경우 채팅을 전송하고 오프라인일 경우 FCM을 통해 알람을 보내는 방식을 구성하였습니다.
+- 처음 Websocket과 STOMP, Redis의 Sub/Pub, Firebase를 사용하여 구현하는데 많은 경험을 할 수 있었습니다. 
+- HTTP통신이 아닌 Websocket통신을 구현하면서 가장 어려웠던 부분은 유저의 접속 유무 판단 및 미접속시 FCM을 전송하고 접속시에는 채팅메세지만 보내야 하는 요구사항 이었습니다.
+- @EventListenr를 사용하여 유저의 접속및 해제를 감지하였고, Session 정보를 유저의 헤더 토큰에서 추출한 유저 Id, 유저의 접속상태("online","offline)값을 함께 Redis에 저장하였습니다. 
+- 이를 이용하여 채팅 전송 비즈니스 로직에서 유저의 접속 유무를 판단하여 온라인일 경우 채팅을 전송하고 오프라인일 경우 FCM을 통해 알람을 보내는 방식을 구성하였습니다.
+
