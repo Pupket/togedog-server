@@ -23,10 +23,7 @@ public class WebSocketEventListener {
 
     private final Set<String> connectedSessions = new HashSet<>();
     private final RedisTemplate<String, String> redisTemplate;
-    private final JwtService jwtTokenProvider;  // JWT 토큰 파싱을 위한 JwtTokenProvider
     private final JwtService jwtService;
-    private final JwtUtils jwtUtils;
-    private final UserRepository userRepository;
     private static final String SESSION_USER_KEY = "session:user:";
 
     // WebSocket 연결 시 세션 ID 저장 및 사용자 상태를 "online"으로 설정

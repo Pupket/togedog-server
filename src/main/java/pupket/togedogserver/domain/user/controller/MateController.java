@@ -208,11 +208,7 @@ public class MateController {
             @PathVariable("keyword") String keyword
     )
     {
-        long startTime = System.currentTimeMillis();
-        List<String> result = mateService.autoCompleteKeyword(keyword);
-        long endTime = System.currentTimeMillis();
-        long resultTime = endTime - startTime;
-        log.info("duringTime ={}",resultTime);
+        List<String> result = mateService.autocorrect(keyword);
 
         return ResponseEntity.ok().body(result);
     }

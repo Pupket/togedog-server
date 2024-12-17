@@ -27,6 +27,7 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.redis.RedisSortedSetService;
 import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.security.CustomUserDetail;
+import pupket.togedogserver.global.trie.Trie;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +50,8 @@ public class MateServiceImpl implements MateService {
     private final S3FileUtil s3FileUtil;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EntityManager entityManager;
-
-    private final String suffix = "*";
     private final RedisSortedSetService redisSortedSetService;
+    private final Trie trie = new Trie(); // Trie 인스턴스 생성
 
     private static Mate connectWithUser(Mate createdMate, User findUser) {
         //mate와 user 양방향 맵핑
@@ -62,52 +62,18 @@ public class MateServiceImpl implements MateService {
 
     @PostConstruct
     public void init() {    //이 Service Bean이 생성된 이후에 검색어 자동 완성 기능을 위한 데이터들을 Redis에 저장 (Redis는 인메모리 DB라 휘발성을 띄기 때문)
-        if (redisSortedSetService.isInitializedUserNickname()) {
-            log.info("Redis already contains autocomplete data. Skipping initialization.");
-            return;
-        }
         List<String> nicknames = userRepository.findAllNicknames();
         log.info("size={}", nicknames.size());
-        saveAllSubstring(nicknames); //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-
-    }
-
-    private void saveAllSubstring(List<String> userNickName) { //MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-        // long start1 = System.currentTimeMillis(); //뒤에서 성능 비교를 위해 시간을 재는 용도
-        for (String name : userNickName) {
-            redisSortedSetService.addToSortedSetFromMate(name + suffix);   //완벽한 형태의 단어일 경우에는 *을 붙여 구분
-
-            for (int i = name.length(); i > 0; --i) { //음절 단위로 잘라서 모든 Substring 구하기
-                redisSortedSetService.addToSortedSetFromMate(name.substring(0, i)); //곧바로 redis에 저장
-            }
+        for (String name : nicknames) {
+            trie.insert(name); // Trie에 모든 닉네임 삽입
         }
+        log.info("Trie 초기화 완료");
     }
 
     @Override
-    public List<String> autoCompleteKeyword(String keyword) {
+    public List<String> autocorrect(String keyword) {
         log.info("자동 완성 키워드 요청: {}", keyword);
-        return autocorrect(keyword);
-    }
-
-    @Override
-    public List<String> autocorrect(String keyword) { //검색어 자동 완성 기능 관련 로직
-        Long index = redisSortedSetService.findFromSortedSetFromMate(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
-        if (index == null) {
-            log.info("index가 비어있음");
-            return new ArrayList<>();   //만약 사용자 검색어 바탕으로 자동 완성 검색어를 만들 수 없으면 Empty Array 리턴
-        }
-
-        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInMateAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
-
-        //자동 완성을 통해 만들어진 최대 maxSize 개의 키워드들
-        //검색어 자동 완성 기능 최대 개수
-        int maxSize = 2000;
-
-        return allValuesAfterIndexFromSortedSet.stream()
-                .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
-                .map(this::removeEnd)
-                .limit(maxSize)
-                .toList();
+        return trie.searchByPrefix(keyword, 10); // Trie에서 자동완성 결과 반환
     }
 
     @Override
@@ -128,6 +94,10 @@ public class MateServiceImpl implements MateService {
         Mate savedMate = twoWayMappingUserAndMate(createdMate, findUser); //양방향 맵핑(유저, 메이트)
 
         saveMatePreferences(savedMate, request); //각 태그 영속성 저장
+
+        // 새로운 닉네임을 Trie에 추가
+        trie.insert(request.getNickname());
+        log.info("Trie에 닉네임 추가 완료: {}", request.getNickname());
 
         mateRepository.save(savedMate);
         log.info("메이트 생성 완료: 사용자 ID = {}", userDetail.getUuid());
@@ -176,8 +146,14 @@ public class MateServiceImpl implements MateService {
                     .phoneNumber(request.getPhoneNumber())
                     .build();
         }
+        // 기존 닉네임 Trie에서 삭제
+        trie.remove(findUser.getNickname());
+        log.info("Trie에서 기존 닉네임 삭제 완료: {}", findUser.getNickname());
 
         findUser = userRepository.save(findUser);
+        // 새로운 닉네임을 Trie에 추가
+        trie.insert(request.getNickname());
+        log.info("Trie에 새로운 닉네임 추가 완료: {}", request.getNickname());
         log.info("유저 정보 업데이트 완료: 사용자 ID = {}", findUser.getUuid());
         return findUser;
     }
@@ -233,13 +209,10 @@ public class MateServiceImpl implements MateService {
 
         validateNickname(request, findUser); //nickname 중복 검사
 
-        deleteOldNicknameFromRedis(findUser); //Redis에 유저 닉네임 최신화
-
         String uploadedProfileImage = updateProfileImage(profileImage, findUser); //profileImage 최신화
 
         findUser = updateUserByRequest(request, findUser, uploadedProfileImage);// 유저 정보 업데이트 (닉네임 변경 포함)
 
-        saveNewNicknameInRedis(findUser); // Redis에 새로운 닉네임 정보 저장
 
         Mate findMate = getMate(findUser);
 
@@ -263,14 +236,6 @@ public class MateServiceImpl implements MateService {
     private Mate getMate(User findUser) {
         return mateRepository.findByUser(findUser)
                 .orElseThrow(() -> new MateException(ExceptionCode.NOT_FOUND_MATE));
-    }
-
-    private void saveNewNicknameInRedis(User findUser) {
-        log.info("새로운 닉네임 Redis에 저장 시작: 사용자 ID = {}", findUser.getUuid());
-        List<String> newNicknames = new ArrayList<>();
-        newNicknames.add(findUser.getNickname());
-        saveAllSubstring(newNicknames);
-        log.info("새로운 닉네임 Redis에 저장 완료: 사용자 ID = {}", findUser.getUuid());
     }
 
     private User updateUserByRequest(UpdateMateRequest request, User findUser, String uploadedProfileImage) {
@@ -325,25 +290,6 @@ public class MateServiceImpl implements MateService {
         log.info("닉네임 유효성 검사 완료: 사용자 ID = {}", findUser.getUuid());
     }
 
-    private void deleteOldNicknameFromRedis(User findUser) {
-        log.info("기존 닉네임 Redis에서 삭제 시작: 사용자 ID = {}", findUser.getUuid());
-        // Redis에서 기존 닉네임 정보 삭제
-        List<String> oldNicknames = new ArrayList<>();
-        oldNicknames.add(findUser.getNickname());
-        deleteNicknameFromRedis(oldNicknames);
-        log.info("기존 닉네임 Redis에서 삭제 완료: 사용자 ID = {}", findUser.getUuid());
-    }
-
-    private void deleteNicknameFromRedis(List<String> oldNicknames) {
-        for (String name : oldNicknames) {
-            // 기존 닉네임을 Redis에서 삭제
-            redisSortedSetService.removeFromSortedSetFromMate(name + suffix); // 기존 닉네임 전체 삭제
-
-            for (int i = name.length(); i > 0; --i) { // 음절 단위로 잘라서 모든 Substring을 Redis에서 삭제
-                redisSortedSetService.removeFromSortedSetFromMate(name.substring(0, i));
-            }
-        }
-    }
 
     private void deleteTags(Mate findMate) {
         log.info("메이트 태그 삭제 시작: 메이트 ID = {}", findMate.getMateUuid());
@@ -423,10 +369,5 @@ public class MateServiceImpl implements MateService {
         return result;
     }
 
-    private String removeEnd(String str) {
-        if (str != null && str.endsWith("*")) {
-            return str.substring(0, str.length() - "*".length());
-        }
-        return str;
-    }
+
 }

@@ -31,12 +31,9 @@ import pupket.togedogserver.global.exception.customException.MemberException;
 import pupket.togedogserver.global.redis.RedisSortedSetService;
 import pupket.togedogserver.global.s3.util.S3FileUtil;
 import pupket.togedogserver.global.security.CustomUserDetail;
+import pupket.togedogserver.global.trie.Trie;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -53,28 +50,19 @@ public class DogServiceImpl implements DogService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomDogRepositoryImpl customDogRepository;
     private final RedisSortedSetService redisSortedSetService;
-
-    private final String suffix = "*";
+    private final Trie trie = new Trie(); // Trie 인스턴스 생성
 
     @PostConstruct
     public void init() {
-        if (redisSortedSetService.isinitializedDogBrreds()) {
-            log.info("Redis already contains autocomplete data. Skipping initialization.");
-            return;
-        }
+
         List<String> dogBreedList = dogRepository.findAllBreedData();
-        log.info("Breed data size: {}", dogBreedList.size());
-        saveAllSubstring(dogBreedList); // MySQL DB에 저장된 모든 견종을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
+        log.info("data Size={}", dogBreedList.size());
+
+        for (String breed : dogBreedList) {
+            trie.insert(breed); // Trie에 모든 단어 삽입
+        }
     }
 
-    private void saveAllSubstring(List<String> userNickName) { // MySQL DB에 저장된 모든 가게명을 음절 단위로 잘라 모든 Substring을 Redis에 저장해주는 로직
-        for (String name : userNickName) {
-            redisSortedSetService.addToSortedSetFromDog(name + suffix);   // 완벽한 형태의 단어일 경우에는 *을 붙여 구분
-            for (int i = name.length(); i > 0; --i) { // 음절 단위로 잘라서 모든 Substring 구하기
-                redisSortedSetService.addToSortedSetFromDog(name.substring(0, i)); // 곧바로 redis에 저장
-            }
-        }
-    }
 
     @Override
     public void create(CustomUserDetail user, DogRegistRequest request, MultipartFile profileImages) {
@@ -252,28 +240,22 @@ public class DogServiceImpl implements DogService {
 
     @Override
     public List<String> autoCompleteKeyword(String keyword) {
-
-        Long index = redisSortedSetService.findFromSortedSetFromDog(keyword);  //사용자가 입력한 검색어를 바탕으로 Redis에서 조회한 결과 매칭되는 index
-        if (index == null) {
-            log.info("index가 비어있음");
-            return new ArrayList<>();   //만약 사용자 검색어 바탕으로 자동 완성 검색어를 만들 수 없으면 Empty Array 리턴
+        if (keyword == null || keyword.isEmpty()) {
+            log.info("검색어가 비어 있음");
+            return Collections.emptyList();
         }
 
-        Set<String> allValuesAfterIndexFromSortedSet = redisSortedSetService.findAllValuesInDogAfterIndexFromSortedSet(index);   //사용자 검색어 이후로 정렬된 Redis 데이터들 가져오기
+        // Trie를 사용해 접두사에 해당하는 단어 검색
+        List<String> results = trie.searchByPrefix(keyword, 10);
 
-        //검색어 자동 완성 기능 최대 개수
-        int maxSize = 200;
-        return allValuesAfterIndexFromSortedSet.stream()
-                .filter(value -> value.endsWith(suffix) && value.startsWith(keyword))
-                .map(this::removeEnd)
-                .limit(maxSize)
-                .toList();
-    }
-
-    private String removeEnd(String str) {
-        if (str != null && str.endsWith("*")) {
-            return str.substring(0, str.length() - "*".length());
+        if (results.isEmpty()) {
+            log.info("자동완성 결과 없음");
         }
-        return str;
+        results.forEach(
+                data ->
+                log.info("result={}",data)
+        );
+
+        return results;
     }
 }

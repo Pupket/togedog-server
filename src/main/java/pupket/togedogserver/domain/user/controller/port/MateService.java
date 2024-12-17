@@ -29,8 +29,6 @@ public interface MateService {
 
      boolean checkNickname(CustomUserDetail userDetail, String nickname);
 
-     List<String> autoCompleteKeyword(String keyword);
-
      List<String> autocorrect(String keyword);
 
 }
