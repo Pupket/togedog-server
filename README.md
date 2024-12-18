@@ -26,13 +26,13 @@ FrontEnd 2명, BackEnd 1명, Designer 2명, 기획/PM 1명
 
 Backend: Java, Spring Boot, Spring Security, OAuth2, JPA, JWT, Redis, WebSocket
 
-Frontend: Flutter
-
 Database: MySQL (AWS RDS)
 
 Cloud Services: AWS EC2, S3, ACM, Route53, ALB, FCM
 
 CI/CD: Git Actions, Docker
+
+Performance Test : Jmeter
 
 
 ## System Architecture
@@ -206,6 +206,6 @@ CI/CD: Git Actions, Docker
 2. 채팅 미접속 유저 체크 및 알람 전송
 - 처음 Websocket과 STOMP, Redis의 Sub/Pub, Firebase를 사용하여 구현하는데 많은 경험을 할 수 있었습니다. 
 - HTTP통신이 아닌 Websocket통신을 구현하면서 가장 어려웠던 부분은 유저의 접속 유무 판단 및 미접속시 FCM을 전송하고 접속시에는 채팅메세지만 보내야 하는 요구사항 이었습니다.
-- @EventListenr를 사용하여 유저의 접속및 해제를 감지하였고, Session 정보를 유저의 헤더 토큰에서 추출한 유저 Id, 유저의 접속상태("online","offline)값을 함께 Redis에 저장하였습니다. 
+- @EventListenr를 사용하여 유저의 å접속및 해제를 감지하였고, Session 정보를 유저의 헤더 토큰에서 추출한 유저 Id, 유저의 접속상태("online","offline)값을 함께 Redis에 저장하였습니다. 
 - 이를 이용하여 채팅 전송 비즈니스 로직에서 유저의 접속 유무를 판단하여 온라인일 경우 채팅을 전송하고 오프라인일 경우 FCM을 통해 알람을 보내는 방식을 구성하였습니다.
 
