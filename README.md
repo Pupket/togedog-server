@@ -162,7 +162,7 @@ Performance Test : Jmeter
 - AOP를 사용한 각 컨트롤러 및 서비스 레이어의 로깅 공통 로직 중복 제거
 - OAuth2를 사용한 소셜 로그인 구현
 - 중복 로그인을 처리할 수 있는 Filter와 인증을 거칠 수 있는 Filter를 OncePerRequestFilter를 상속받아 구현
-- Redis의 **ZSet** **트라이 구조**를 사용한 실시간 초성 검색 자동완성 기능 개발
+- **트라이 구조**를 사용한 실시간 초성 검색 자동완성 기능 개발
 - **STOMP**와 **Websocket**을 사용한 실시간 채팅 기능 개발
   - 유저의 마지막 접속 시간을 Redis 캐시에서 로드하여 이후 시간의 미수신 메시지 클라이언트에 반환 
   - EventListener, JWT Token을 사용하여 유저 로그인 세션 접속유무 실시간 Redis에 캐싱처리
