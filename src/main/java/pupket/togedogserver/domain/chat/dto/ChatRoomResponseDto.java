@@ -22,16 +22,16 @@ public class ChatRoomResponseDto {
     int unreceivedMessageCount;
      String lastMessage;
 
-    public static ChatRoomResponseDto to(ChatRoom room, User owner, User mate, List<ChattingResponseDto> unreceivedMessages, ChattingResponseDto lastMessage) {
+    public static ChatRoomResponseDto to(ChatRoom room, User sender, User receiver, List<ChattingResponseDto> unreceivedMessages, ChattingResponseDto lastMessage) {
 
         return ChatRoomResponseDto.builder()
                 .roomId(room.getRoomId())
                 .title(room.getTitle())
                 .lastTime(Optional.ofNullable(lastMessage).map(ChattingResponseDto::getLastTime).orElse(null))
-                .sender(owner.getNickname())
-                .senderImage(owner.getProfileImage().isEmpty() ? null : owner.getProfileImage())
-                .receiver(mate.getNickname())
-                .receiverImage(mate.getProfileImage().isEmpty() ? null : mate.getProfileImage())
+                .sender(sender.getNickname())
+                .senderImage(sender.getProfileImage().isEmpty() ? null : sender.getProfileImage())
+                .receiver(receiver.getNickname())
+                .receiverImage(receiver.getProfileImage().isEmpty() ? null : receiver.getProfileImage())
                 .unreceivedMessageCount(unreceivedMessages.size())
                 .lastMessage(Optional.ofNullable(lastMessage).map(ChattingResponseDto::getContent).orElse(null))
                 .build();

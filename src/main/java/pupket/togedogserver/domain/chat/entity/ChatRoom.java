@@ -22,9 +22,9 @@ public class ChatRoom {
     @GeneratedValue(strategy = IDENTITY)
     private Long roomId;
 
-    private Long owner;
+    private Long sender;
 
-    private Long mate;
+    private Long receiver;
 
     private String title;
 
@@ -34,10 +34,10 @@ public class ChatRoom {
 
     private String receiverImage;
 
-    public static ChatRoom to(Long mate, Long owner, String findSenderProfileImage, String roomTitle, String findReceiverProfileImage) {
+    public static ChatRoom to(Long sender, Long receiver, String findSenderProfileImage, String roomTitle, String findReceiverProfileImage) {
         return ChatRoom.builder()
-                .mate(mate)
-                .owner(owner)
+                .sender(sender)
+                .receiver(receiver)
                 .senderImage(findSenderProfileImage)
                 .title(roomTitle)
                 .receiverImage(findReceiverProfileImage)

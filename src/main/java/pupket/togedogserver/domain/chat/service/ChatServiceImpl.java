@@ -60,7 +60,7 @@ public class ChatServiceImpl implements ChatService {
 
         log.info("Chat room created or validated: {}", findChatRoom);
 
-        if (findChatRoom.getOwner().equals(findSender.getUuid())) {
+        if (findChatRoom.getSender().equals(findSender.getUuid())) {
             log.info("Returning chat room with title: {}", findChatRoom.getTitle());
             return ChatRoomCreateResponse.builder()
                     .roomTitle(findChatRoom.getTitle())
@@ -161,8 +161,16 @@ public class ChatServiceImpl implements ChatService {
 
         for (ChatRoom room : chatRooms) {
             log.info("Processing chat room: {}", room.getRoomId());
-            User findSender = findSender(room.getOwner());
-            User findReceiver = findReceiver(room.getMate());
+
+            User findSender = null;
+            User findReceiver = null;
+            if (uuid == room.getSender()) {
+                 findSender = findSender(room.getSender());
+                 findReceiver = findReceiver(room.getReceiver());
+            }else{
+                findSender = findSender(room.getReceiver());
+                findReceiver = findReceiver(room.getSender());
+            }
 
             //채팅 가져오기
             String key = "chatRoomId:" + room.getRoomId();
@@ -329,12 +337,12 @@ public class ChatServiceImpl implements ChatService {
 
     private static Long isMateOrOwner(ChattingRequestDto message, ChatRoom findChatRoom) {
         log.info("isMateOrOwner를 수행하여 받을 사람 지정");
-        if (findChatRoom.getMate().equals(message.getUserId())) {
-            log.info("receiver id = {}", findChatRoom.getOwner());
-            return findChatRoom.getOwner();
+        if (findChatRoom.getReceiver().equals(message.getUserId())) {
+            log.info("receiver id = {}", findChatRoom.getSender());
+            return findChatRoom.getSender();
         } else {
-            log.info("receiver id = {}", findChatRoom.getMate());
-            return findChatRoom.getMate();
+            log.info("receiver id = {}", findChatRoom.getReceiver());
+            return findChatRoom.getReceiver();
         }
     }
 
@@ -345,8 +353,8 @@ public class ChatServiceImpl implements ChatService {
         );
 
         log.info("Processing chat room: {}", chatRoom.getRoomId());
-        User findSender = findSender(chatRoom.getOwner());
-        User findReceiver = findReceiver(chatRoom.getMate());
+        User findSender = findSender(chatRoom.getSender());
+        User findReceiver = findReceiver(chatRoom.getReceiver());
 
         //채팅 가져오기
         String key = "chatRoomId:" + roomId;
