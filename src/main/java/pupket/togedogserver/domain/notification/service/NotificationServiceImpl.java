@@ -163,6 +163,7 @@ public class NotificationServiceImpl implements NotificationService {
         data.put("boardId", String.valueOf(notificationRequestDtoForMatching.getBoardId()));
         data.put("message", notificationRequestDtoForMatching.getMessage());
         data.put("sendTime", notificationRequestDtoForMatching.getTimestamp().toString());
+        data.put("type" , NotificationType.MATCH.name());
     }
 
     @Override
@@ -274,6 +275,7 @@ public class NotificationServiceImpl implements NotificationService {
         data.put("message", notification.getContent());
         data.put("image", notification.getImage() != null ? notification.getImage() : "");
         data.put("timestamp", String.valueOf(notification.getLastTime().getTime()));
+        data.put("type", NotificationType.MATCH.name());
     }
 
     private static Message createFireBaseMessage(NotificationRequestDto notification, String token, Map<String, String> data) {
