@@ -23,10 +23,6 @@ public class GlobalExceptionHandler {
 
         ExceptionResponse exceptionResponse = ExceptionResponse.fromException(ex.getExceptionCode());
 
-        if (exceptionResponse.httpStatus().equals(HttpStatus.CONFLICT)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
-        }
-
         return ResponseEntity.status(exceptionResponse.httpStatus()).body(exceptionResponse);
     }
 
