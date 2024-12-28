@@ -16,12 +16,12 @@ public class ChatRoomRepositoryImpl implements ChatRoomRepository {
 
     @Override
     public Optional<ChatRoom> findByOwnerAndMateAndTitle(Long sender, Long receiver, String roomTitle, Long receiver1, Long sender1, String roomTitle1) {
-        return chatRoomJPARepository.findByOwnerAndMateAndTitle(sender, receiver, roomTitle);
+        return chatRoomJPARepository.findBySenderAndReceiverAndTitle(sender, receiver, roomTitle);
     }
 
     @Override
     public List<ChatRoom> findByOwnerOrMate(Long uuid, Long uuid1) {
-        return chatRoomJPARepository.findByOwnerOrMate(uuid, uuid1);
+        return chatRoomJPARepository.findBySenderOrReceiver(uuid, uuid1);
     }
 
     @Override

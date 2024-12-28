@@ -87,6 +87,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notificationEntity);
     }
 
+    @Override
     public void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User user) {
 
         Long userId = notificationRequestDtoForMatching.getUserId();

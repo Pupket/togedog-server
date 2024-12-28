@@ -1,7 +1,9 @@
 package pupket.togedogserver.domain.notification.controller.port;
 
 import pupket.togedogserver.domain.notification.dto.NotificationRequestDto;
+import pupket.togedogserver.domain.notification.dto.NotificationRequestDtoForMatching;
 import pupket.togedogserver.domain.notification.dto.NotificationResponseDto;
+import pupket.togedogserver.domain.user.entity.User;
 import pupket.togedogserver.global.security.CustomUserDetail;
 
 import java.sql.Timestamp;
@@ -14,6 +16,8 @@ public interface NotificationService {
     void deleteToken(Long uuid);
 
     void sendNotification(NotificationRequestDto notification) throws InterruptedException, ExecutionException;
+
+    void sendNotificationAboutMatching(NotificationRequestDtoForMatching notificationRequestDtoForMatching, User user);
 
     List<NotificationResponseDto> getUnreceivedNotificationList(CustomUserDetail userDetail, String lastTime);
 
