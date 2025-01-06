@@ -51,6 +51,7 @@ public class JwtService {
         this.refreshTokenExpirationTime = refreshTokenExpirationTime;
     }
 
+    //토큰객체 생성 메서드, 어세스토큰과 리프레쉬 토큰을 생성하여 빌드
     public JwtToken generateToken(Authentication authentication) {
         return JwtToken.builder()
                 .grantType("Bearer")
@@ -81,6 +82,7 @@ public class JwtService {
                 .build();
     }
 
+    //어세스토큰에서 계정 정보 추출
     public Authentication getAuthenticationFromAccessToken(String accessToken) {
         Claims claims = parseClaims(accessToken);
 
@@ -97,6 +99,7 @@ public class JwtService {
         return new UsernamePasswordAuthenticationToken(userDetail, "", authorities);
     }
 
+
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -111,6 +114,7 @@ public class JwtService {
         }
     }
 
+    //어세스토큰 생성
     private String generateAccessToken(Authentication authentication) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -124,13 +128,14 @@ public class JwtService {
 
         return Jwts.builder()
                 .setSubject(authentication.getName())
-                .claim("id", customUserDetail.getUuid())
+                .claim("id", customUserDetail.getUuid()) //유저 아이디값
                 .claim("auth", authorities)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256) //deprecated된 메서드 변경
                 .compact();
     }
 
+    //리프레쉬 토큰 생성
     private String generateRefreshToken(Authentication authentication) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -222,6 +227,7 @@ public class JwtService {
         }
     }
 
+    //헤더에서 토큰값 추출 메서드
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

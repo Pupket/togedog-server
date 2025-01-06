@@ -39,7 +39,6 @@ public class SecurityConfig {
     private final LoginService loginService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
-    private final RedisLoginService redisLoginService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, RedisLoginService redisLoginService) throws Exception {

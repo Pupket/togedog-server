@@ -1,7 +1,6 @@
 package pupket.togedogserver.global.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,10 +29,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private final RedisLoginService redisService;
     private final ObjectMapper objectMapper;
 
-    @Value("${jwt.secret}") String secretKey;
-    @Value("${jwt.token.access-token-expiration-time}") long accessTokenExpirationTime;
-    @Value("${jwt.token.refresh-token-expiration-time}") long refreshTokenExpirationTime;
-
     private static final List<String> EXCLUDE_URLS = List.of(
             "/css", "/swagger", "/v3/api-docs", "/login", "/favicon", "/api/v1/member/reissue-token"
     );
@@ -43,17 +38,21 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        //1. 요청 경로를 가져옴
         String requestURI = request.getRequestURI();
 
-        // 특정 경로에 대해 필터링 제외
+        //2. whiteList 경로 필터에서 제외
         if (isExcludedUrl(requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
+        //3. 토큰 검증
         try {
 
-        // 요청에서 JWT 토큰을 가져옴
+        // request Header에서 accessToken값을 가져옴
         String token = jwtService.resolveToken(request);
+
+        // jwtService
         if (token != null && jwtService.validateToken(token)) {
             Long userId = jwtService.getUserIdFromToken(token);
 
@@ -69,7 +68,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 handleDuplicateLogin(response);
                 return;
             }
-
 
                 Authentication authentication = jwtService.getAuthenticationFromAccessToken(token);
                 SecurityContextHolder.getContext().setAuthentication(authentication);

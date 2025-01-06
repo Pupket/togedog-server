@@ -66,6 +66,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     if (existingUser.accountStatus.toString().equals("DELETED")) {
                         throw new MemberException(ExceptionCode.MEMBER_ALREADY_WITHDRAW);
                     }
+                    validateAndUpdateSocialAccessToken(existingUser, socialAccessToken);
                     return existingUser;
 
                 }).orElseGet(() -> {
@@ -89,7 +90,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 memberAttribute);
     }
 
-    private void validateAndupdateSocialAccessToken(User existingUser, String socialAccessToken) {
+    private void validateAndUpdateSocialAccessToken(User existingUser, String socialAccessToken) {
         socialAccessTokenRepository.findByUser(existingUser).ifPresentOrElse(
                 existingToken -> {
                     existingToken.updateSocialAccessToken(socialAccessToken);
