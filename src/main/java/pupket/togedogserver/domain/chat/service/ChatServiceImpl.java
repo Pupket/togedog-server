@@ -42,6 +42,9 @@ public class ChatServiceImpl implements ChatService {
     private final RedisPublisher redisPublisher;
     private final WebSocketEventListener webSocketEventListener;
 
+    //채팅방 정보 반환
+    // 기존에 유저와 채팅하던 방이 있으면 채팅방 정보를 반환 없으면 새로 생성
+    // findChatRoom의 필드 sender와 receiver를 구분하는것이 의미가 없음 - 방  생성자가 sender가 될 수도있고 receiver도 될 수 있기 때문
     @Override
     public ChatRoomCreateResponse getOrCreateChatRoom(Long sender, Long receiver, String roomTitle) {
         log.info("Getting or creating chat room. Sender: {}, Receiver: {}, RoomTitle: {}", sender, receiver, roomTitle);
@@ -75,6 +78,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
+    //채팅방 생성 메서드
     private ChatRoom createChatRoom(Long sender, Long receiver, String roomTitle, String findSenderProfileImage, String findReceiverProfileImage) {
         log.info("Creating chat room if not exists. Sender: {}, Receiver: {}, Title: {}", sender, receiver, roomTitle);
         return chatRoomRepository.findByOwnerAndMateAndTitle(sender, receiver, roomTitle, receiver, sender, roomTitle)
@@ -90,6 +94,7 @@ public class ChatServiceImpl implements ChatService {
                 });
     }
 
+    //레디스에서 Topic설정
     private void setTopicInRedisTemplate(ChatRoom newChatRoom) {
         log.info("Setting topic in Redis template for chat room: {}", newChatRoom.getRoomId());
         ChannelTopic topic = new ChannelTopic("/sub/chat/room/" + newChatRoom.getRoomId());
@@ -134,25 +139,8 @@ public class ChatServiceImpl implements ChatService {
         );
     }
 
-    @Override
-    public String calculateTimeAgo(Timestamp lastTime) {
-        log.info("Calculating time ago for timestamp: {}", lastTime);
-        long diffInMillis = System.currentTimeMillis() - lastTime.getTime();
-        long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis);
-
-        if (diffInMinutes < 60) {
-            return diffInMinutes + "분 전";
-        } else {
-            long diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMillis);
-            if (diffInHours < 24) {
-                return diffInHours + "시간 전";
-            } else {
-                long diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis);
-                return diffInDays + "일 전";
-            }
-        }
-    }
-
+    //채팅방 목록 반환
+    // 가장 최근 채팅 시간, 내용을 함께 반환
     @Override
     public List<ChatRoomResponseDto> getChatRoomList(Long uuid) {
         log.info("Fetching chat room list for user: {}", uuid);
@@ -164,7 +152,7 @@ public class ChatServiceImpl implements ChatService {
 
             User findSender = null;
             User findReceiver = null;
-            if (uuid == room.getSender()) {
+            if (uuid.equals(room.getSender())) {
                  findSender = findSender(room.getSender());
                  findReceiver = findReceiver(room.getReceiver());
             }else{
@@ -200,6 +188,9 @@ public class ChatServiceImpl implements ChatService {
         return chatRoomList;
     }
 
+    // 채팅을 레디스에 저장
+    // 키 =  chatRoomId: id값
+    // 메세지는 레디스에 3일간 저장, 저장소 스펙으로인해 유저의 로컬에 저장하는걸로 함
     @Override
     public void saveChatToRedis(String roomId, ChattingResponseDto chat) {
         log.info("Saving chat to Redis. Room ID: {}, Chat: {}", roomId, chat);
@@ -235,12 +226,14 @@ public class ChatServiceImpl implements ChatService {
         return chatList;
     }
 
+    //방 삭제
     @Override
     public void leaveRoom(Long roomId) {
         log.info("User leaving chat room: {}", roomId);
         chatRoomRepository.deleteById(roomId);
     }
 
+    //시간 포맷 메서드
     @Override
     public Timestamp getParsedLastTime(String lastTime) {
         log.info("Parsing timestamp: {}", lastTime);
@@ -253,6 +246,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    //매개변수 lastTime 이후의 채팅메세지를 가져오는 메서드
     @Override
     public List<ChattingResponseDto> getMessagesAfterLastTime(Long roomId, Timestamp lastTime, Long uuid) {
         log.info("Fetching messages after last time. Room ID: {}, Last Time: {}", roomId, lastTime);
@@ -303,6 +297,8 @@ public class ChatServiceImpl implements ChatService {
 
     }
 
+    //Pub에게 메세지를 전달하는 메서드
+    //유저의 세션상태가
     @Override
     public void sendMessageToPublisher(ChattingRequestDto message) {
         log.info("{} send This Message - {}", message.getUserId(), message.getContent());
@@ -346,6 +342,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    //채팅방 단일 조회
     @Override
     public ChatRoomResponseDto getChatRoom(Long uuid, Long roomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(

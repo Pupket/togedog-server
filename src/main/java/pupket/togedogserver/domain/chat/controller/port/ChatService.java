@@ -11,8 +11,6 @@ import java.util.List;
 public interface ChatService {
     ChatRoomCreateResponse getOrCreateChatRoom(Long sender, Long receiver, String roomTitle);
 
-    String calculateTimeAgo(Timestamp lastTime);
-
     List<ChatRoomResponseDto> getChatRoomList(Long uuid);
 
     void saveChatToRedis(String roomId, ChattingResponseDto chat);
