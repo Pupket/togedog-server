@@ -70,8 +70,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         //전송할 데이터 설정
         Map<String, String> data = new HashMap<>();
-        log.info("data ={}", data);
         setData(notification, roomId, data);
+        log.info("data ={}", data);
 
         //메세지 생성
         log.info("FCM message payload: {}", data);
