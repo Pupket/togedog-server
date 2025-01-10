@@ -77,7 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
         Message firebaseMessage = createFireBaseMessage(notification, token, data);
 
         //메세지 전송
-        log.info("Sending FCM message for userId: {}, roomId: {}", notification.getUserId(), roomId);
+        log.info("Sending FCM message for userId: {}, roomId: {}, type : {} ", notification.getUserId(), roomId);
         sendMessage(notification, roomId, firebaseMessage);
 
         //Notification Entity 생성
@@ -276,7 +276,7 @@ public class NotificationServiceImpl implements NotificationService {
         data.put("message", notification.getContent());
         data.put("image", notification.getImage() != null ? notification.getImage() : "");
         data.put("timestamp", String.valueOf(notification.getLastTime().getTime()));
-        data.put("type", NotificationType.MATCH.name());
+        data.put("type", NotificationType.CHAT.name());
     }
 
     private static Message createFireBaseMessage(NotificationRequestDto notification, String token, Map<String, String> data) {
